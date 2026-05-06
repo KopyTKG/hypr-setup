@@ -1,0 +1,18 @@
+# Backups created by `omarchy refresh`
+*.bak
+*.bak.*
+
+# Runtime theme state (managed by `omarchy theme set`)
+config/omarchy/current/
+
+# Caches / logs that may slip in
+**/cache/
+**/Cache/
+**/Caches/
+**/logs/
+**/*.log
+
+# Editor scratch
+.DS_Store
+*.swp
+*~
