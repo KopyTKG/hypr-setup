@@ -1,9 +1,6 @@
-# Backups created by `omarchy refresh`
+# Backups (e.g. created by install.sh)
 *.bak
 *.bak.*
-
-# Runtime theme state (managed by `omarchy theme set`)
-config/omarchy/current/
 
 # Caches / logs that may slip in
 **/cache/
