@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# launch-webapp NAME URL
+# Open a Chromium PWA window. If a window with our class already exists,
+# focus it instead of opening a new one.
+
+set -eu
+
+NAME="${1:?missing webapp name}"
+URL="${2:?missing webapp url}"
+CLASS="webapp-${NAME// /-}"
+
+# Find a chromium-family browser that supports --app=
+for b in chromium chromium-browser google-chrome-stable google-chrome brave brave-browser microsoft-edge-stable; do
+  if command -v "$b" >/dev/null 2>&1; then
+    BROWSER_BIN="$b"
+    break
+  fi
+done
+
+if [ -z "${BROWSER_BIN:-}" ]; then
+  echo "launch-webapp: no chromium-family browser found in PATH" >&2
+  exit 1
+fi
+
+# Focus existing window if it's already running
+if command -v hyprctl >/dev/null 2>&1; then
+  if hyprctl clients -j 2>/dev/null | grep -q "\"class\": \"$CLASS\""; then
+    hyprctl dispatch focuswindow "class:$CLASS" >/dev/null
+    exit 0
+  fi
+fi
+
+exec "$BROWSER_BIN" --app="$URL" --class="$CLASS" --name="$CLASS"
