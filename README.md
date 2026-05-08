@@ -16,10 +16,14 @@ top-level choices:
 ```bash
 git clone <this repo> ~/hyprland-config
 cd ~/hyprland-config
-./setup.sh                    # installs all packages, deploys configs, mise tools
+./setup.sh                    # user layer: packages, configs, mise tools
+./bootstrap-system.sh         # system layer: SDDM, networkd+iwd, polkit, keyring
 ```
 
-`setup.sh --dry-run` shows what would happen without changing anything.
+Both scripts accept `--dry-run`. The system layer (greeter, services,
+network stack) is documented in [`BOOTSTRAP.md`](./BOOTSTRAP.md) — read it
+before running `bootstrap-system.sh`, especially if you've already chosen
+NetworkManager or a different polkit agent.
 
 What `setup.sh` does, in order:
 
