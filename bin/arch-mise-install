@@ -1,0 +1,29 @@
+#!/bin/bash
+# arch-mise-install — TUI flow to pick a mise tool + version, then `mise use --global`.
+
+set -e
+
+tool=$(mise registry 2>/dev/null \
+  | awk '{print $1}' \
+  | sort -u \
+  | fzf --prompt='Tool> ' --height=100% --reverse --border --header='Pick a mise tool')
+[[ -z $tool ]] && { echo "Cancelled."; exit 0; }
+
+echo "Loading versions for $tool…"
+versions=$(mise ls-remote "$tool" 2>/dev/null)
+if [[ -z $versions ]]; then
+  echo "No versions found for $tool (the tool may require a custom plugin)."
+  read -r -p "[Enter to close]"
+  exit 1
+fi
+
+version=$(printf '%s\n' "$versions" \
+  | fzf --prompt="$tool@" --height=100% --reverse --border --tac --header="Pick a version for $tool")
+[[ -z $version ]] && { echo "Cancelled."; exit 0; }
+
+echo
+echo "Installing $tool@$version globally…"
+mise use --global "$tool@$version"
+
+echo
+read -r -p "[Enter to close]"

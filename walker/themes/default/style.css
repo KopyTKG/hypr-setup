@@ -1,0 +1,90 @@
+@import "colors.css";
+
+* {
+  all: unset;
+}
+
+* {
+  font-family: monospace;
+  font-size: 16px;
+  color: @text;
+}
+
+scrollbar {
+  opacity: 0;
+}
+
+.normal-icons {
+  -gtk-icon-size: 16px;
+}
+
+.large-icons {
+  -gtk-icon-size: 32px;
+}
+
+/* Outer pill — same translucent dark + 1px white border as waybar pills */
+.box-wrapper {
+  background: #1c1917;                          /* stone-900 (opaque) */
+  border: 1px solid rgba(245, 245, 244, 0.5);    /* stone-100 @ 50% */
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.search-container {
+  background: transparent;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(245, 245, 244, 0.15);  /* stone-100 hairline */
+  margin-bottom: 8px;
+}
+
+.input placeholder {
+  opacity: 0.5;
+}
+
+.input:focus,
+.input:active {
+  box-shadow: none;
+  outline: none;
+}
+
+/* List item */
+child:selected {
+  background: rgba(68, 64, 60, 0.7);   /* stone-700 — neutral selection */
+  border-radius: 8px;
+}
+
+child:selected .item-box * {
+  color: @selected-text;
+}
+
+.item-box {
+  padding-left: 14px;
+}
+
+.item-text-box {
+  all: unset;
+  padding: 10px 0;
+}
+
+.item-subtext {
+  font-size: 0px;
+  min-height: 0px;
+  margin: 0px;
+  padding: 0px;
+}
+
+.item-image {
+  margin-right: 14px;
+  -gtk-icon-transform: scale(0.9);
+}
+
+.current {
+  font-style: italic;
+}
+
+.keybind-hints {
+  background: transparent;
+  border-top: 1px solid rgba(245, 245, 244, 0.15);
+  padding: 8px 12px;
+  margin-top: 8px;
+}

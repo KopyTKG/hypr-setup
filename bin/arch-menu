@@ -1,0 +1,216 @@
+#!/bin/bash
+# arch-menu — hierarchical walker-dmenu launcher (vanilla, post-omarchy)
+
+WALKER=(walker --dmenu --width 300 --height 520)
+
+# `menu` takes a title then any number of items. Each item is one menu line.
+menu() {
+  local title="$1"; shift
+  printf '%s\n' "$@" | "${WALKER[@]}" --placeholder "$title"
+}
+
+term_install() {
+  uwsm-app -- xdg-terminal-exec bash -c "yay -S $*; echo; read -p 'Press Enter to close.'"
+}
+
+editor()   { uwsm-app -- xdg-terminal-exec nvim "$1"; }
+open_url() { uwsm-app -- chromium "$1"; }
+
+
+# ---------- Top level ----------
+show_main() {
+  case $(menu "Menu" \
+    "  Apps" \
+    "  Install" \
+    "  Capture" \
+    "  Toggle" \
+    "  Setup" \
+    "  System" \
+    "  Learn" \
+    "  Power") in
+    *Apps*)    walker ;;
+    *Learn*)   show_learn ;;
+    *Capture*) show_capture ;;
+    *Toggle*)  show_toggle ;;
+    *Setup*)   show_setup ;;
+    *Install*) show_install ;;
+    *System*)  show_system ;;
+    *Power*)   arch-power-menu ;;
+  esac
+}
+
+
+# ---------- Learn ----------
+show_learn() {
+  case $(menu "Learn" \
+    "  Arch Wiki" \
+    "  Hyprland Wiki" \
+    "  Waybar Wiki" \
+    "  Walker" \
+    "  Elephant" \
+    "  Bash cheatsheet" \
+    "  Back") in
+    *"Arch Wiki"*) open_url "https://wiki.archlinux.org/title/Main_page" ;;
+    *Hyprland*)    open_url "https://wiki.hypr.land/" ;;
+    *Waybar*)      open_url "https://github.com/Alexays/Waybar/wiki" ;;
+    *Walker*)      open_url "https://github.com/abenz1267/walker" ;;
+    *Elephant*)    open_url "https://github.com/abenz1267/elephant" ;;
+    *Bash*)        open_url "https://devhints.io/bash" ;;
+    *Back*)        show_main ;;
+  esac
+}
+
+
+# ---------- Capture ----------
+show_capture() {
+  case $(menu "Capture" \
+    "  Region" \
+    "  Window" \
+    "  Output" \
+    "  Color Picker" \
+    "  Back") in
+    *Region*) hyprshot -m region ;;
+    *Window*) hyprshot -m window ;;
+    *Output*) hyprshot -m output ;;
+    *Color*)  pkill hyprpicker || hyprpicker -a ;;
+    *Back*)   show_main ;;
+  esac
+}
+
+
+# ---------- Toggle ----------
+show_toggle() {
+  case $(menu "Toggle" \
+    "  Waybar" \
+    "  Nightlight" \
+    "  Idle lock" \
+    "  Notifications" \
+    "  Touchpad" \
+    "  Window transparency" \
+    "  Window gaps" \
+    "  Back") in
+    *Waybar*)        arch-toggle-waybar ;;
+    *Nightlight*)    arch-toggle-nightlight ;;
+    *"Idle lock"*)   arch-toggle-idle ;;
+    *Notifications*) arch-toggle-notification-silencing ;;
+    *Touchpad*)      arch-toggle-touchpad ;;
+    *transparency*)  arch-toggle-window-transparency ;;
+    *gaps*)          arch-toggle-window-gaps ;;
+    *Back*)          show_main ;;
+  esac
+}
+
+
+# ---------- Setup ----------
+show_setup() {
+  case $(menu "Setup" \
+    "  Hyprland" \
+    "  Bindings" \
+    "  Waybar" \
+    "  Walker" \
+    "  Hypridle" \
+    "  Hyprlock" \
+    "  Back") in
+    *Hyprland*) editor ~/.config/hypr/hyprland.conf ;;
+    *Bindings*) editor ~/.config/hypr/bindings.conf ;;
+    *Waybar*)   editor ~/.config/waybar/config.jsonc ;;
+    *Walker*)   editor ~/.config/walker/config.toml ;;
+    *Hypridle*) editor ~/.config/hypr/hypridle.conf ;;
+    *Hyprlock*) editor ~/.config/hypr/hyprlock.conf ;;
+    *Back*)     show_main ;;
+  esac
+}
+
+
+# ---------- Install ----------
+show_install() {
+  case $(menu "Install" \
+    "  Pacman" \
+    "  AUR" \
+    "  Development" \
+    "  Gaming" \
+    "  Terminal" \
+    "  Font" \
+    "  Back") in
+    *Pacman*)      uwsm-app -- alacritty --class arch-installer -e arch-pacman-install ;;
+    *AUR*)         uwsm-app -- alacritty --class arch-installer -e arch-aur-install ;;
+    *Terminal*)    show_install_terminal ;;
+    *Gaming*)      show_install_gaming ;;
+    *Font*)        show_install_font ;;
+    *Development*) uwsm-app -- alacritty --class arch-installer -e arch-mise-install ;;
+    *Back*)        show_main ;;
+  esac
+}
+
+show_install_terminal() {
+  case $(menu "Terminal" \
+    "  Alacritty" \
+    "  Foot" \
+    "  Ghostty" \
+    "  Kitty" \
+    "  Back") in
+    *Alacritty*) term_install alacritty ;;
+    *Foot*)      term_install foot ;;
+    *Ghostty*)   term_install ghostty ;;
+    *Kitty*)     term_install kitty ;;
+    *Back*)      show_install ;;
+  esac
+}
+
+show_install_gaming() {
+  case $(menu "Gaming" \
+    "  Steam" \
+    "  RetroArch" \
+    "  Minecraft" \
+    "  Moonlight" \
+    "  Lutris" \
+    "  Heroic" \
+    "  Back") in
+    *Steam*)     term_install steam ;;
+    *RetroArch*) term_install retroarch ;;
+    *Minecraft*) term_install minecraft-launcher ;;
+    *Moonlight*) term_install moonlight-qt ;;
+    *Lutris*)    term_install lutris ;;
+    *Heroic*)    term_install heroic-games-launcher-bin ;;
+    *Back*)      show_install ;;
+  esac
+}
+
+show_install_font() {
+  case $(menu "Font" \
+    "  Cascadia Mono" \
+    "  Meslo LG Mono" \
+    "  Fira Code" \
+    "  Victor Mono" \
+    "  Bitstream Vera" \
+    "  Iosevka" \
+    "  Back") in
+    *Cascadia*)  term_install ttf-cascadia-mono-nerd ;;
+    *Meslo*)     term_install ttf-meslo-nerd ;;
+    *Fira*)      term_install ttf-firacode-nerd ;;
+    *Victor*)    term_install ttf-victor-mono-nerd ;;
+    *Bitstream*) term_install ttf-bitstream-vera-mono-nerd ;;
+    *Iosevka*)   term_install ttf-iosevka-nerd ;;
+    *Back*)      show_install ;;
+  esac
+}
+
+# ---------- System ----------
+show_system() {
+  case $(menu "System" \
+    "  Lock" \
+    "  Battery" \
+    "  Time" \
+    "  Power menu" \
+    "  Info" \
+    "  Back") in
+    *Lock*)         hyprlock ;;
+    *Battery*)      notify-send -u low "$(arch-battery-status)" ;;
+    *Time*)         notify-send -u low "$(date +"%A %H:%M  ·  %d %B %Y  ·  Week %V")" ;;
+    *"Power menu"*) arch-power-menu ;;
+    *Info*)         uwsm-app -- xdg-terminal-exec bash -c "fastfetch; read -p 'Press Enter to close.'" ;;
+    *Back*)         show_main ;;
+  esac
+}
+
+show_main

@@ -1,0 +1,50 @@
+# Chrome: monochrome stone (Tailwind stone-50..950)
+# ANSI normal/bright: untouched — keeps syntax highlighting readable
+
+[colors.primary]
+background = "#0c0a09"   # stone-950
+foreground = "#fafaf9"   # stone-50
+
+[colors.cursor]
+text       = "#0c0a09"
+cursor     = "#fafaf9"
+
+[colors.vi_mode_cursor]
+text       = "#0c0a09"
+cursor     = "#d6d3d1"   # stone-300
+
+[colors.search.matches]
+foreground = "#0c0a09"
+background = "#d6d3d1"   # stone-300 highlight
+
+[colors.search.focused_match]
+foreground = "#0c0a09"
+background = "#fafaf9"   # stone-50 — strong active match
+
+[colors.footer_bar]
+foreground = "#0c0a09"
+background = "#d6d3d1"
+
+[colors.selection]
+text       = "#fafaf9"
+background = "#44403c"   # stone-700 — subtle selection
+
+[colors.normal]
+black   = "#32344a"
+red     = "#f7768e"
+green   = "#9ece6a"
+yellow  = "#e0af68"
+blue    = "#7aa2f7"
+magenta = "#ad8ee6"
+cyan    = "#449dab"
+white   = "#787c99"
+
+[colors.bright]
+black   = "#444b6a"
+red     = "#ff7a93"
+green   = "#b9f27c"
+yellow  = "#ff9e64"
+blue    = "#7da6ff"
+magenta = "#bb9af7"
+cyan    = "#0db9d7"
+white   = "#acb0d0"

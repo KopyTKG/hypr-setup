@@ -1,0 +1,75 @@
+* {
+  background-color: rgba(50, 50, 50, 0);
+  color: #fafaf9;            /* stone-50 */
+  border: none;
+  min-height: 0;
+  font-family: "CaskaydiaMono Nerd Font";
+  font-size: 0.82rem;
+}
+
+.modules-left {
+  margin-left: 8px;
+}
+
+.modules-right {
+  margin-right: 8px;
+}
+
+.cell,
+.modules-left,
+.modules-center,
+.modules-right {
+  background-color: rgba(28, 25, 23, 0.7);  /* stone-900 @ 70% */
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  border: 1px rgba(245, 245, 244, 0.5) solid;  /* stone-100 @ 50% */
+}
+
+#workspaces {
+  opacity: 1;
+  margin: 0 8px;
+}
+
+#workspaces button {
+  all: initial;
+  padding: 0 0.5rem;
+}
+
+#workspaces button.empty {
+  opacity: 0.5;
+}
+
+#cpu,
+#battery,
+#pulseaudio,
+#custom-launcher,
+#language,
+#bluetooth,
+#network,
+#tray,
+#custom-expand-icon {
+  min-width: 12px;
+  margin: 0 7.5px;
+}
+
+tooltip {
+  padding: 0.2rem;
+}
+
+.hidden {
+  opacity: 0;
+}
+
+#custom-idle-indicator,
+#custom-notification-silencing-indicator {
+  min-width: 12px;
+  margin-left: 5px;
+  margin-right: 0;
+  font-size: 10px;
+  padding-bottom: 1px;
+}
+
+#custom-idle-indicator.active,
+#custom-notification-silencing-indicator.active {
+  color: #a8a29e;            /* stone-400 — muted active indicator */
+}

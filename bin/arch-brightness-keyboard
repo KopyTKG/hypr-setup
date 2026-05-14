@@ -1,0 +1,19 @@
+#!/bin/bash
+direction="${1:-up}"
+device=""
+for c in /sys/class/leds/*kbd_backlight*; do
+  [[ -e $c ]] && { device=$(basename "$c"); break; }
+done
+[[ -z $device ]] && { echo "No keyboard backlight"; exit 1; }
+max=$(brightnessctl -d "$device" max)
+cur=$(brightnessctl -d "$device" get)
+step=$(( max / 10 )); (( step < 1 )) && step=1
+case "$direction" in
+  off)     new=0 ;;
+  cycle)   new=$(( cur + step )); (( new > max )) && new=0 ;;
+  up)      new=$(( cur + step )); (( new > max )) && new=$max ;;
+  down|*)  new=$(( cur - step )); (( new < 0 )) && new=0 ;;
+esac
+brightnessctl -d "$device" set "$new" >/dev/null
+pct=$(( new * 100 / max ))
+swayosd-client --custom-icon keyboard-brightness-symbolic --custom-message "Keyboard brightness ${pct}%" 2>/dev/null || notify-send -u low "Keyboard brightness ${pct}%"

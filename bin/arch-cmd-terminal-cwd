@@ -1,0 +1,12 @@
+#!/bin/bash
+# Return cwd of the active terminal's shell, falling back to $HOME.
+tpid=$(hyprctl activewindow | awk '/pid:/ {print $2}')
+spid=$(pgrep -P "$tpid" 2>/dev/null | tail -n1)
+if [[ -n $spid ]]; then
+  cwd=$(readlink -f "/proc/$spid/cwd" 2>/dev/null)
+  shell=$(readlink -f "/proc/$spid/exe" 2>/dev/null)
+  if grep -qs "$shell" /etc/shells && [[ -d $cwd ]]; then
+    echo "$cwd"; exit
+  fi
+fi
+echo "$HOME"

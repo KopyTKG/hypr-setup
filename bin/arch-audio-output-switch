@@ -1,0 +1,12 @@
+#!/bin/bash
+# Cycle to the next available pulse/pipewire sink and notify.
+default=$(pactl get-default-sink)
+sinks=$(pactl list short sinks | awk '{print $2}')
+[[ -z $sinks ]] && { notify-send -u low "No audio sinks"; exit 1; }
+mapfile -t arr <<<"$sinks"
+idx=0
+for i in "${!arr[@]}"; do [[ ${arr[$i]} == "$default" ]] && idx=$i; done
+next=${arr[$(( (idx + 1) % ${#arr[@]} ))]}
+pactl set-default-sink "$next"
+desc=$(pactl list sinks | awk -v s="$next" '$1=="Name:" && $2==s {found=1} found && /Description:/ {sub(/^\s*Description:\s*/, ""); print; exit}')
+notify-send -u low "Audio output: ${desc:-$next}"

@@ -1,0 +1,12 @@
+#!/bin/bash
+# Focus a window matching pattern (class or title), else launch a command.
+# Usage: launch-or-focus.sh <pattern> [launch-cmd]   (default cmd: uwsm-app -- <pattern>)
+pat="$1"; shift
+cmd="${*:-uwsm-app -- $pat}"
+[[ -z $pat ]] && { echo "Usage: $0 <pattern> [cmd]" >&2; exit 1; }
+addr=$(hyprctl clients -j | jq -r --arg p "$pat" '.[] | select((.class|test("\\b" + $p + "\\b";"i")) or (.title|test("\\b" + $p + "\\b";"i"))) | .address' | head -n1)
+if [[ -n $addr ]]; then
+  hyprctl dispatch focuswindow "address:$addr"
+else
+  eval exec setsid $cmd
+fi

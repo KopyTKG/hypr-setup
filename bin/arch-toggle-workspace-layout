@@ -1,0 +1,9 @@
+#!/bin/bash
+ws=$(hyprctl activeworkspace -j | jq -r '.id')
+current=$(hyprctl activeworkspace -j | jq -r '.tiledLayout')
+case "$current" in
+  dwindle) new=scrolling ;;
+  *)       new=dwindle ;;
+esac
+hyprctl keyword workspace "$ws, layout:$new"
+notify-send -u low "Workspace layout: $new"

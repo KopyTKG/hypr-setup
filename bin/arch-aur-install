@@ -1,0 +1,22 @@
+#!/bin/bash
+# arch-aur-install — fzf-driven picker over AUR packages, then `yay -S --aur`.
+
+set -e
+
+pkgs=$(yay -Slq --aur 2>/dev/null \
+  | sort -u \
+  | fzf --multi \
+        --prompt='AUR> ' \
+        --height=100% --reverse --border \
+        --preview='yay -Si {} 2>/dev/null | head -40' \
+        --preview-window=right:50%:wrap \
+        --header='Tab to multi-select · Enter to install · Esc to cancel')
+[[ -z $pkgs ]] && { echo "Cancelled."; exit 0; }
+
+echo
+echo "Installing from AUR: $(echo "$pkgs" | tr '\n' ' ')"
+echo
+yay -S --aur $pkgs
+
+echo
+read -r -p "[Enter to close]"

@@ -1,0 +1,22 @@
+#!/bin/bash
+# Power menu: walker-dmenu picker, dispatches to systemctl/hyprlock/uwsm/waybar.
+
+choice=$(printf '%s\n' \
+  "  Lock" \
+  "  Suspend" \
+  "  Hibernate" \
+  "  Logout" \
+  "  Restart" \
+  "  Shutdown" \
+  "  Restart Waybar" \
+  | walker --dmenu --placeholder "Power" --width 400 --height 465)
+
+case "$choice" in
+  *"Restart Waybar"*) pkill -9 -x waybar; setsid uwsm-app -- waybar >/dev/null 2>&1 & disown ;;
+  *Lock*)             hyprlock ;;
+  *Suspend*)          systemctl suspend ;;
+  *Hibernate*)        systemctl hibernate ;;
+  *Logout*)           nohup bash -c "sleep 1 && uwsm stop" >/dev/null 2>&1 & ;;
+  *Restart*)          nohup bash -c "sleep 1 && systemctl reboot --no-wall" >/dev/null 2>&1 & ;;
+  *Shutdown*)         nohup bash -c "sleep 1 && systemctl poweroff --no-wall" >/dev/null 2>&1 & ;;
+esac

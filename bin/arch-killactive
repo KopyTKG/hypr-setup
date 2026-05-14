@@ -1,0 +1,7 @@
+#!/bin/bash
+# Dismiss walker if it's the topmost layer surface; otherwise close the active window.
+if hyprctl layers 2>/dev/null | grep -q 'namespace: walker'; then
+  walker --close
+else
+  hyprctl dispatch killactive
+fi

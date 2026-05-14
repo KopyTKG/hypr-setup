@@ -1,0 +1,14 @@
+#!/bin/bash
+W=${1:-1300}; H=${2:-900}
+active=$(hyprctl activewindow -j)
+addr=$(jq -r '.address' <<<"$active")
+pinned=$(jq -r '.pinned' <<<"$active")
+[[ -z $addr ]] && exit 0
+if [[ $pinned == "true" ]]; then
+  hyprctl -q --batch "dispatch pin address:$addr; dispatch togglefloating address:$addr"
+else
+  hyprctl dispatch togglefloating address:$addr
+  hyprctl dispatch resizeactive exact $W $H
+  hyprctl dispatch centerwindow
+  hyprctl -q --batch "dispatch pin address:$addr; dispatch alterzorder top address:$addr"
+fi

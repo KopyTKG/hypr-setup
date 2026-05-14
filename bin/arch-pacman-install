@@ -1,0 +1,22 @@
+#!/bin/bash
+# arch-pacman-install — fzf-driven picker over official-repo packages, then `sudo pacman -S`.
+
+set -e
+
+pkgs=$(pacman -Slq \
+  | sort -u \
+  | fzf --multi \
+        --prompt='pacman> ' \
+        --height=100% --reverse --border \
+        --preview='pacman -Si {} 2>/dev/null' \
+        --preview-window=right:50%:wrap \
+        --header='Tab to multi-select · Enter to install · Esc to cancel')
+[[ -z $pkgs ]] && { echo "Cancelled."; exit 0; }
+
+echo
+echo "Installing: $(echo "$pkgs" | tr '\n' ' ')"
+echo
+sudo pacman -S $pkgs
+
+echo
+read -r -p "[Enter to close]"
