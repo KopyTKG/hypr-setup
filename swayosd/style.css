@@ -1,0 +1,29 @@
+/* Stone monochrome — matches waybar pill style */
+
+window {
+  background-color: rgba(28, 25, 23, 0.95);    /* stone-900 */
+  border: 1px solid rgba(245, 245, 244, 0.5);  /* stone-100 @ 50% */
+  border-radius: 12px;
+  padding: 6px;
+}
+
+label {
+  font-family: 'CaskaydiaMono Nerd Font';
+  font-size: 11pt;
+  color: #fafaf9;                              /* stone-50 */
+}
+
+image {
+  color: #d6d3d1;                              /* stone-300 */
+}
+
+progressbar {
+  border-radius: 6px;
+  background-color: rgba(68, 64, 60, 0.6);     /* stone-700 track */
+}
+
+progress {
+  background-color: #fafaf9;                   /* stone-50 fill */
+  border-radius: 6px;
+  min-height: 6px;
+}

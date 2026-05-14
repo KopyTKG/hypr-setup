@@ -81,7 +81,7 @@
     "tooltip-format-discharging": "{power:>1.0f}W↓ {capacity}%",
     "tooltip-format-charging": "{power:>1.0f}W↑ {capacity}%",
     "interval": 5,
-    "on-click": "hyprlock",
+    "on-click": "arch-power-menu",
     "on-click-right": "notify-send -u low \"Battery $(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n1)%\" \"$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -n1)\"",
     "states": {
       "warning": 20,
