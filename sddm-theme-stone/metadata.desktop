@@ -1,0 +1,17 @@
+[SddmGreeterTheme]
+Name=Stone Monochrome
+Description=Minimal stone monochrome SDDM theme matching the hypr-setup palette
+Author=Martin Kopecký
+Copyright=© 2026 Martin Kopecký
+License=MIT
+Type=sddm-theme
+Version=1.0
+Website=
+Screenshot=preview.png
+MainScript=Main.qml
+ConfigFile=theme.conf
+TranslationsDirectory=
+Email=
+Theme-Id=stone
+Theme-API=2.0
+QtVersion=6
