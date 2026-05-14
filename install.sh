@@ -27,7 +27,7 @@ link_to() {
 }
 
 cyan "[1/5] Link config dirs into ~/.config/"
-for name in alacritty btop elephant environment.d hypr mako swayosd walker waybar; do
+for name in alacritty btop elephant environment.d fastfetch hypr mako swayosd walker waybar; do
   link_to "$REPO/$name" "$HOME/.config/$name"
 done
 
