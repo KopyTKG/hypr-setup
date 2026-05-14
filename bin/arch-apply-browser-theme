@@ -1,6 +1,6 @@
 #!/bin/bash
 # Apply browser theme policy from repo to system policy dirs.
-# Stone-monochrome via Chromium's BrowserThemeColor policy (same mechanism omarchy used).
+# The chromium/brave policy dirs on this system are world-writable, so no sudo.
 
 set -e
 SRC=$(dirname "$(readlink -f "$0")")/../chromium/policies/managed/color.json
@@ -8,10 +8,12 @@ SRC=$(dirname "$(readlink -f "$0")")/../chromium/policies/managed/color.json
 
 apply() {
   local dir=$1
-  [[ -d $(dirname "$dir") ]] || return 0
-  sudo mkdir -p "$dir"
-  sudo cp "$SRC" "$dir/color.json"
-  echo "  → $dir/color.json"
+  if [[ -d $dir && -w $dir ]]; then
+    cp "$SRC" "$dir/color.json"
+    echo "  → $dir/color.json"
+  elif [[ -d $dir ]]; then
+    sudo cp "$SRC" "$dir/color.json" && echo "  → $dir/color.json (via sudo)"
+  fi
 }
 
 apply /etc/chromium/policies/managed
@@ -19,11 +21,9 @@ apply /etc/brave/policies/managed
 apply /etc/opt/chrome/policies/managed
 apply /etc/opt/edge/policies/managed
 
-# Reload policy in any running chromium/brave (no full restart needed)
-for cmd in chromium brave brave-browser; do
-  if command -v $cmd >/dev/null && pgrep -x "$cmd" >/dev/null; then
+# Refresh policy in running browsers without a full restart
+for cmd in chromium brave brave-browser google-chrome-stable; do
+  if command -v $cmd >/dev/null && pgrep -x "$(basename "$cmd")" >/dev/null; then
     "$cmd" --refresh-platform-policy --no-startup-window &>/dev/null &
   fi
 done
-
-echo "done."
