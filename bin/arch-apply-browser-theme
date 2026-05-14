@@ -1,0 +1,29 @@
+#!/bin/bash
+# Apply browser theme policy from repo to system policy dirs.
+# Stone-monochrome via Chromium's BrowserThemeColor policy (same mechanism omarchy used).
+
+set -e
+SRC=$(dirname "$(readlink -f "$0")")/../chromium/policies/managed/color.json
+[[ -f $SRC ]] || { echo "missing $SRC" >&2; exit 1; }
+
+apply() {
+  local dir=$1
+  [[ -d $(dirname "$dir") ]] || return 0
+  sudo mkdir -p "$dir"
+  sudo cp "$SRC" "$dir/color.json"
+  echo "  → $dir/color.json"
+}
+
+apply /etc/chromium/policies/managed
+apply /etc/brave/policies/managed
+apply /etc/opt/chrome/policies/managed
+apply /etc/opt/edge/policies/managed
+
+# Reload policy in any running chromium/brave (no full restart needed)
+for cmd in chromium brave brave-browser; do
+  if command -v $cmd >/dev/null && pgrep -x "$cmd" >/dev/null; then
+    "$cmd" --refresh-platform-policy --no-startup-window &>/dev/null &
+  fi
+done
+
+echo "done."
