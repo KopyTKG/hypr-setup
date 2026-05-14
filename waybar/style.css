@@ -81,3 +81,34 @@ tooltip label {
 #custom-notification-silencing-indicator.active {
   color: #a8a29e;            /* stone-400 — muted active indicator */
 }
+
+/* Tray right-click context menus (Steam, Discord, etc.) */
+menu {
+  background-color: rgba(28, 25, 23, 0.97);     /* stone-900 @ 97% */
+  border: 1px solid rgba(245, 245, 244, 0.5);   /* stone-100 @ 50% — matches pills/tooltip */
+  border-radius: 10px;
+  padding: 4px;
+}
+
+menu menuitem {
+  color: #fafaf9;                                /* stone-50 */
+  padding: 6px 12px;
+  border-radius: 6px;
+  min-height: 0;
+}
+
+menu menuitem:hover,
+menu menuitem:focus {
+  background-color: rgba(245, 245, 244, 0.1);    /* stone-100 @ 10% */
+  color: #fafaf9;
+}
+
+menu menuitem:disabled {
+  color: #57534e;                                /* stone-600 — muted disabled */
+}
+
+menu separator {
+  background-color: rgba(245, 245, 244, 0.15);   /* stone-100 @ 15% — thin divider */
+  min-height: 1px;
+  margin: 4px 6px;
+}

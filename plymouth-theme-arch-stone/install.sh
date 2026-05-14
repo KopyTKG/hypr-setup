@@ -5,7 +5,10 @@ set -e
 REPO=$(dirname "$(readlink -f "$0")")
 TARGET=/usr/share/plymouth/themes/arch-stone
 [[ -L $TARGET || -e $TARGET ]] && rm -rf "$TARGET"
-ln -s "$REPO" "$TARGET"
-echo "  symlinked: $TARGET → $REPO"
+# copy instead of symlink — keeps the theme readable for tools that don't run as root
+cp -rL "$REPO" "$TARGET"
+chown -R root:root "$TARGET"
+chmod -R a+rX "$TARGET"
+echo "  copied: $REPO → $TARGET"
 plymouth-set-default-theme -R arch-stone
 echo "  set as default + rebuilt initramfs"

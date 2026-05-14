@@ -1,0 +1,126 @@
+#!/bin/bash
+# arch-protonge-install — fzf-pick any GE-Proton release and extract into Steam compat tools.
+# Usage: arch-protonge-install            # interactive fzf picker
+#        arch-protonge-install GE-Proton9-25   # direct install by tag
+
+set -e
+
+TARGET_DIR="$HOME/.steam/root/compatibilitytools.d"
+mkdir -p "$TARGET_DIR"
+
+cyan()  { printf '\033[36m%s\033[0m\n' "$*"; }
+green() { printf '\033[32m%s\033[0m\n' "$*"; }
+red()   { printf '\033[31m%s\033[0m\n' "$*" >&2; }
+gray()  { printf '\033[90m%s\033[0m\n' "$*"; }
+
+# Fetch releases (first 3 pages = ~90 releases, well past anything anyone needs)
+fetch_releases() {
+  for page in 1 2 3; do
+    curl -fsSL "https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases?per_page=30&page=$page"
+    echo ","
+  done
+}
+
+# Parse via Python: emit one line per release as `TAG<TAB>DATE<TAB>INSTALLED<TAB>TARBALL_URL<TAB>SHA512_URL`
+# Code is passed via -c so stdin stays available for the curl pipe.
+parse_releases() {
+  python3 -c '
+import json, sys, os, re
+target = sys.argv[1]
+installed = set(os.listdir(target)) if os.path.isdir(target) else set()
+raw = sys.stdin.read()
+chunks = re.split(r"\]\s*,\s*\[", raw)
+chunks[0] = chunks[0].lstrip(" \n\t,[")
+chunks[-1] = chunks[-1].rstrip(" \n\t,]")
+items = []
+for c in chunks:
+    c = c.strip().rstrip(",")
+    if not c:
+        continue
+    try:
+        arr = json.loads("[" + c + "]")
+    except Exception:
+        continue
+    items.extend(arr)
+seen = set()
+for r in items:
+    tag = r.get("tag_name")
+    if not tag or tag in seen:
+        continue
+    seen.add(tag)
+    date = (r.get("published_at") or "")[:10]
+    tarball = ""
+    sha = ""
+    for a in r.get("assets", []):
+        name = a.get("name", "")
+        url = a.get("browser_download_url", "")
+        if name.endswith(".tar.gz"):
+            tarball = url
+        elif name.endswith(".sha512sum"):
+            sha = url
+    if not tarball:
+        continue
+    flag = "[installed]" if tag in installed else "          "
+    print(f"{tag}\t{date}\t{flag}\t{tarball}\t{sha}")
+' "$TARGET_DIR"
+}
+
+select_tag() {
+  local list=$1
+  clear
+  awk -F'\t' '{ printf "%-22s  %s  %s\n", $1, $2, $3 }' "$list" \
+    | fzf --height=100% --prompt="ProtonGE> " --header="Pick a release to install" \
+    | awk '{ print $1 }'
+}
+
+cyan "Fetching ProtonGE release index..."
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
+LIST="$WORK/releases.tsv"
+fetch_releases | parse_releases > "$LIST"
+
+count=$(wc -l < "$LIST")
+[[ $count -eq 0 ]] && { red "No releases parsed"; exit 1; }
+gray "  $count releases found"
+
+# Pick: argv1 if given, else fzf
+if [[ -n $1 ]]; then
+  TAG="$1"
+else
+  TAG=$(select_tag "$LIST")
+fi
+
+[[ -z $TAG ]] && { gray "cancelled"; exit 0; }
+
+# Look up the chosen tag in the index
+line=$(awk -F'\t' -v t="$TAG" '$1==t {print; exit}' "$LIST")
+[[ -z $line ]] && { red "Tag '$TAG' not in index"; exit 1; }
+IFS=$'\t' read -r _ _ INSTALLED_FLAG TARBALL CHECKSUM <<< "$line"
+
+if [[ -d "$TARGET_DIR/$TAG" ]]; then
+  green "$TAG already installed at $TARGET_DIR/$TAG"
+  printf '\n[enter] to close'
+  read -r
+  exit 0
+fi
+
+green "Selected: $TAG"
+gray "  $TARBALL"
+
+cyan "Downloading tarball..."
+curl -fL --progress-bar -o "$WORK/proton-ge.tar.gz" "$TARBALL"
+
+if [[ -n $CHECKSUM ]]; then
+  cyan "Verifying SHA512..."
+  curl -fsSL -o "$WORK/proton-ge.sha512" "$CHECKSUM"
+  ( cd "$WORK" && sha512sum -c proton-ge.sha512 2>&1 | grep -v ': No such' ) || \
+    { red "checksum failed"; exit 1; }
+fi
+
+cyan "Extracting into $TARGET_DIR..."
+tar -xzf "$WORK/proton-ge.tar.gz" -C "$TARGET_DIR"
+
+green "✓ $TAG installed at $TARGET_DIR/$TAG"
+gray "Restart Steam, then pick \"$TAG\" under any game's Properties → Compatibility."
+printf '\n[enter] to close'
+read -r

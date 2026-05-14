@@ -1,0 +1,77 @@
+#!/bin/bash
+# arch-webapp-install — create a desktop launcher for a web app.
+# Interactive (gum) when no args, scriptable when given:
+#   arch-webapp-install <name> <url> [icon-url-or-name] [custom-exec] [mime-types]
+
+set -e
+
+ICON_DIR="$HOME/.local/share/applications/icons"
+DESKTOP_DIR="$HOME/.local/share/applications"
+mkdir -p "$ICON_DIR" "$DESKTOP_DIR"
+
+if (( $# < 2 )); then
+  printf '\033[32mCreate a new web app launcher.\n\033[0m\n'
+  APP_NAME=$(gum input --prompt "Name> " --placeholder "My favorite web app")
+  APP_URL=$(gum input  --prompt "URL>  " --placeholder "https://example.com")
+  INTERACTIVE=true
+else
+  APP_NAME="$1"
+  APP_URL="$2"
+  ICON_REF="$3"
+  CUSTOM_EXEC="$4"
+  MIME_TYPES="$5"
+  INTERACTIVE=false
+fi
+
+[[ -n $APP_NAME && -n $APP_URL ]] || { echo "Need name + URL." >&2; exit 1; }
+[[ $APP_URL =~ ^[a-zA-Z][a-zA-Z0-9+.-]*: ]] || APP_URL="https://$APP_URL"
+
+# class slug — lowercase, spaces/punct → '-', no leading/trailing dash
+CLASS=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\+/-/g; s/^-\+//; s/-\+$//')
+[[ -n $CLASS ]] || CLASS="webapp-$(date +%s)"
+
+# icon: auto-fetch favicon, else prompt
+ICON_PATH="$ICON_DIR/$APP_NAME.png"
+if [[ $INTERACTIVE == true ]]; then
+  FAVICON="https://www.google.com/s2/favicons?domain=${APP_URL}&sz=128"
+  if ! curl -fsSL -o "$ICON_PATH" "$FAVICON" || [[ ! -s $ICON_PATH ]]; then
+    ICON_URL=$(gum input --prompt "Icon URL> " --placeholder "Could not auto-fetch favicon — enter PNG URL")
+    if [[ -n $ICON_URL ]]; then
+      curl -fsSL -o "$ICON_PATH" "$ICON_URL" || { echo "icon download failed" >&2; exit 1; }
+    fi
+  fi
+else
+  if [[ -n $ICON_REF ]]; then
+    if [[ $ICON_REF =~ ^https?:// ]]; then
+      curl -fsSL -o "$ICON_PATH" "$ICON_REF" || { echo "icon download failed" >&2; exit 1; }
+    else
+      ICON_PATH="$ICON_DIR/$ICON_REF"
+    fi
+  else
+    curl -fsSL -o "$ICON_PATH" "https://www.google.com/s2/favicons?domain=${APP_URL}&sz=128" || true
+  fi
+fi
+
+EXEC_CMD="${CUSTOM_EXEC:-arch-launch-webapp $CLASS $APP_URL}"
+DESKTOP_FILE="$DESKTOP_DIR/$APP_NAME.desktop"
+
+cat > "$DESKTOP_FILE" <<EOF
+[Desktop Entry]
+Version=1.0
+Name=$APP_NAME
+Comment=$APP_NAME
+Exec=$EXEC_CMD
+Terminal=false
+Type=Application
+Icon=$ICON_PATH
+StartupNotify=true
+StartupWMClass=$CLASS
+EOF
+
+[[ -n $MIME_TYPES ]] && echo "MimeType=$MIME_TYPES" >> "$DESKTOP_FILE"
+chmod +x "$DESKTOP_FILE"
+
+if [[ $INTERACTIVE == true ]]; then
+  printf '\033[32m✓ Installed:\033[0m %s\n  Launch with SUPER + SPACE\n' "$APP_NAME"
+  sleep 1
+fi

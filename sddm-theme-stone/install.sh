@@ -9,12 +9,14 @@ set -e
 REPO_THEME=$(dirname "$(readlink -f "$0")")
 TARGET=/usr/share/sddm/themes/stone
 
-# 1. Symlink theme dir
+# 1. Copy theme dir (NOT symlink — sddm user can't traverse /home/$USER which is mode 700)
 if [[ -L $TARGET || -e $TARGET ]]; then
   rm -rf "$TARGET"
 fi
-ln -s "$REPO_THEME" "$TARGET"
-echo "  symlinked: $TARGET → $REPO_THEME"
+cp -rL "$REPO_THEME" "$TARGET"
+chown -R root:root "$TARGET"
+chmod -R a+rX "$TARGET"
+echo "  copied: $REPO_THEME → $TARGET"
 
 # 2. Tell SDDM to use it
 CONF=/etc/sddm.conf.d/theme.conf

@@ -127,10 +127,12 @@ show_install() {
   case $(menu "Install" \
     "  Pacman" \
     "  AUR" \
+    "  Webapp" \
     "  Development" \
     "  Gaming" \
     "  Terminal" \
     "  Font" \
+    "  ProtonGE" \
     "  Back") in
     *Pacman*)      uwsm-app -- alacritty --class arch-installer -e arch-pacman-install ;;
     *AUR*)         uwsm-app -- alacritty --class arch-installer -e arch-aur-install ;;
@@ -138,6 +140,8 @@ show_install() {
     *Gaming*)      show_install_gaming ;;
     *Font*)        show_install_font ;;
     *Development*) uwsm-app -- alacritty --class arch-installer -e arch-mise-install ;;
+    *Webapp*)      show_install_webapp ;;
+    *ProtonGE*)   uwsm-app -- alacritty --class arch-installer -e arch-protonge-install ;;
     *Back*)        show_main ;;
   esac
 }
@@ -192,6 +196,17 @@ show_install_font() {
     *Bitstream*) term_install ttf-bitstream-vera-mono-nerd ;;
     *Iosevka*)   term_install ttf-iosevka-nerd ;;
     *Back*)      show_install ;;
+  esac
+}
+
+show_install_webapp() {
+  case $(menu "Webapp" \
+    "  Install" \
+    "  Remove" \
+    "  Back") in
+    *Install*) uwsm-app -- alacritty --class arch-installer -e arch-webapp-install ;;
+    *Remove*)  uwsm-app -- alacritty --class arch-installer -e arch-webapp-remove ;;
+    *Back*)    show_install ;;
   esac
 }
 
