@@ -48,7 +48,7 @@
   "cpu": {
     "interval": 5,
     "format": "󰍛",
-    "on-click": "uwsm-app -- xdg-terminal-exec btop"
+    "on-click": "uwsm-app -- alacritty --class arch-btop -e btop"
   },
   "clock": {
     "format": "{:L%A %H:%M (%d.%m.%Y)}",
@@ -66,7 +66,7 @@
     "tooltip-format-disconnected": "Disconnected",
     "interval": 3,
     "spacing": 1,
-    "on-click": "uwsm-app -- xdg-terminal-exec iwctl"
+    "on-click": "uwsm-app -- alacritty --class arch-impala -e sh -c 'rfkill unblock wifi; exec impala'"
   },
   "battery": {
     "format": "{capacity}% {icon}",
@@ -95,19 +95,20 @@
     "format-connected": "󰂱",
     "format-no-controller": "",
     "tooltip-format": "Devices connected: {num_connections}",
-    "on-click": "uwsm-app -- xdg-terminal-exec bluetuith"
+    "on-click": "uwsm-app -- alacritty --class arch-bluetui -e sh -c 'rfkill unblock bluetooth; exec bluetui'"
   },
   "pulseaudio": {
     "format": "{icon}",
-    "on-click": "uwsm-app -- xdg-terminal-exec pulsemixer",
+    "format-bluetooth": "{icon}",
+    "on-click": "uwsm-app -- alacritty --class arch-wiremix -e wiremix",
     "on-click-right": "pamixer -t",
     "tooltip-format": "Playing at {volume}%",
     "scroll-step": 5,
-    "format-muted": "",
+    "format-muted": "",
     "format-icons": {
-      "headphone": "",
-      "headset": "",
-      "default": ["", "", ""]
+      "headphone": "",
+      "headset": "",
+      "default": ["", "", ""]
     }
   },
   "group/tray-expander": {

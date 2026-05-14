@@ -53,7 +53,15 @@
 }
 
 tooltip {
-  padding: 0.2rem;
+  background-color: rgba(28, 25, 23, 0.95);   /* stone-900 @ 95% */
+  border: 1px solid rgba(245, 245, 244, 0.5); /* stone-100 @ 50% — matches pills */
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+}
+
+tooltip label {
+  color: #fafaf9;                              /* stone-50 */
+  padding: 0;
 }
 
 .hidden {
