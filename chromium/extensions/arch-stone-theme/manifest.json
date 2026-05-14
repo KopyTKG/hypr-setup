@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Arch Stone Monochrome",
+  "version": "1.0",
+  "description": "Tailwind stone palette dark theme for Chromium UI chrome",
+  "theme": {
+    "colors": {
+      "frame":                          [12, 10, 9],
+      "frame_inactive":                 [28, 25, 23],
+      "frame_incognito":                [12, 10, 9],
+      "frame_incognito_inactive":       [28, 25, 23],
+      "toolbar":                        [28, 25, 23],
+      "tab_text":                       [250, 250, 249],
+      "tab_background_text":            [168, 162, 158],
+      "tab_background_text_incognito":  [168, 162, 158],
+      "bookmark_text":                  [250, 250, 249],
+      "ntp_background":                 [12, 10, 9],
+      "ntp_text":                       [250, 250, 249],
+      "ntp_link":                       [245, 245, 244],
+      "ntp_header":                     [245, 245, 244],
+      "button_background":              [68, 64, 60],
+      "omnibox_background":             [41, 37, 36],
+      "omnibox_text":                   [250, 250, 249],
+      "toolbar_button_icon":            [214, 211, 209],
+      "toolbar_text":                   [250, 250, 249]
+    },
+    "tints": {
+      "buttons":         [-1, -1, 0.6],
+      "frame":           [-1, -1, 0.05],
+      "frame_inactive":  [-1, -1, 0.1]
+    },
+    "properties": {
+      "ntp_background_alignment": "bottom"
+    }
+  }
+}
