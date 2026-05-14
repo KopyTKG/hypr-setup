@@ -120,6 +120,21 @@ else
     elephant-providerlist elephant-runner elephant-symbols elephant-todo
     elephant-unicode elephant-websearch
   )
+
+  # Handle known omarchy → AUR-only-as-git renames. Each entry: "old-name new-name"
+  RENAMES=(
+    "xdg-terminal-exec xdg-terminal-exec-git"
+  )
+  for r in "${RENAMES[@]}"; do
+    old=${r%% *}; new=${r##* }
+    if pacman -Q "$old" >/dev/null 2>&1 && ! pacman -Q "$new" >/dev/null 2>&1; then
+      echo "    rename: $old → $new (force-remove old, install new)"
+      pacman -Rdd --noconfirm "$old" || true
+      # swap in the PKGS array
+      PKGS=("${PKGS[@]/$old/$new}")
+    fi
+  done
+
   echo "    rebuilding ${#PKGS[@]} packages from AUR (this can take several minutes)..."
   sudo -u "$TARGET_USER" yay -S --aur --needed --noconfirm "${PKGS[@]}" \
     || echo "    some rebuilds failed — not fatal, packages still work at the omarchy-installed version"
