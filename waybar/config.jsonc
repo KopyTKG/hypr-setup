@@ -81,7 +81,7 @@
     "tooltip-format-discharging": "{power:>1.0f}W↓ {capacity}%",
     "tooltip-format-charging": "{power:>1.0f}W↑ {capacity}%",
     "interval": 5,
-    "on-click": "arch-power-menu",
+    "on-click": "arch-power-profile-menu",
     "on-click-right": "notify-send -u low \"Battery $(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n1)%\" \"$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -n1)\"",
     "states": {
       "warning": 20,
@@ -89,11 +89,11 @@
     }
   },
   "bluetooth": {
-    "format": "",
+    "format": "󰂯",
     "format-disabled": "󰂲",
     "format-off": "󰂲",
     "format-connected": "󰂱",
-    "format-no-controller": "",
+    "format-no-controller": "󰂲",
     "tooltip-format": "Devices connected: {num_connections}",
     "on-click": "uwsm-app -- alacritty --class arch-bluetui -e sh -c 'rfkill unblock bluetooth; exec bluetui'"
   },

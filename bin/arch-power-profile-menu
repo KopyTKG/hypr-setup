@@ -1,0 +1,23 @@
+#!/bin/bash
+# arch-power-profile-menu — pick a power profile via walker-dmenu and apply it.
+
+set -e
+
+current=$(powerprofilesctl get 2>/dev/null || echo balanced)
+
+# Build list + find the index of the current profile (walker --current wants an int)
+mapfile -t profiles < <(powerprofilesctl list \
+  | awk '/^\s*[* ]\s*[a-zA-Z0-9\-]+:$/ { gsub(/^[*[:space:]]+|:$/, ""); print }')
+
+current_idx=0
+for i in "${!profiles[@]}"; do
+  [[ "${profiles[$i]}" == "$current" ]] && current_idx=$i
+done
+
+choice=$(printf '%s\n' "${profiles[@]}" \
+  | walker --dmenu \
+           --placeholder "Power Profile" \
+           --width 400 --height 280 \
+           --current "$current_idx")
+
+[[ -n $choice ]] && powerprofilesctl set "$choice"
