@@ -26,25 +26,25 @@ link_to() {
   green "  → $dst"
 }
 
-cyan "[1/6] Link config dirs into ~/.config/"
+cyan "[1/7] Link config dirs into ~/.config/"
 for name in alacritty btop elephant environment.d fastfetch hypr mako swayosd walker waybar; do
   link_to "$REPO/$name" "$HOME/.config/$name"
 done
 
-cyan "[2/6] Link standalone config files"
+cyan "[2/7] Link standalone config files"
 link_to "$REPO/chromium/chromium-flags.conf" "$HOME/.config/chromium-flags.conf"
 
-cyan "[3/6] Link bin/arch-* into ~/.local/bin/"
+cyan "[3/7] Link bin/arch-* into ~/.local/bin/"
 for f in "$REPO/bin"/*; do
   link_to "$f" "$HOME/.local/bin/$(basename "$f")"
 done
 
-cyan "[4/6] Apply system-wide browser theme policy"
+cyan "[4/7] Apply system-wide browser theme policy"
 if [[ -x "$REPO/bin/arch-apply-browser-theme" ]]; then
   "$REPO/bin/arch-apply-browser-theme" || red "  (browser theme policy: skipped, manual run may be needed)"
 fi
 
-cyan "[5/6] Apply systemd user env + gsettings"
+cyan "[5/7] Apply systemd user env + gsettings"
 # Push FZF_DEFAULT_OPTS into the live systemd user session
 if [[ -f "$HOME/.config/environment.d/fzf.conf" ]]; then
   line=$(head -1 "$HOME/.config/environment.d/fzf.conf")
@@ -75,7 +75,7 @@ EOF
 done
 gray "  gtk-3.0 + gtk-4.0 settings.ini written"
 
-cyan "[6/6] Install SDDM stone theme (login screen)"
+cyan "[6/7] Install SDDM stone theme (login screen)"
 SDDM_INSTALLER=$REPO/sddm-theme-stone/install.sh
 if [[ -x $SDDM_INSTALLER ]]; then
   if sudo -n true 2>/dev/null || [[ -t 0 ]]; then
@@ -87,5 +87,15 @@ else
   red "  sddm-theme-stone/install.sh missing"
 fi
 
+cyan "[7/7] Install Arch Stone Plymouth theme (boot/shutdown splash)"
+PLYMOUTH_INSTALLER=$REPO/plymouth-theme-arch-stone/install.sh
+if [[ -x $PLYMOUTH_INSTALLER ]]; then
+  if sudo -n true 2>/dev/null || [[ -t 0 ]]; then
+    sudo bash "$PLYMOUTH_INSTALLER" || red "  Plymouth theme install failed (run manually: sudo bash $PLYMOUTH_INSTALLER)"
+  else
+    red "  Skipping — needs sudo. Run manually:  sudo bash $PLYMOUTH_INSTALLER"
+  fi
+fi
+
 green "done. Restart waybar / walker / chromium / running terminals to pick up everything."
-green "      Reboot or 'sudo systemctl restart sddm' to see the new login screen."
+green "      Reboot to see new SDDM login + Plymouth boot splash."

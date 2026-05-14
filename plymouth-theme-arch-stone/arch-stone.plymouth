@@ -1,0 +1,11 @@
+[Plymouth Theme]
+Name=Arch Stone
+Description=Stone monochrome Plymouth splash with Arch logo
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/arch-stone
+ScriptFile=/usr/share/plymouth/themes/arch-stone/arch-stone.script
+ConsoleLogBackgroundColor=0x0c0a09
+MonospaceFont=Cantarell 11
+Font=Cantarell 11
