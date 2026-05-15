@@ -31,7 +31,7 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Bar / launcher / notifications** — `waybar` `walker` `elephant` `mako` `swaybg` `swayosd`
 
-**Terminal & CLI** — `alacritty` (every `arch-*` installer + TUI runs here under `--class arch-*`) · `xdg-terminal-exec` · `fzf` `gum` `jq` `python` (all four required by the helper scripts) · `tmux` · `neovim` · `fastfetch`
+**Terminal & CLI** — `alacritty` (every `arch-*` installer + TUI runs here under `--class arch-*`) · `xdg-terminal-exec` · `fzf` `gum` `jq` `python` (all four required by the helper scripts) · `neovim` · `fastfetch`
 
 **Waybar tray TUIs** — `btop` (CPU/mem) · `bluetui` + `bluez bluez-utils` (bluetooth) · `impala` + `iwd` (wifi) · `wiremix` (audio)
 
@@ -52,7 +52,7 @@ sudo pacman -S --needed \
   hyprland hypridle hyprlock hyprpicker hyprshot hyprsunset uwsm \
   xdg-desktop-portal-hyprland sddm polkit-gnome plymouth \
   waybar mako swaybg swayosd \
-  alacritty xdg-terminal-exec fzf gum jq python tmux neovim fastfetch \
+  alacritty xdg-terminal-exec fzf gum jq python neovim fastfetch \
   btop libnotify brightnessctl fcitx5 pipewire-pulse \
   bluez bluez-utils iwd \
   ttf-cascadia-mono-nerd \
