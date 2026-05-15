@@ -22,9 +22,11 @@ show_main() {
   case $(menu "Menu" \
     "  Apps" \
     "  Install" \
+    "  Remove" \
     "  Capture" \
     "  Toggle" \
     "  Setup" \
+    "  Bookmarks" \
     "  System" \
     "  Remote" \
     "  Keybinds" \
@@ -36,9 +38,11 @@ show_main() {
     *Toggle*)  show_toggle ;;
     *Setup*)   show_setup ;;
     *Install*) show_install ;;
+    *Remove*)  show_remove ;;
     *System*)  show_system ;;
     *Remote*)  show_remote ;;
     *Keybinds*) uwsm-app -- alacritty --class arch-installer -e arch-keybinds ;;
+    *Bookmarks*) show_bookmarks ;;
     *Power*)   arch-power-menu ;;
   esac
 }
@@ -222,12 +226,14 @@ show_system() {
     "  Time" \
     "  Power menu" \
     "  Info" \
+    "  Files" \
     "  Back") in
     *Lock*)         hyprlock ;;
     *Battery*)      notify-send -u low "$(arch-battery-status)" ;;
     *Time*)         notify-send -u low "$(date +"%A %H:%M  ·  %d %B %Y  ·  Week %V")" ;;
     *"Power menu"*) arch-power-menu ;;
     *Info*)         uwsm-app -- xdg-terminal-exec bash -c "fastfetch; read -p 'Press Enter to close.'" ;;
+    *Files*)        uwsm-app -- alacritty --class yazi -e yazi ;;
     *Back*)         show_main ;;
   esac
 }
@@ -291,5 +297,125 @@ show_remote_group() {
   esac
 }
 
+
+
+# ---------- Bookmarks ----------
+# Reads ~/.config/arch-menu/bookmarks.conf (one "Label | URL" per line).
+# Lines starting with # are comments; blank lines ignored.
+show_bookmarks() {
+  local conf="$HOME/.config/arch-menu/bookmarks.conf" items=() pick label url
+  if [[ ! -f $conf ]]; then
+    menu "Bookmarks" "  (no bookmarks.conf yet)" "  Back" >/dev/null
+    show_main
+    return
+  fi
+  while IFS= read -r line; do
+    [[ -z $line || $line =~ ^[[:space:]]*# ]] && continue
+    label="${line%%|*}"
+    label="${label#"${label%%[![:space:]]*}"}"
+    label="${label%"${label##*[![:space:]]}"}"
+    [[ -z $label ]] && continue
+    items+=("  $label")
+  done < "$conf"
+  items+=("  Back")
+
+  pick=$(menu "Bookmarks" "${items[@]}")
+  case "$pick" in
+    *Back*) show_main ;;
+    "")     : ;;
+    *)      label="${pick#*  }"
+            url=$(awk -F'|' -v L="$label" '
+              !/^[[:space:]]*#/ && NF==2 {
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", $1)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
+                if ($1 == L) { print $2; exit }
+              }' "$conf")
+            [[ -n $url ]] && open_url "$url" ;;
+  esac
+}
+
+
+
+# ---------- Remove ----------
+# Helper: install a removal task into a floating alacritty (mirrors term_install).
+term_remove() {
+  uwsm-app -- xdg-terminal-exec bash -c "sudo pacman -Rns $*; echo; read -p 'Press Enter to close.'"
+}
+
+show_remove() {
+  case $(menu "Remove" \
+    "  Pacman" \
+    "  AUR" \
+    "  Webapp" \
+    "  Development" \
+    "  Gaming" \
+    "  Terminal" \
+    "  Font" \
+    "  ProtonGE" \
+    "  Back") in
+    *Pacman*)      uwsm-app -- alacritty --class arch-installer -e arch-pacman-remove ;;
+    *AUR*)         uwsm-app -- alacritty --class arch-installer -e arch-aur-remove ;;
+    *Webapp*)      uwsm-app -- alacritty --class arch-installer -e arch-webapp-remove ;;
+    *Development*) uwsm-app -- alacritty --class arch-installer -e arch-mise-remove ;;
+    *Gaming*)      show_remove_gaming ;;
+    *Terminal*)    show_remove_terminal ;;
+    *Font*)        show_remove_font ;;
+    *ProtonGE*)    uwsm-app -- alacritty --class arch-installer -e arch-protonge-remove ;;
+    *Back*)        show_main ;;
+  esac
+}
+
+show_remove_gaming() {
+  case $(menu "Gaming" \
+    "  Steam" \
+    "  RetroArch" \
+    "  Minecraft" \
+    "  Moonlight" \
+    "  Lutris" \
+    "  Heroic" \
+    "  Back") in
+    *Steam*) term_remove steam ;;
+    *RetroArch*) term_remove retroarch ;;
+    *Minecraft*) term_remove minecraft-launcher ;;
+    *Moonlight*) term_remove moonlight-qt ;;
+    *Lutris*) term_remove lutris ;;
+    *Heroic*) term_remove heroic-games-launcher-bin ;;
+    *Back*)      show_remove ;;
+  esac
+}
+
+show_remove_terminal() {
+  case $(menu "Terminal" \
+    "  Alacritty" \
+    "  Foot" \
+    "  Ghostty" \
+    "  Kitty" \
+    "  Back") in
+    *Alacritty*) term_remove alacritty ;;
+    *Foot*) term_remove foot ;;
+    *Ghostty*) term_remove ghostty ;;
+    *Kitty*) term_remove kitty ;;
+    *Back*)      show_remove ;;
+  esac
+}
+
+show_remove_font() {
+  case $(menu "Font" \
+    "  Cascadia Mono" \
+    "  Meslo LG Mono" \
+    "  Fira Code" \
+    "  Victor Mono" \
+    "  Bitstream Vera" \
+    "  Iosevka" \
+    "  Back") in
+    *Cascadia*) term_remove ttf-cascadia-mono-nerd ;;
+    *Meslo*) term_remove ttf-meslo-nerd ;;
+    *Fira*) term_remove ttf-firacode-nerd ;;
+    *Victor*) term_remove ttf-victor-mono-nerd ;;
+    *Bitstream*) term_remove ttf-bitstream-vera-mono-nerd ;;
+    *Iosevka*) term_remove ttf-iosevka-nerd ;;
+    *Back*)      show_remove ;;
+  esac
+}
 
 show_main

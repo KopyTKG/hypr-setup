@@ -1,0 +1,28 @@
+#!/bin/bash
+# arch-mise-remove — fzf-pick an installed mise tool@version and uninstall it.
+
+set -e
+
+if ! command -v mise >/dev/null 2>&1; then
+  echo "mise is not installed." >&2
+  exit 1
+fi
+
+pick=$(mise ls --installed 2>/dev/null \
+  | awk 'NF>=2 { printf "%s@%s\n", $1, $2 }' \
+  | sort -u \
+  | fzf --multi \
+        --prompt='mise remove> ' \
+        --height=100% --reverse --border \
+        --header='Tab to multi-select · Enter to uninstall · Esc to cancel')
+[[ -z $pick ]] && { echo "Cancelled."; exit 0; }
+
+echo
+while IFS= read -r tv; do
+  [[ -z $tv ]] && continue
+  echo "→ mise uninstall $tv"
+  mise uninstall "$tv" || true
+done <<< "$pick"
+
+echo
+read -r -p "[Enter to close]"

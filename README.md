@@ -13,6 +13,7 @@ elephant/                  walker data provider config
 environment.d/             systemd user env (FZF_DEFAULT_OPTS, ...)
 fastfetch/                 system info (no Omarchy branding)
 hypr/                      Hyprland config (inputs, monitors, windowrules, binds)
+arch-menu/                 user-editable arch-menu config (bookmarks.conf)
 mako/                      notification daemon (stone-styled)
 nvim/                      submodule → gitlab.com/kopytkg/nvim
 plymouth-theme-arch-stone/ boot/shutdown splash (Arch logo on stone-950)
@@ -36,7 +37,7 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Terminal & CLI** — `alacritty` (every `arch-*` installer + TUI runs here under `--class arch-*`) · `xdg-terminal-exec` · `fzf` `gum` `jq` `python` (all four required by the helper scripts) · `neovim` · `fastfetch` · `starship` (prompt) · `bash-completion` · `git` `openssh` `curl` `tar` `wl-clipboard`
 
-**Waybar tray TUIs** — `btop` (CPU/mem) · `bluetui` + `bluez bluez-utils` (bluetooth) · `impala` + `iwd` (wifi) · `wiremix` (audio)
+**Waybar tray TUIs** — `btop` (CPU/mem) · `bluetui` + `bluez bluez-utils` (bluetooth) · `impala` + `iwd` (wifi) · `wiremix` (audio) · `yazi` (file manager, arch-menu → System → Files)
 
 **Audio / input / misc** — `pipewire-pulse` (provides `pactl`) · `brightnessctl` · `libnotify` (`notify-send`) · `fcitx5`
 
@@ -62,7 +63,7 @@ sudo pacman -S --needed \
   xdg-desktop-portal-hyprland sddm polkit-gnome plymouth \
   waybar mako swaybg swayosd \
   alacritty xdg-terminal-exec fzf gum jq python neovim fastfetch starship \
-  btop libnotify brightnessctl fcitx5 pipewire-pulse \
+  btop yazi libnotify brightnessctl fcitx5 pipewire-pulse \
   bluez bluez-utils iwd \
   ttf-cascadia-mono-nerd \
   git openssh curl tar wl-clipboard \
@@ -106,11 +107,13 @@ Existing files are backed up to `<path>.bak.<timestamp>` before linking.
 
 ## arch-menu (SUPER+ALT+SPACE)
 
-Hierarchical walker-dmenu launcher. Top level: **Apps · Install · Capture · Toggle · Setup · System · Remote · Keybinds · Learn · Power**.
+Hierarchical walker-dmenu launcher. Top level: **Apps · Install · Remove · Capture · Toggle · Setup · Bookmarks · System · Remote · Keybinds · Learn · Power**.
 
 Notable submenus:
 
 - **Install** — fzf-driven installers for Pacman / AUR / Development (mise) / Gaming / Terminal / Font / **Webapp** (create or remove a chromium `--app` desktop launcher) / **ProtonGE** (fzf-pick any GE-Proton release, download into `~/.steam/root/compatibilitytools.d/`)
+- **Remove** — mirrors Install: Pacman (fzf over `pacman -Qq`) / AUR (foreign packages only, `pacman -Qqm`) / Webapp / Development (`mise uninstall`) / Gaming/Terminal/Font (curated `pacman -Rns`) / ProtonGE (rm from `compatibilitytools.d/`)
+- **Bookmarks** — reads `~/.config/arch-menu/bookmarks.conf` (one `Label | URL` per line, `#` comments OK). Selecting opens the URL in chromium.
 - **System** — TUI control panels via floating alacritty: bluetui, impala, wiremix, btop
 - **Remote** — parses `~/.ssh/config` for `# group: NAME` markers; picks a group, then a host, and spawns ssh in a tiled `ssh-session` terminal. **Custom…** gum-prompts for User/Host/Port.
 - **Keybinds** — also bound to SUPER+F1; fzf-list of every described Hyprland bind (live from `hyprctl binds`), colored per modifier
@@ -125,8 +128,13 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-menu`                     | the hierarchical launcher (SUPER+ALT+SPACE)                        |
 | `arch-pacman-install`           | fzf-pick a pacman package from the package list                    |
 | `arch-aur-install`              | fzf-pick an AUR package                                            |
+| `arch-pacman-remove`            | fzf-pick installed package(s); `sudo pacman -Rns`                  |
+| `arch-aur-remove`               | fzf-pick AUR-installed (foreign) package(s); `sudo pacman -Rns`    |
+| `arch-mise-remove`              | fzf-pick installed mise tool@version; `mise uninstall`             |
 | `arch-protonge-install`         | fzf-pick a GE-Proton release; downloads + sha512-verifies + extracts |
+| `arch-protonge-remove`          | fzf-pick a GE-Proton release in `compatibilitytools.d/`; `rm -rf`  |
 | `arch-webapp-install`           | gum prompt → desktop launcher for any URL via chromium `--app`     |
+| `arch-webapp "<Name>"`          | launch a webapp by Name (matches `Name=` in any `~/.local/share/applications/*.desktop` whose Exec calls `arch-launch-webapp`); no args → walker picker over all discovered webapps |
 | `arch-keybinds`                 | SUPER+F1; fzf-list of every Hyprland bind (colored per modifier)   |
 | `arch-remote-custom`            | gum prompt → User/Host/Port → spawns ssh in a tiled `ssh-session` window |
 | `arch-power-menu`               | bound to SUPER+ESC                                                 |

@@ -1,0 +1,46 @@
+#!/bin/bash
+# arch-webapp — launch a chromium webapp by name.
+# Source of truth: ~/.local/share/applications/*.desktop entries whose Exec
+# calls arch-launch-webapp (the .desktop files arch-webapp-install creates).
+#
+# Usage:
+#   arch-webapp                # walker-dmenu picker over installed webapps
+#   arch-webapp "<Name>"       # exact `Name=` match from the .desktop file
+
+set -e
+DESKTOP_DIR="$HOME/.local/share/applications"
+
+# emit "Name<TAB>path" for every webapp .desktop
+list_webapps() {
+  grep -lE '^Exec=(arch-launch-webapp|omarchy-launch-webapp|omarchy-webapp-handler)' \
+    "$DESKTOP_DIR"/*.desktop 2>/dev/null \
+  | while IFS= read -r f; do
+      n=$(awk -F= '/^Name=/ { sub(/^Name=/, ""); print; exit }' "$f")
+      [[ -n $n ]] && printf "%s\t%s\n" "$n" "$f"
+    done
+}
+
+NAME="$1"
+
+if [[ -z $NAME ]]; then
+  NAME=$(list_webapps | cut -f1 | sort -u \
+         | walker --dmenu --width 300 --height 520 --placeholder "Webapp")
+  [[ -z $NAME ]] && exit 0
+fi
+
+FILE=$(list_webapps | awk -F'\t' -v L="$NAME" '$1==L { print $2; exit }')
+[[ -z $FILE ]] && {
+  echo "arch-webapp: no webapp '$NAME' (run arch-webapp-install to add one)" >&2
+  exit 1
+}
+
+# Strip XDG field codes (%u/%U/%f/%F) that some .desktop files include.
+CMD=$(awk -F= '
+  /^Exec=/ {
+    sub(/^Exec=/, "")
+    gsub(/[[:space:]]*%[uUfF]/, "")
+    print
+    exit
+  }' "$FILE")
+
+exec sh -c "$CMD"

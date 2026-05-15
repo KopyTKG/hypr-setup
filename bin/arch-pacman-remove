@@ -1,0 +1,22 @@
+#!/bin/bash
+# arch-pacman-remove — fzf-driven picker over installed packages, then `sudo pacman -Rns`.
+
+set -e
+
+pkgs=$(pacman -Qq \
+  | sort -u \
+  | fzf --multi \
+        --prompt='remove> ' \
+        --height=100% --reverse --border \
+        --preview='pacman -Qi {} 2>/dev/null' \
+        --preview-window=right:50%:wrap \
+        --header='Tab to multi-select · Enter to remove (Rns) · Esc to cancel')
+[[ -z $pkgs ]] && { echo "Cancelled."; exit 0; }
+
+echo
+echo "Removing: $(echo "$pkgs" | tr '\n' ' ')"
+echo
+sudo pacman -Rns $pkgs
+
+echo
+read -r -p "[Enter to close]"

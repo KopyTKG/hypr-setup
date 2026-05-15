@@ -1,0 +1,24 @@
+#!/bin/bash
+# arch-aur-remove — fzf-driven picker over AUR-installed (foreign) packages.
+# Uses `pacman -Qqm` which lists only packages not from any sync database
+# (i.e. AUR/local builds). Removal still uses sudo pacman -Rns.
+
+set -e
+
+pkgs=$(pacman -Qqm \
+  | sort -u \
+  | fzf --multi \
+        --prompt='AUR remove> ' \
+        --height=100% --reverse --border \
+        --preview='pacman -Qi {} 2>/dev/null' \
+        --preview-window=right:50%:wrap \
+        --header='Tab to multi-select · Enter to remove (Rns) · Esc to cancel')
+[[ -z $pkgs ]] && { echo "Cancelled."; exit 0; }
+
+echo
+echo "Removing AUR packages: $(echo "$pkgs" | tr '\n' ' ')"
+echo
+sudo pacman -Rns $pkgs
+
+echo
+read -r -p "[Enter to close]"
