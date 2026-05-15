@@ -20,6 +20,8 @@ sddm-theme-stone/          Qt6 login-screen theme
 swayosd/                   audio/brightness OSD
 walker/                    launcher (dmenu mode for arch-menu)
 waybar/                    status bar + tray-menu CSS
+.bashrc                    interactive bash config (aliases, completions, language env)
+starship.toml              starship prompt (Tokyo Night, current dev stack)
 install.sh                 wire everything into ~/.config/, ~/.local/bin/, system theme
 arch-strip-omarchy-system.sh  one-shot system migrator (snapper snapshot, repo strip, AUR rebuild)
 ```
@@ -32,7 +34,7 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Bar / launcher / notifications** — `waybar` `walker` `elephant` `mako` `swaybg` `swayosd`
 
-**Terminal & CLI** — `alacritty` (every `arch-*` installer + TUI runs here under `--class arch-*`) · `xdg-terminal-exec` · `fzf` `gum` `jq` `python` (all four required by the helper scripts) · `neovim` · `fastfetch`
+**Terminal & CLI** — `alacritty` (every `arch-*` installer + TUI runs here under `--class arch-*`) · `xdg-terminal-exec` · `fzf` `gum` `jq` `python` (all four required by the helper scripts) · `neovim` · `fastfetch` · `starship` (prompt) · `bash-completion`
 
 **Waybar tray TUIs** — `btop` (CPU/mem) · `bluetui` + `bluez bluez-utils` (bluetooth) · `impala` + `iwd` (wifi) · `wiremix` (audio)
 
@@ -53,7 +55,7 @@ sudo pacman -S --needed \
   hyprland hypridle hyprlock hyprpicker hyprshot hyprsunset uwsm \
   xdg-desktop-portal-hyprland sddm polkit-gnome plymouth \
   waybar mako swaybg swayosd \
-  alacritty xdg-terminal-exec fzf gum jq python neovim fastfetch \
+  alacritty xdg-terminal-exec fzf gum jq python neovim fastfetch starship \
   btop libnotify brightnessctl fcitx5 pipewire-pulse \
   bluez bluez-utils iwd \
   ttf-cascadia-mono-nerd \

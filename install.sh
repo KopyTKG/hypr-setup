@@ -33,6 +33,8 @@ done
 
 cyan "[2/7] Link standalone config files"
 link_to "$REPO/chromium/chromium-flags.conf" "$HOME/.config/chromium-flags.conf"
+link_to "$REPO/.bashrc"        "$HOME/.bashrc"
+link_to "$REPO/starship.toml"  "$HOME/.config/starship.toml"
 
 cyan "[3/7] Link bin/arch-* into ~/.local/bin/"
 for f in "$REPO/bin"/*; do

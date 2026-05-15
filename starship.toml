@@ -1,0 +1,77 @@
+# ============================================
+# Starship — Tokyo Night Minimal
+# Stack: Java, Kotlin, C#, Node, Go, LaTeX
+# ============================================
+
+format = """
+$directory\
+$git_branch\
+$git_status\
+$java\
+$kotlin\
+$dotnet\
+$nodejs\
+$golang\
+$docker_context\
+$line_break\
+$character"""
+
+[character]
+success_symbol = "[λ](bold #7aa2f7)"
+error_symbol = "[λ](bold #f7768e)"
+
+[directory]
+format = "[$path]($style)[$read_only]($read_only_style) "
+style = "bold #bb9af7"
+truncation_length = 3
+truncate_to_repo = true
+read_only = " 󰌾"
+read_only_style = "#f7768e"
+
+[git_branch]
+format = "on [$symbol$branch]($style) "
+symbol = " "
+style = "#7aa2f7"
+
+[git_status]
+format = '([$all_status$ahead_behind]($style) )'
+style = "#e0af68"
+
+[java]
+format = "[$symbol($version)]($style) "
+symbol = "󰬷 "
+style = "#e0af68"
+
+[kotlin]
+format = "[$symbol($version)]($style) "
+symbol = "󱈙 "
+style = "#bb9af7"
+
+[dotnet]
+format = "[$symbol($version)]($style) "
+symbol = "󰪮 "
+style = "#bb9af7"
+heuristic = true
+
+[nodejs]
+format = "[$symbol($version)]($style) "
+symbol = "󰎙 "
+style = "#9ece6a"
+
+[golang]
+format = "[$symbol($version)]($style) "
+symbol = "󰟓 "
+style = "#7dcfff"
+
+[docker_context]
+format = "[$symbol$context]($style) "
+symbol = "󰡨 "
+style = "#7dcfff"
+
+# Python and Rust intentionally not shown in the prompt; the modules still
+# auto-detect if needed, just disabled here.
+[python]
+disabled = true
+
+[rust]
+disabled = true
