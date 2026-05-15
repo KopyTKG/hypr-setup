@@ -14,6 +14,7 @@ environment.d/             systemd user env (FZF_DEFAULT_OPTS, ...)
 fastfetch/                 system info (no Omarchy branding)
 hypr/                      Hyprland config (inputs, monitors, windowrules, binds)
 mako/                      notification daemon (stone-styled)
+nvim/                      submodule → gitlab.com/kopytkg/nvim
 plymouth-theme-arch-stone/ boot/shutdown splash (Arch logo on stone-950)
 sddm-theme-stone/          Qt6 login-screen theme
 swayosd/                   audio/brightness OSD
@@ -63,9 +64,21 @@ yay -S walker elephant bluetui impala wiremix   # if not in chaotic-aur yet
 ## Install
 
 ```bash
-git clone git@gitlab.com:kopytkg/hypr-setup.git ~/Projects/hypr-setup
+git clone --recurse-submodules git@gitlab.com:kopytkg/hypr-setup.git ~/Projects/hypr-setup
 cd ~/Projects/hypr-setup
 ./install.sh
+```
+
+Already cloned without `--recurse-submodules`? Pull the submodules in:
+
+```bash
+git submodule update --init --recursive
+```
+
+Pull future nvim updates with:
+
+```bash
+git submodule update --remote nvim
 ```
 
 7-phase bootstrap:
