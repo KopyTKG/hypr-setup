@@ -84,7 +84,7 @@ Rectangle {
                     color: config.inputColor
                     border.color: passwordField.activeFocus ? config.mutedColor : config.borderInputColor
                     border.width: passwordField.activeFocus ? 1 : 0
-                    radius: height / 2
+                    radius: 8
                 }
                 Keys.onReturnPressed: doLogin()
                 Keys.onEnterPressed: doLogin()

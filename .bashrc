@@ -742,7 +742,7 @@ if [[ -t 1 ]]; then
                 tool = $2; ver = $3
                 if (!(tool in seen)) { order[++n] = tool; seen[tool] = 1 }
                 sep = (tool in versions ? ", " : "")
-                if (ver == active[tool]) versions[tool] = versions[tool] sep "\033[1m" ver "\033[0m"
+                if (ver == active[tool]) versions[tool] = versions[tool] sep "\033[1;38;2;224;175;104m" ver "\033[0m"
                 else                     versions[tool] = versions[tool] sep ver
             }
             END {
