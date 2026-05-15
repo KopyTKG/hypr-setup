@@ -82,9 +82,9 @@ Rectangle {
                 horizontalAlignment: TextInput.AlignHCenter
                 background: Rectangle {
                     color: config.inputColor
-                    border.color: passwordField.activeFocus ? config.borderColor : config.borderInputColor
-                    border.width: 1
-                    radius: 8
+                    border.color: passwordField.activeFocus ? config.mutedColor : config.borderInputColor
+                    border.width: passwordField.activeFocus ? 1 : 0
+                    radius: height / 2
                 }
                 Keys.onReturnPressed: doLogin()
                 Keys.onEnterPressed: doLogin()
