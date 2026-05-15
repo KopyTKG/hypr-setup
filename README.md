@@ -34,7 +34,7 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Bar / launcher / notifications** — `waybar` `walker` `elephant` `mako` `swaybg` `swayosd`
 
-**Terminal & CLI** — `alacritty` (every `arch-*` installer + TUI runs here under `--class arch-*`) · `xdg-terminal-exec` · `fzf` `gum` `jq` `python` (all four required by the helper scripts) · `neovim` · `fastfetch` · `starship` (prompt) · `bash-completion`
+**Terminal & CLI** — `alacritty` (every `arch-*` installer + TUI runs here under `--class arch-*`) · `xdg-terminal-exec` · `fzf` `gum` `jq` `python` (all four required by the helper scripts) · `neovim` · `fastfetch` · `starship` (prompt) · `bash-completion` · `git` `openssh` `curl` `tar` `wl-clipboard`
 
 **Waybar tray TUIs** — `btop` (CPU/mem) · `bluetui` + `bluez bluez-utils` (bluetooth) · `impala` + `iwd` (wifi) · `wiremix` (audio)
 
@@ -42,11 +42,17 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Fonts** — `ttf-cascadia-mono-nerd` (hard-coded in waybar + alacritty)
 
+**Shell QoL (referenced by `.bashrc`)** — `lazygit` (alias `lz`) · `eza` · `bat` · `fd` (powers `FZF_DEFAULT_COMMAND`) · `ripgrep` · `git-delta` · `tree` · `net-tools` (`netstat`) · `lsof`
+
+**Dev toolchains (work stack)** — most are managed by `mise` (`mise use --global …`); pacman covers the rest: `jdk-openjdk` `kotlin` `maven` `gradle` (Java/Kotlin/Android) · `texlive-meta` (LaTeX) · `bun` (RN/Expo/Preact). The Development install entry in `arch-menu` wraps `mise use --global` over a fzf-pick.
+
 **Apps reached from default keybinds** — `chromium` (used by `arch-launch-webapp` + the Enterprise theme policy; `brave` works as a swap) · `nautilus` · optional: `discord-canary` `spotify`
 
 **Installer / migrator only** — `yay` (AUR helper for `term_install`) · `mise` (Development install menu) · `snapper` (pre-migration snapshot)
 
 **AMD + Steam** — `vulkan-radeon` `lib32-vulkan-radeon` `mesa-utils` (no RADV ⇒ no DXVK ⇒ Proton/Unity games fail at graphics init)
+
+**Nvim submodule** — `nvim/install.sh` covers its own extras (`base-devel` `unzip` `tree-sitter-cli` `python-pip` `luarocks` `glab` …). Run it once after `./install.sh`.
 
 One-shot bootstrap:
 
@@ -59,6 +65,9 @@ sudo pacman -S --needed \
   btop libnotify brightnessctl fcitx5 pipewire-pulse \
   bluez bluez-utils iwd \
   ttf-cascadia-mono-nerd \
+  git openssh curl tar wl-clipboard \
+  lazygit eza bat fd ripgrep git-delta tree net-tools lsof \
+  jdk-openjdk kotlin maven gradle texlive-meta bun \
   chromium nautilus
 yay -S walker elephant bluetui impala wiremix   # if not in chaotic-aur yet
 ```
@@ -86,7 +95,7 @@ git submodule update --remote nvim
 7-phase bootstrap:
 
 1. Symlink config dirs into `~/.config/`
-2. Symlink standalone files (`chromium-flags.conf`)
+2. Symlink standalone files (`chromium-flags.conf`, `.bashrc`, `starship.toml`)
 3. Symlink `bin/arch-*` into `~/.local/bin/`
 4. Apply system-wide Chromium / Brave theme policy (writes `/etc/{chromium,brave}/policies/managed/color.json`)
 5. Push `FZF_DEFAULT_OPTS` to live systemd user env + write GTK dark-theme settings
@@ -97,12 +106,14 @@ Existing files are backed up to `<path>.bak.<timestamp>` before linking.
 
 ## arch-menu (SUPER+ALT+SPACE)
 
-Hierarchical walker-dmenu launcher. Top level: **Apps · Learn · Capture · Toggle · Setup · Install · System · Power**.
+Hierarchical walker-dmenu launcher. Top level: **Apps · Install · Capture · Toggle · Setup · System · Remote · Keybinds · Learn · Power**.
 
 Notable submenus:
 
 - **Install** — fzf-driven installers for Pacman / AUR / Development (mise) / Gaming / Terminal / Font / **Webapp** (create or remove a chromium `--app` desktop launcher) / **ProtonGE** (fzf-pick any GE-Proton release, download into `~/.steam/root/compatibilitytools.d/`)
 - **System** — TUI control panels via floating alacritty: bluetui, impala, wiremix, btop
+- **Remote** — parses `~/.ssh/config` for `# group: NAME` markers; picks a group, then a host, and spawns ssh in a tiled `ssh-session` terminal. **Custom…** gum-prompts for User/Host/Port.
+- **Keybinds** — also bound to SUPER+F1; fzf-list of every described Hyprland bind (live from `hyprctl binds`), colored per modifier
 - **Power** — sleep / lock / logout / restart / shutdown
 
 ## arch-* helpers
@@ -116,6 +127,8 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-aur-install`              | fzf-pick an AUR package                                            |
 | `arch-protonge-install`         | fzf-pick a GE-Proton release; downloads + sha512-verifies + extracts |
 | `arch-webapp-install`           | gum prompt → desktop launcher for any URL via chromium `--app`     |
+| `arch-keybinds`                 | SUPER+F1; fzf-list of every Hyprland bind (colored per modifier)   |
+| `arch-remote-custom`            | gum prompt → User/Host/Port → spawns ssh in a tiled `ssh-session` window |
 | `arch-power-menu`               | bound to SUPER+ESC                                                 |
 | `arch-killactive`               | SUPER+W; closes walker layer if visible, else `killactive`         |
 | `arch-launch-webapp <class> <url>` | focus existing chromium-app window by class, else launch it    |
@@ -132,8 +145,10 @@ Stone palette (`#0c0a09` bg, `#f5f5f4` border, `#fafaf9` fg, `#a8a29e` muted) is
 - **Btop / Mako / SwayOSD** — same chrome
 - **Fastfetch** — Arch logo, no Omarchy branding
 - **Chromium / Brave** — `BrowserThemeColor = #0a0a0a` via Enterprise Policy
-- **SDDM** — `sddm-theme-stone` Qt6 theme (single password field, time/date, hostname)
+- **SDDM** — `sddm-theme-stone` Qt6 theme (single password field, time/date, hostname); input is `radius: 8` (rounded-lg), border hidden idle / 1px stone-400 on focus
+- **Hyprlock** — same input treatment: `rounding = 16`, `outline_thickness = 1`, outer_color stone-400 (muted)
 - **Plymouth** — `arch-stone` (cloned omarchy script with stone-950 bg + Arch logo)
+- **Starship** — Tokyo Night accents (purple cwd, blue branch, yellow status); language modules for Java / Kotlin / .NET / Node / Go / Docker
 
 ## System migrator
 
