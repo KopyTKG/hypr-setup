@@ -1,0 +1,31 @@
+#!/bin/bash
+# arch-remote-custom — prompt for User/Host/Port, then spawn ssh in a tiled terminal.
+# The form runs in a floating arch-installer alacritty; the ssh session runs as
+# `--class ssh-session` so it tiles normally. Password (if any) is typed straight
+# into ssh — never collected here.
+
+set -e
+clear
+
+cyan() { printf '\033[36m%s\033[0m\n' "$*"; }
+gray() { printf '\033[90m%s\033[0m\n' "$*"; }
+
+cyan "Custom SSH connection"
+gray "Esc / Ctrl-C cancels."
+echo
+
+USER=$(gum input --placeholder="user" --prompt="User  ") || exit 0
+[[ -z $USER ]] && { gray "cancelled"; exit 0; }
+
+HOST=$(gum input --placeholder="host or IP" --prompt="Host  ") || exit 0
+[[ -z $HOST ]] && { gray "cancelled"; exit 0; }
+
+PORT=$(gum input --value="22" --prompt="Port  ") || exit 0
+PORT="${PORT:-22}"
+
+# Spawn the real ssh session in a tiled terminal and exit so the floating
+# form window closes.
+setsid -f uwsm-app -- alacritty --class ssh-session \
+    -e ssh "${USER}@${HOST}" -p "${PORT}" >/dev/null 2>&1 &
+disown
+exit 0

@@ -26,6 +26,7 @@ show_main() {
     "  Toggle" \
     "  Setup" \
     "  System" \
+    "  Remote" \
     "  Keybinds" \
     "  Learn" \
     "  Power") in
@@ -36,6 +37,7 @@ show_main() {
     *Setup*)   show_setup ;;
     *Install*) show_install ;;
     *System*)  show_system ;;
+    *Remote*)  show_remote ;;
     *Keybinds*) uwsm-app -- alacritty --class arch-installer -e arch-keybinds ;;
     *Power*)   arch-power-menu ;;
   esac
@@ -229,5 +231,65 @@ show_system() {
     *Back*)         show_main ;;
   esac
 }
+
+
+# ---------- Remote ----------
+# Parses ~/.ssh/config for "# group: NAME" markers and groups Host entries
+# under whatever marker preceded them. Wildcard hosts are filtered out.
+_ssh_grouped() {
+  awk '
+    BEGIN { group = "Ungrouped" }
+    /^[[:space:]]*#[[:space:]]*[Gg]roup[[:space:]]*:/ {
+      sub(/^[[:space:]]*#[[:space:]]*[Gg]roup[[:space:]]*:[[:space:]]*/, "")
+      sub(/[[:space:]]+$/, "")
+      group = $0
+      next
+    }
+    tolower($1) == "host" {
+      for (i = 2; i <= NF; i++)
+        if ($i !~ /[*?!]/)
+          printf "%s\t%s\n", group, $i
+    }
+  ' "$HOME/.ssh/config" 2>/dev/null
+}
+
+show_remote() {
+  local items=() pick group seen
+  seen=$(mktemp); trap 'rm -f "$seen"' RETURN
+  while IFS= read -r group; do
+    [[ -z $group ]] && continue
+    grep -qxF "$group" "$seen" && continue
+    echo "$group" >> "$seen"
+    items+=("  $group")
+  done < <(_ssh_grouped | cut -f1)
+  items+=("  Custom...")
+  items+=("  Back")
+
+  pick=$(menu "Remote" "${items[@]}")
+  case "$pick" in
+    *Back*)   show_main ;;
+    *Custom*) uwsm-app -- alacritty --class arch-installer -e arch-remote-custom ;;
+    "")       : ;;
+    *)        group="${pick#*  }"; show_remote_group "$group" ;;
+  esac
+}
+
+show_remote_group() {
+  local group=$1 items=() pick host
+  while IFS= read -r host; do
+    [[ -z $host ]] && continue
+    items+=("  $host")
+  done < <(_ssh_grouped | awk -F'\t' -v g="$group" '$1==g {print $2}' | sort -u)
+  items+=("  Back")
+
+  pick=$(menu "$group" "${items[@]}")
+  case "$pick" in
+    *Back*)  show_remote ;;
+    "")      : ;;
+    *)       host="${pick##* }"
+             [[ -n $host ]] && setsid -f uwsm-app -- alacritty --class ssh-session -e ssh "$host" >/dev/null 2>&1 & disown ;;
+  esac
+}
+
 
 show_main
