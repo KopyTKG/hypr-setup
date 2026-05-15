@@ -1,0 +1,99 @@
+#!/bin/bash
+# arch-keybinds — fzf-list every described Hyprland keybind (live from hyprctl).
+# Bound to SUPER+F1 and reachable from arch-menu → Keybinds.
+
+set -e
+clear
+
+hyprctl binds -j | python3 -c '
+import json, sys
+
+# Tokyo Night accents for mods + stone neutrals (truecolor)
+RESET = "\033[0m"
+BOLD  = "\033[1m"
+def fg(r,g,b): return f"\033[38;2;{r};{g};{b}m"
+
+C_SUPER = fg(122, 162, 247)   # tn blue
+C_SHIFT = fg(158, 206, 106)   # tn green
+C_CTRL  = fg(224, 175, 104)   # tn yellow
+C_ALT   = fg(187, 154, 247)   # tn magenta
+C_KEY   = BOLD + fg(250, 250, 249)  # stone-50 bold
+C_SEP   = fg(120, 113, 108)   # stone-500 dim "+"
+C_DESC  = fg(214, 211, 209)   # stone-300
+C_MUTED = fg(168, 162, 158)   # stone-400
+
+MOD_BITS = [
+    (1,  ("SHIFT", C_SHIFT)),
+    (4,  ("CTRL",  C_CTRL)),
+    (8,  ("ALT",   C_ALT)),
+    (64, ("SUPER", C_SUPER)),
+]
+
+# X11 keycodes → labels for binds written as "code:N"
+KEYCODE = {
+    10: "1", 11: "2", 12: "3", 13: "4", 14: "5",
+    15: "6", 16: "7", 17: "8", 18: "9", 19: "0",
+}
+
+# fzf right-pads using the colored string length, so plain-text width has to
+# be computed separately for alignment.
+def visible_len(s):
+    out, in_esc = 0, False
+    for ch in s:
+        if in_esc:
+            if ch == "m":
+                in_esc = False
+            continue
+        if ch == "\033":
+            in_esc = True
+            continue
+        out += 1
+    return out
+
+binds = json.load(sys.stdin)
+rows = []
+for b in binds:
+    if not b.get("has_description"):
+        continue
+    desc = (b.get("description") or "").strip()
+    if not desc:
+        continue
+    mods = []
+    for bit, (name, color) in MOD_BITS:
+        if b.get("modmask", 0) & bit:
+            mods.append((name, color))
+    key = b.get("key") or ""
+    if not key:
+        kc = b.get("keycode", 0)
+        key = KEYCODE.get(kc, "code:" + str(kc))
+
+    parts = [color + name + RESET for name, color in mods]
+    parts.append(C_KEY + key + RESET)
+    combo = (C_SEP + "+" + RESET).join(parts)
+    plain = "+".join([n for n, _ in mods] + [key])
+    if b.get("mouse"):
+        combo += C_MUTED + " (mouse)" + RESET
+        plain += " (mouse)"
+    rows.append((combo, plain, desc))
+
+# de-dupe (same plain combo + same description)
+seen, deduped = set(), []
+for c, p, d in rows:
+    k = (p, d)
+    if k in seen: continue
+    seen.add(k); deduped.append((c, p, d))
+rows = deduped
+# sort: fewer mods first (count plain "+"), then alphabetical
+rows.sort(key=lambda r: (r[1].count("+"), r[1].lower()))
+
+w = max((len(p) for _, p, _ in rows), default=0)
+for combo, plain, desc in rows:
+    pad = " " * (w - len(plain))
+    print(f"{combo}{pad}   {C_DESC}{desc}{RESET}")
+' | fzf \
+    --ansi \
+    --height=100% \
+    --prompt="Keybind> " \
+    --header="Hyprland keybinds  (esc / ctrl-c to close)" \
+    --no-mouse \
+    >/dev/null || true

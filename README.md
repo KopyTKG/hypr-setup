@@ -23,6 +23,43 @@ install.sh                 wire everything into ~/.config/, ~/.local/bin/, syste
 arch-strip-omarchy-system.sh  one-shot system migrator (snapper snapshot, repo strip, AUR rebuild)
 ```
 
+## Requirements
+
+Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-strip-omarchy-system.sh`) wires up `chaotic-aur` automatically; on a fresh box add it manually first.
+
+**Hyprland session** — `hyprland` `hypridle` `hyprlock` `hyprpicker` `hyprshot` `hyprsunset` `uwsm` `xdg-desktop-portal-hyprland` `sddm` `polkit-gnome` `plymouth`
+
+**Bar / launcher / notifications** — `waybar` `walker` `elephant` `mako` `swaybg` `swayosd`
+
+**Terminal & CLI** — `alacritty` (every `arch-*` installer + TUI runs here under `--class arch-*`) · `xdg-terminal-exec` · `fzf` `gum` `jq` `python` (all four required by the helper scripts) · `tmux` · `neovim` · `fastfetch`
+
+**Waybar tray TUIs** — `btop` (CPU/mem) · `bluetui` + `bluez bluez-utils` (bluetooth) · `impala` + `iwd` (wifi) · `wiremix` (audio)
+
+**Audio / input / misc** — `pipewire-pulse` (provides `pactl`) · `brightnessctl` · `libnotify` (`notify-send`) · `fcitx5`
+
+**Fonts** — `ttf-cascadia-mono-nerd` (hard-coded in waybar + alacritty)
+
+**Apps reached from default keybinds** — `chromium` (used by `arch-launch-webapp` + the Enterprise theme policy; `brave` works as a swap) · `nautilus` · optional: `discord-canary` `spotify`
+
+**Installer / migrator only** — `yay` (AUR helper for `term_install`) · `mise` (Development install menu) · `snapper` (pre-migration snapshot)
+
+**AMD + Steam** — `vulkan-radeon` `lib32-vulkan-radeon` `mesa-utils` (no RADV ⇒ no DXVK ⇒ Proton/Unity games fail at graphics init)
+
+One-shot bootstrap:
+
+```bash
+sudo pacman -S --needed \
+  hyprland hypridle hyprlock hyprpicker hyprshot hyprsunset uwsm \
+  xdg-desktop-portal-hyprland sddm polkit-gnome plymouth \
+  waybar mako swaybg swayosd \
+  alacritty xdg-terminal-exec fzf gum jq python tmux neovim fastfetch \
+  btop libnotify brightnessctl fcitx5 pipewire-pulse \
+  bluez bluez-utils iwd \
+  ttf-cascadia-mono-nerd \
+  chromium nautilus
+yay -S walker elephant bluetui impala wiremix   # if not in chaotic-aur yet
+```
+
 ## Install
 
 ```bash

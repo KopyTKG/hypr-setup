@@ -26,6 +26,7 @@ show_main() {
     "  Toggle" \
     "  Setup" \
     "  System" \
+    "  Keybinds" \
     "  Learn" \
     "  Power") in
     *Apps*)    walker ;;
@@ -35,6 +36,7 @@ show_main() {
     *Setup*)   show_setup ;;
     *Install*) show_install ;;
     *System*)  show_system ;;
+    *Keybinds*) uwsm-app -- alacritty --class arch-installer -e arch-keybinds ;;
     *Power*)   arch-power-menu ;;
   esac
 }
