@@ -63,7 +63,7 @@ sudo pacman -S --needed \
   hyprland hypridle hyprlock hyprpicker hyprshot hyprsunset uwsm \
   xdg-desktop-portal-hyprland sddm polkit-gnome plymouth \
   waybar mako swaybg swayosd \
-  alacritty xdg-terminal-exec fzf gum jq python neovim fastfetch starship \
+  alacritty fzf gum jq python neovim fastfetch starship \
   btop yazi libnotify brightnessctl fcitx5 pipewire-pulse \
   bluez bluez-utils iwd \
   ttf-cascadia-mono-nerd \
@@ -71,7 +71,7 @@ sudo pacman -S --needed \
   lazygit eza bat fd ripgrep git-delta tree net-tools lsof \
   jdk-openjdk kotlin maven gradle texlive-meta bun \
   chromium nautilus
-yay -S walker elephant bluetui impala wiremix   # if not in chaotic-aur yet
+yay -S walker elephant xdg-terminal-exec-git bluetui impala wiremix   # if not in chaotic-aur yet
 ```
 
 ## Install

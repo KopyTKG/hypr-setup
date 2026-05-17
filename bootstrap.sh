@@ -59,8 +59,8 @@ PACMAN_PKGS=(
   xdg-desktop-portal-hyprland sddm polkit-gnome plymouth
   # bar / launcher / notifications
   waybar mako swaybg swayosd
-  # terminal & CLI
-  alacritty xdg-terminal-exec fzf gum jq python neovim fastfetch starship
+  # terminal & CLI (xdg-terminal-exec is AUR-only as -git, installed below)
+  alacritty fzf gum jq python neovim fastfetch starship
   bash-completion
   # tray TUIs
   btop yazi libnotify brightnessctl fcitx5 pipewire-pulse
@@ -92,6 +92,7 @@ AUR_PKGS=(
   elephant-desktopapplications elephant-files elephant-menus
   elephant-providerlist elephant-runner elephant-symbols elephant-todo
   elephant-unicode elephant-websearch
+  xdg-terminal-exec-git
   bluetui impala wiremix
 )
 yay -S --needed --noconfirm "${AUR_PKGS[@]}"
