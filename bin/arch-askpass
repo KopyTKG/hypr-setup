@@ -1,0 +1,77 @@
+#!/bin/bash
+# arch-askpass — TUI askpass for SSH_ASKPASS (ssh-add, ssh-keygen, gcr-ssh-agent).
+#
+# Flow:
+#   1. Parse the keyfile path out of openssh's prompt ("Enter passphrase for /…:").
+#   2. Look up the passphrase in the gnome-keyring (via libsecret / secret-tool).
+#   3. Hit → print it on stdout, exit. Caller never sees a prompt.
+#   4. Miss → TUI gum prompt. Inline if we have a TTY; else a floating
+#      `arch-askpass`-class alacritty (sized in hypr/windows.conf). Store the
+#      result in the keyring so the next session is silent.
+#
+# Schema matches openssh's `ssh-add -K` (so a passphrase entered here is
+# reused by future `ssh-add -K`, and vice versa):
+#   attribute  unique = "ssh-store:<keyfile-path>"
+#
+# Exit 1 (and empty stdout) on cancel/failure, so the caller knows to abort.
+
+set -u
+
+prompt=${1:-Password:}
+title=${prompt%%:*}
+
+# ----- 1. parse keyfile path from openssh's standard prompt --------------------
+keyfile=
+if [[ $prompt =~ Enter\ passphrase\ for\ (.*) ]]; then
+  k=${BASH_REMATCH[1]}
+  k=${k% (will confirm)}        # confirm-prompt variant
+  k=${k%:}                      # trailing colon
+  keyfile=$k
+fi
+
+# ----- 2. keyring lookup -------------------------------------------------------
+if [[ -n $keyfile ]] && command -v secret-tool >/dev/null 2>&1; then
+  cached=$(secret-tool lookup unique "ssh-store:$keyfile" 2>/dev/null)
+  if [[ -n $cached ]]; then
+    printf '%s\n' "$cached"
+    exit 0
+  fi
+fi
+
+# ----- 3. TUI prompt -----------------------------------------------------------
+keyname=${keyfile##*/}
+keyname=${keyname:-key}
+
+# Inline path (caller has a TTY: `ssh-add` from a terminal) — gum stays terminal-native.
+read_password_inline() {
+  gum input --password --prompt "${keyname}: " --placeholder ""
+}
+
+# Headless path (caller has no TTY: hypr exec-once, gcr-ssh-agent, etc.) —
+# walker --password is a GTK4 password input that follows the same spotlight
+# theme as arch-menu. Single widget, masked input, Enter prints the password
+# on stdout, Esc exits without printing.
+read_password_floating() {
+  command -v walker >/dev/null || return 1
+  [[ -n ${WAYLAND_DISPLAY:-} || -n ${DISPLAY:-} ]] || return 1
+  # Uses the dedicated arch-askpass theme (walker/themes/arch-askpass/),
+  # which renders the static "Unlock SSH key" title above the input and
+  # "[esc] cancel    [enter] unlock" footer below. The dynamic key name
+  # goes in the input's placeholder.
+  walker --theme arch-askpass --password --placeholder "$keyname" 2>/dev/null
+}
+
+if [[ -t 0 && -t 1 ]]; then
+  pw=$(read_password_inline) || exit 1
+else
+  pw=$(read_password_floating) || exit 1
+fi
+[[ -z $pw ]] && exit 1
+
+# ----- 4. store in keyring -----------------------------------------------------
+if [[ -n $keyfile ]] && command -v secret-tool >/dev/null 2>&1; then
+  printf '%s' "$pw" | secret-tool store --label "Unlock password for $keyfile" \
+    unique "ssh-store:$keyfile" 2>/dev/null || true
+fi
+
+printf '%s\n' "$pw"

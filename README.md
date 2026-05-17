@@ -23,7 +23,7 @@ walker/                    launcher (dmenu mode for arch-menu)
 waybar/                    status bar + tray-menu CSS
 .bashrc                    interactive bash config (aliases, completions, language env)
 starship.toml              starship prompt (Tokyo Night, current dev stack)
-bootstrap.sh               fresh-box: install yay + every required package, then run install.sh
+bootstrap.sh               vanilla Arch → desktop: yay, pacman/AUR, GPU pick, services, install.sh
 install.sh                 wire everything into ~/.config/, ~/.local/bin/, system theme
 arch-strip-omarchy-system.sh  one-shot system migrator (snapper snapshot, repo strip, AUR rebuild)
 ```
@@ -46,33 +46,36 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Shell QoL (referenced by `.bashrc`)** — `lazygit` (alias `lz`) · `eza` · `bat` · `fd` (powers `FZF_DEFAULT_COMMAND`) · `ripgrep` · `git-delta` · `tree` · `net-tools` (`netstat`) · `lsof`
 
+**Keyring / SSH agent** — `gnome-keyring` (PAM unlock at SDDM login) · `libsecret` (`secret-tool`, used by `arch-askpass` for passphrase caching) · `gcr-4` (provides `gcr-ssh-agent.socket`, the user systemd ssh-agent)
+
 **Dev toolchains (work stack)** — most are managed by `mise` (`mise use --global …`); pacman covers the rest: `jdk-openjdk` `kotlin` `maven` `gradle` (Java/Kotlin/Android) · `texlive-meta` (LaTeX) · `bun` (RN/Expo/Preact). The Development install entry in `arch-menu` wraps `mise use --global` over a fzf-pick.
 
 **Apps reached from default keybinds** — `chromium` (used by `arch-launch-webapp` + the Enterprise theme policy; `brave` works as a swap) · `nautilus` · optional: `discord-canary` `spotify`
 
 **Installer / migrator only** — `yay` (AUR helper for `term_install`) · `mise` (Development install menu) · `snapper` (pre-migration snapshot)
 
-**AMD + Steam** — `vulkan-radeon` `lib32-vulkan-radeon` `mesa-utils` (no RADV ⇒ no DXVK ⇒ Proton/Unity games fail at graphics init)
+**GPU** — picked interactively in `bootstrap.sh` phase 4. AMD: `vulkan-radeon` `lib32-vulkan-radeon` `mesa-utils` `libva-mesa-driver` (no RADV ⇒ no DXVK ⇒ Proton/Unity games fail at graphics init). Intel: `vulkan-intel` `lib32-vulkan-intel` `intel-media-driver`. Nvidia: `nvidia(-open)` `nvidia-utils` `lib32-nvidia-utils` `nvidia-settings` (+ manual Wayland env tweaks).
 
 **Nvim submodule** — `nvim/install.sh` covers its own extras (`base-devel` `unzip` `tree-sitter-cli` `python-pip` `luarocks` `glab` …). Run it once after `./install.sh`.
 
-One-shot bootstrap — `./bootstrap.sh` does all of the below in one go (installs `yay` first if missing, then `pacman -S --needed` the extra/multilib block, then `yay -S --needed` the AUR block, then runs `./install.sh`):
+One-shot bootstrap — `./bootstrap.sh` takes a vanilla Arch box (post-`pacstrap`, no DM/audio/Wayland) all the way to a working desktop. Six phases:
 
-```bash
-sudo pacman -S --needed \
-  hyprland hypridle hyprlock hyprpicker hyprshot hyprsunset uwsm \
-  xdg-desktop-portal-hyprland sddm polkit-gnome plymouth \
-  waybar mako swaybg swayosd \
-  alacritty fzf gum jq python neovim fastfetch starship \
-  btop yazi libnotify brightnessctl fcitx5 pipewire-pulse \
-  bluez bluez-utils iwd \
-  ttf-cascadia-mono-nerd \
-  git openssh curl tar wl-clipboard \
-  lazygit eza bat fd ripgrep git-delta tree net-tools lsof \
-  jdk-openjdk kotlin maven gradle texlive-meta bun \
-  chromium nautilus
-yay -S walker elephant xdg-terminal-exec-git bluetui impala wiremix   # if not in chaotic-aur yet
-```
+1. **yay** — `base-devel` + `git`, build `yay-bin` from AUR if missing
+2. **pacman** — `--needed` install of the extra/multilib stack (Hyprland session, pipewire+wireplumber, qt6-wayland, xorg-xwayland, terminals, fonts, dev toolchains, keyring, tray TUIs `bluetui`/`impala`/`wiremix`, `linux-lts` + headers, …)
+3. **AUR** — `walker-bin`, full `elephant-*-bin` stack, `xdg-terminal-exec-git` (prefers `-bin`/stable variants when upstream offers them; only `xdg-terminal-exec` is `-git` because no stable release exists)
+4. **GPU** — `lspci` detect, then `gum choose` between **AMD** / **Intel** / **Nvidia open** / **Nvidia closed** / **Skip**
+5. **Services + network** — enables `sddm`, `bluetooth`, `iwd`, `systemd-resolved`; writes `/etc/iwd/main.conf` (DHCP+DNS via systemd) and points `/etc/resolv.conf` at the systemd stub; runs `xdg-user-dirs-update`
+6. **install.sh** — symlink configs, browser policy, systemd user env, gcr-ssh-agent, SDDM + Plymouth themes
+
+The package lists are inline at the top of `bootstrap.sh`. Re-running is safe: pacman/yay use `--needed`, services are `is-enabled`-checked, config files are only written when missing.
+
+`linux-lts` is installed alongside whatever kernel you pacstrapped with. mkinitcpio's pacman hook auto-generates `initramfs-linux-lts.img`. The bootloader entry depends on what you use:
+
+- **Limine** (with `limine-mkinitcpio-hook`): entry auto-added by pacman hook — no command needed. Fallback: `sudo limine-update`.
+- **GRUB**: `sudo grub-mkconfig -o /boot/grub/grub.cfg`
+- **systemd-boot**: copy `/boot/loader/entries/arch.conf` → `arch-lts.conf` and replace `linux` with `linux-lts` in the `linux=`/`initrd=` lines
+
+The final message of `bootstrap.sh` detects which bootloader you have and tells you what to do (or confirms the entry's already there for Limine).
 
 ## Install
 
@@ -109,11 +112,27 @@ git submodule update --remote nvim
 2. Symlink standalone files (`chromium-flags.conf`, `.bashrc`, `starship.toml`)
 3. Symlink `bin/arch-*` into `~/.local/bin/`
 4. Apply system-wide Chromium / Brave theme policy (writes `/etc/{chromium,brave}/policies/managed/color.json`)
-5. Push `FZF_DEFAULT_OPTS` to live systemd user env + write GTK dark-theme settings
+5. Push `FZF_DEFAULT_OPTS` to live systemd user env + write GTK dark-theme settings, enable `gcr-ssh-agent.socket`
 6. Install SDDM stone theme (login screen) — needs sudo
 7. Install Arch Stone Plymouth theme (boot splash) — needs sudo, rebuilds initramfs
 
 Existing files are backed up to `<path>.bak.<timestamp>` before linking.
+
+## Keyring / SSH agent
+
+`environment.d/ssh-agent.conf` points `SSH_AUTH_SOCK` at `gcr-ssh-agent` (`/run/user/UID/gcr/ssh`) and sets `SSH_ASKPASS=arch-askpass`. From a terminal (`ssh-add` typed at a shell) `arch-askpass` uses `gum input --password` inline. From a no-TTY caller (the `exec-once` in `hypr/autostart.conf`, gcr-ssh-agent, etc.) it pops `walker --password` — the same GTK4 launcher widget that powers `arch-menu`, themed with the stone spotlight palette.
+
+`arch-askpass` reads/writes the keyring via `secret-tool` (libsecret). PAM unlocks the gnome-keyring at SDDM login (`pam_gnome_keyring.so auto_start` is already in `/etc/pam.d/sddm`), so:
+
+- **First boot** — hypr's `exec-once = ssh-add ~/.ssh/dev/dev_sign` (in `hypr/autostart.conf`) triggers `arch-askpass`; a floating TUI prompt asks for the passphrase and stores it under `unique=ssh-store:<keypath>`.
+- **Every later boot** — keyring is unlocked at SDDM login → `arch-askpass` returns the cached passphrase silently → keys ready before the first commit / push.
+
+For other keys to lazy-load on first SSH use, add this to your `~/.ssh/config` (top of file, outside any `Host` block):
+
+```
+Host *
+  AddKeysToAgent yes
+```
 
 ## arch-menu (SUPER+ALT+SPACE)
 
@@ -151,6 +170,7 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-killactive`               | SUPER+W; closes walker layer if visible, else `killactive`         |
 | `arch-launch-webapp <class> <url>` | focus existing chromium-app window by class, else launch it    |
 | `arch-apply-browser-theme`      | copy `chromium/policies/managed/color.json` to system policy dir   |
+| `arch-askpass`                  | Password prompt (`SSH_ASKPASS`); libsecret-cached. Inline `gum` from a TTY, `walker --password` headless |
 
 ## Themes
 

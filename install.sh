@@ -55,6 +55,15 @@ if [[ -f "$HOME/.config/environment.d/fzf.conf" ]]; then
   gray "  systemd FZF_DEFAULT_OPTS set"
 fi
 
+# Enable gcr-ssh-agent socket (lazy-activated; provides SSH_AUTH_SOCK at
+# $XDG_RUNTIME_DIR/gcr/ssh). environment.d/ssh-agent.conf points SSH_AUTH_SOCK
+# and SSH_ASKPASS at this socket + the TUI arch-askpass.
+if systemctl --user list-unit-files gcr-ssh-agent.socket >/dev/null 2>&1; then
+  systemctl --user enable --now gcr-ssh-agent.socket 2>/dev/null \
+    && gray "  gcr-ssh-agent.socket enabled" \
+    || gray "  gcr-ssh-agent.socket: already enabled or failed (check 'systemctl --user status gcr-ssh-agent.socket')"
+fi
+
 # GTK / libadwaita theme
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'  || true
 gsettings set org.gnome.desktop.interface accent-color 'slate'         || true
