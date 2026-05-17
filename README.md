@@ -120,7 +120,7 @@ Existing files are backed up to `<path>.bak.<timestamp>` before linking.
 
 ## Keyring / SSH agent
 
-`environment.d/ssh-agent.conf` points `SSH_AUTH_SOCK` at `gcr-ssh-agent` (`/run/user/UID/gcr/ssh`) and sets `SSH_ASKPASS=arch-askpass`. From a terminal (`ssh-add` typed at a shell) `arch-askpass` uses `gum input --password` inline. From a no-TTY caller (the `exec-once` in `hypr/autostart.conf`, gcr-ssh-agent, etc.) it pops `walker --password` — the same GTK4 launcher widget that powers `arch-menu`, themed with the stone spotlight palette.
+`environment.d/ssh-agent.conf` points `SSH_AUTH_SOCK` at `gcr-ssh-agent` (`/run/user/UID/gcr/ssh`) and sets `SSH_ASKPASS=arch-askpass`. From a terminal (`ssh-add` typed at a shell) `arch-askpass` uses `gum input --password` inline. From a no-TTY caller (the `exec-once` in `hypr/autostart.conf`, gcr-ssh-agent, etc.) it pops `walker --password` — same GTK4 launcher widget that powers `arch-menu`, default spotlight theme; the key name shows in the input placeholder.
 
 `arch-askpass` reads/writes the keyring via `secret-tool` (libsecret). PAM unlocks the gnome-keyring at SDDM login (`pam_gnome_keyring.so auto_start` is already in `/etc/pam.d/sddm`), so:
 

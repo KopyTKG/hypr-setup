@@ -1,9 +1,7 @@
 force_keyboard_focus = true                                                 # forces keyboard forcus to stay in Walker
 selection_wrap = true                                                       # wrap list if at bottom or top
 theme = "spotlight"
-additional_themes = ["arch-askpass"]                                        # extra themes selectable via --theme (e.g. password prompt)
 hide_action_hints = true                                                    # globally hide the action hints
-as_window = true                                                            # regular GTK window (not layer-shell) — lets hypr windowrules center it
 
 [placeholders]
 "default" = { input = " Search...", list = "No Results" } # placeholders for input and empty list, key is the providers name, so f.e. "desktopapplications" or "menus:other"

@@ -24,8 +24,11 @@ title=${prompt%%:*}
 keyfile=
 if [[ $prompt =~ Enter\ passphrase\ for\ (.*) ]]; then
   k=${BASH_REMATCH[1]}
+  k=${k%$'\n'}                  # trailing newline (some askpass callers)
   k=${k% (will confirm)}        # confirm-prompt variant
   k=${k%:}                      # trailing colon
+  k=${k%\"}; k=${k%\'}          # trailing quote (ssh-add wraps paths in '...')
+  k=${k#\"}; k=${k#\'}          # leading quote
   keyfile=$k
 fi
 
@@ -48,17 +51,13 @@ read_password_inline() {
 }
 
 # Headless path (caller has no TTY: hypr exec-once, gcr-ssh-agent, etc.) —
-# walker --password is a GTK4 password input that follows the same spotlight
-# theme as arch-menu. Single widget, masked input, Enter prints the password
-# on stdout, Esc exits without printing.
+# walker --password uses the default spotlight theme (top-anchored, matches
+# arch-menu). Title context goes in the placeholder since we can't have a
+# separate title widget in this layout.
 read_password_floating() {
   command -v walker >/dev/null || return 1
   [[ -n ${WAYLAND_DISPLAY:-} || -n ${DISPLAY:-} ]] || return 1
-  # Uses the dedicated arch-askpass theme (walker/themes/arch-askpass/),
-  # which renders the static "Unlock SSH key" title above the input and
-  # "[esc] cancel    [enter] unlock" footer below. The dynamic key name
-  # goes in the input's placeholder.
-  walker --theme arch-askpass --password --placeholder "$keyname" 2>/dev/null
+  walker --password --placeholder "Unlock SSH key — $keyname" 2>/dev/null
 }
 
 if [[ -t 0 && -t 1 ]]; then
