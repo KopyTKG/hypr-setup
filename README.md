@@ -23,6 +23,7 @@ walker/                    launcher (dmenu mode for arch-menu)
 waybar/                    status bar + tray-menu CSS
 .bashrc                    interactive bash config (aliases, completions, language env)
 starship.toml              starship prompt (Tokyo Night, current dev stack)
+bootstrap.sh               fresh-box: install yay + every required package, then run install.sh
 install.sh                 wire everything into ~/.config/, ~/.local/bin/, system theme
 arch-strip-omarchy-system.sh  one-shot system migrator (snapper snapshot, repo strip, AUR rebuild)
 ```
@@ -55,7 +56,7 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Nvim submodule** — `nvim/install.sh` covers its own extras (`base-devel` `unzip` `tree-sitter-cli` `python-pip` `luarocks` `glab` …). Run it once after `./install.sh`.
 
-One-shot bootstrap:
+One-shot bootstrap — `./bootstrap.sh` does all of the below in one go (installs `yay` first if missing, then `pacman -S --needed` the extra/multilib block, then `yay -S --needed` the AUR block, then runs `./install.sh`):
 
 ```bash
 sudo pacman -S --needed \
@@ -75,8 +76,17 @@ yay -S walker elephant bluetui impala wiremix   # if not in chaotic-aur yet
 
 ## Install
 
+Fresh box (installs yay + every package + wires the configs):
+
 ```bash
 git clone --recurse-submodules git@gitlab.com:kopytkg/hypr-setup.git ~/Projects/hypr-setup
+cd ~/Projects/hypr-setup
+./bootstrap.sh
+```
+
+Already have the packages — just wire the configs:
+
+```bash
 cd ~/Projects/hypr-setup
 ./install.sh
 ```
