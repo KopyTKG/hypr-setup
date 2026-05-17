@@ -1,0 +1,112 @@
+@import "colors.css";
+
+* {
+  all: unset;
+}
+
+* {
+  font-family: "CaskaydiaMono Nerd Font", monospace;
+  font-size: 13px;
+  color: @text;
+}
+
+scrollbar { opacity: 0; }
+
+.normal-icons { -gtk-icon-size: 16px; }
+.large-icons  { -gtk-icon-size: 56px; }
+
+/* Outer wrapper is transparent — the two children become the visible pills */
+.box-wrapper {
+  background: transparent;
+}
+
+/* Input pill — Spotlight-style: tall rounded bar with big font */
+.search-container {
+  background: #1c1917;
+  border: 1px solid rgba(245, 245, 244, 0.5);
+  border-radius: 14px;
+  padding: 16px 22px;
+}
+
+.input {
+  font-size: 22px;
+  color: @foreground;
+}
+
+.input placeholder { opacity: 0.45; }
+
+.input:focus,
+.input:active {
+  box-shadow: none;
+  outline: none;
+}
+
+/* Results pill — separate block below the input */
+.content-container {
+  background: #1c1917;
+  border: 1px solid rgba(245, 245, 244, 0.5);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.scroll { background: transparent; }
+
+.list {
+  background: transparent;
+}
+
+/* Single-column list — icon left, name right, full-width rows */
+.list > child {
+  padding: 0;
+  margin: 2px 4px;
+  border-radius: 10px;
+}
+
+.list > child:hover {
+  background: rgba(245, 245, 244, 0.05);
+}
+
+.list > child:selected {
+  background: rgba(68, 64, 60, 0.7);              /* stone-700 */
+}
+
+.list > child:selected .item-text {
+  color: @selected-text;
+}
+
+.item-box {
+  padding: 8px 14px;
+}
+
+.item-image {
+  -gtk-icon-size: 32px;
+  margin-right: 12px;
+}
+
+.item-text {
+  font-size: 13px;
+  color: @text;
+}
+
+.item-subtext {
+  font-size: 0px;
+  min-height: 0px;
+  margin: 0;
+  padding: 0;
+}
+
+.current { font-style: italic; }
+
+.placeholder,
+.elephant-hint {
+  color: rgba(214, 211, 209, 0.5);
+  font-style: italic;
+  padding: 24px 0;
+}
+
+.keybinds {
+  background: transparent;
+  border-top: 1px solid rgba(245, 245, 244, 0.12);
+  padding: 8px 4px 0 4px;
+  margin-top: 8px;
+}
