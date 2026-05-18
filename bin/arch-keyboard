@@ -1,0 +1,24 @@
+#!/bin/bash
+# arch-keyboard — pick keyboard layout via spot tile picker, apply via hyprctl.
+#
+# Layouts and their order are defined in ~/.config/hypr/input.conf (kb_layout).
+# Keep ~/.config/spot/keyboard.toml in sync with that list — tile values are
+# 0-based indices into kb_layout.
+
+set -e
+
+# Detect current layout index from the main keyboard's active_keymap.
+current=$(hyprctl devices -j 2>/dev/null | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+kbs = d.get("keyboards", [])
+main = next((k for k in kbs if k.get("main")), kbs[0] if kbs else None)
+keymap = (main or {}).get("active_keymap", "")
+# Map active_keymap label -> index into kb_layout (us,cz).
+mapping = {"English (US)": "0", "Czech": "1"}
+print(mapping.get(keymap, "0"))
+' 2>/dev/null || echo 0)
+
+choice=$(SPOT_DEFAULT="$current" spot ~/.config/spot/keyboard.toml) || exit 0
+
+[[ -n $choice ]] && hyprctl switchxkblayout all "$choice" >/dev/null

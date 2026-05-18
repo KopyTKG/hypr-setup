@@ -1,0 +1,28 @@
+# Keyboard layout picker — tile picker matching kb_layout in hypr/input.conf.
+#
+#   spot ~/.config/spot/keyboard.toml
+#
+# Caller passes SPOT_DEFAULT=<index> via env to pre-select the current layout.
+# Values are 0-based indices into the kb_layout list.
+
+title    = "Keyboard Layout"
+anchor   = "center"
+width    = 260
+style    = "spot.css"
+keyboard = "exclusive"
+
+[[items]]
+type    = "tiles"
+id      = "layout"
+columns = 2
+
+[[items.tiles]]
+icon  = "US"
+value = "0"
+
+[[items.tiles]]
+icon  = "CZ"
+value = "1"
+
+[submit]
+stdout = "{layout}"

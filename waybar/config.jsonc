@@ -104,7 +104,7 @@
     "on-click-right": "pamixer -t",
     "tooltip-format": "Playing at {volume}%",
     "scroll-step": 5,
-    "format-muted": "",
+    "format-muted": "",
     "format-icons": {
       "headphone": "",
       "headset": "",
@@ -149,6 +149,7 @@
   "hyprland/language": {
     "format": "{}",
     "format-cs": "CZ",
-    "format-en": "US"
+    "format-en": "US",
+    "on-click": "arch-keyboard"
   }
 }
