@@ -29,6 +29,7 @@ show_main() {
     "  Bookmarks" \
     "  System" \
     "  Remote" \
+    "  Work" \
     "  Keybinds" \
     "  Learn" \
     "  Power") in
@@ -41,6 +42,7 @@ show_main() {
     *Remove*)  show_remove ;;
     *System*)  show_system ;;
     *Remote*)  show_remote ;;
+    *Work*)    show_work ;;
     *Keybinds*) uwsm-app -- alacritty --class arch-installer -e arch-keybinds ;;
     *Bookmarks*) show_bookmarks ;;
     *Power*)   arch-power-menu ;;
@@ -415,6 +417,18 @@ show_remove_font() {
     *Bitstream*) term_remove ttf-bitstream-vera-mono-nerd ;;
     *Iosevka*) term_remove ttf-iosevka-nerd ;;
     *Back*)      show_remove ;;
+  esac
+}
+
+
+# ---------- Work ----------
+WORK_DIR="$HOME/Projects/hypr-setup/work-scripts"
+show_work() {
+  case $(menu "Work" \
+    "  API gen" \
+    "  Back") in
+    *"API gen"*) uwsm-app -- alacritty --class arch-installer -e "$WORK_DIR/work-apigen" ;;
+    *Back*)      show_main ;;
   esac
 }
 

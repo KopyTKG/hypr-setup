@@ -13,3 +13,6 @@
 .DS_Store
 *.swp
 *~
+
+# Nested side-repos (own .git, tracked elsewhere)
+/work-scripts/
