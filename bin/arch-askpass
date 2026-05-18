@@ -51,13 +51,13 @@ read_password_inline() {
 }
 
 # Headless path (caller has no TTY: hypr exec-once, gcr-ssh-agent, etc.) —
-# walker --password uses the default spotlight theme (top-anchored, matches
-# arch-menu). Title context goes in the placeholder since we can't have a
-# separate title widget in this layout.
+# spot password.toml renders a layer-shell prompt; SPOT_TITLE supplies the
+# per-key context.
 read_password_floating() {
-  command -v walker >/dev/null || return 1
+  command -v spot >/dev/null || return 1
   [[ -n ${WAYLAND_DISPLAY:-} || -n ${DISPLAY:-} ]] || return 1
-  walker --password --placeholder "Unlock SSH key — $keyname" 2>/dev/null
+  SPOT_TITLE="Unlock SSH key — $keyname" \
+    spot ~/.config/spot/password.toml 2>/dev/null
 }
 
 if [[ -t 0 && -t 1 ]]; then

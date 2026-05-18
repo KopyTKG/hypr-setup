@@ -1,0 +1,34 @@
+# Power profile picker — three tiles (saver / balanced / performance).
+#
+#   spot ~/.config/spot/power-profile.toml
+#
+# Caller passes SPOT_DEFAULT=<profile> via env to pre-select the current one.
+
+title    = "Power Profile"
+anchor   = "center"
+width    = 420
+style    = "spot.css"
+keyboard = "exclusive"
+
+[[items]]
+type    = "tiles"
+id      = "profile"
+columns = 3
+
+[[items.tiles]]
+icon  = ""
+label = "Power saver"
+value = "power-saver"
+
+[[items.tiles]]
+icon  = ""
+label = "Balanced"
+value = "balanced"
+
+[[items.tiles]]
+icon  = ""
+label = "Performance"
+value = "performance"
+
+[submit]
+stdout = "{profile}"

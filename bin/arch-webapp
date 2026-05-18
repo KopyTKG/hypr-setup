@@ -4,7 +4,7 @@
 # calls arch-launch-webapp (the .desktop files arch-webapp-install creates).
 #
 # Usage:
-#   arch-webapp                # walker-dmenu picker over installed webapps
+#   arch-webapp                # spot picker over installed webapps
 #   arch-webapp "<Name>"       # exact `Name=` match from the .desktop file
 
 set -e
@@ -24,7 +24,7 @@ NAME="$1"
 
 if [[ -z $NAME ]]; then
   NAME=$(list_webapps | cut -f1 | sort -u \
-         | walker --dmenu --width 300 --height 520 --placeholder "Webapp")
+         | SPOT_TITLE="Webapp" spot ~/.config/spot/menu.toml) || exit 0
   [[ -z $NAME ]] && exit 0
 fi
 

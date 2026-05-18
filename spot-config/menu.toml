@@ -1,0 +1,21 @@
+# Dmenu-style picker: pipe newline-delimited items, get selection on stdout.
+#
+#   printf '%s\n' a b c | spot ~/.config/spot/menu.toml
+#
+# Caller can override placeholder via SPOT_PLACEHOLDER env (read in a wrapper)
+# — for now placeholder is generic.
+
+anchor   = "center"
+width    = 320
+style    = "spot.css"
+keyboard = "exclusive"
+
+[[items]]
+type        = "list"
+id          = "choice"
+placeholder = "Search…"
+stdin       = true
+height      = 480
+
+[submit]
+stdout = "{choice}"

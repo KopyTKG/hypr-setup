@@ -1,22 +1,13 @@
 #!/bin/bash
-# Power menu: walker-dmenu picker, dispatches to systemctl/hyprlock/uwsm/waybar.
+# Power menu: spot tile picker, dispatches to systemctl/hyprlock/uwsm/waybar.
 
-choice=$(printf '%s\n' \
-  "  Lock" \
-  "  Suspend" \
-  "  Hibernate" \
-  "  Logout" \
-  "  Restart" \
-  "  Shutdown" \
-  "  Restart Waybar" \
-  | walker --dmenu --placeholder "Power" --width 400 --height 465)
+choice=$(spot ~/.config/spot/power.toml) || exit 0
 
 case "$choice" in
-  *"Restart Waybar"*) pkill -9 -x waybar; setsid uwsm-app -- waybar >/dev/null 2>&1 & disown ;;
-  *Lock*)             hyprlock ;;
-  *Suspend*)          systemctl suspend ;;
-  *Hibernate*)        systemctl hibernate ;;
-  *Logout*)           nohup bash -c "sleep 1 && uwsm stop" >/dev/null 2>&1 & ;;
-  *Restart*)          nohup bash -c "sleep 1 && systemctl reboot --no-wall" >/dev/null 2>&1 & ;;
-  *Shutdown*)         nohup bash -c "sleep 1 && systemctl poweroff --no-wall" >/dev/null 2>&1 & ;;
+  lock)      hyprlock ;;
+  suspend)   systemctl suspend ;;
+  hibernate) systemctl hibernate ;;
+  logout)    nohup bash -c "sleep 1 && uwsm stop" >/dev/null 2>&1 & ;;
+  restart)   nohup bash -c "sleep 1 && systemctl reboot --no-wall" >/dev/null 2>&1 & ;;
+  shutdown)  nohup bash -c "sleep 1 && systemctl poweroff --no-wall" >/dev/null 2>&1 & ;;
 esac

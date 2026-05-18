@@ -1,6 +1,10 @@
 #!/bin/bash
-# Dismiss walker if it's the topmost layer surface; otherwise close the active window.
-if hyprctl layers 2>/dev/null | grep -q 'namespace: walker'; then
+# SUPER+W: dismiss the topmost layer surface we own (spot or walker),
+# otherwise close the active toplevel window.
+layers=$(hyprctl layers 2>/dev/null)
+if grep -q 'namespace: spot' <<<"$layers"; then
+  pkill -TERM -x spot
+elif grep -q 'namespace: walker' <<<"$layers"; then
   walker --close
 else
   hyprctl dispatch killactive

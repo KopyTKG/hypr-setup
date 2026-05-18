@@ -32,6 +32,7 @@ for name in alacritty arch-menu btop elephant environment.d fastfetch hypr mako 
 done
 
 cyan "[2/7] Link standalone config files"
+link_to "$REPO/spot-config"                  "$HOME/.config/spot"
 link_to "$REPO/chromium/chromium-flags.conf" "$HOME/.config/chromium-flags.conf"
 link_to "$REPO/.bashrc"        "$HOME/.bashrc"
 link_to "$REPO/starship.toml"  "$HOME/.config/starship.toml"

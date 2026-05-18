@@ -1,12 +1,10 @@
 #!/bin/bash
-# arch-menu — hierarchical walker-dmenu launcher (vanilla, post-omarchy)
-
-WALKER=(walker --dmenu --width 300 --height 520)
+# arch-menu — hierarchical spot-based launcher (vanilla, post-omarchy)
 
 # `menu` takes a title then any number of items. Each item is one menu line.
 menu() {
   local title="$1"; shift
-  printf '%s\n' "$@" | "${WALKER[@]}" --placeholder "$title"
+  printf '%s\n' "$@" | SPOT_TITLE="$title" spot ~/.config/spot/menu.toml
 }
 
 term_install() {

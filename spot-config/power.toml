@@ -1,0 +1,47 @@
+# Power menu — 3×2 tile picker for session/machine power actions.
+#
+#   spot ~/.config/spot/power.toml
+
+title    = "Power Menu"
+anchor   = "center"
+width    = 440
+style    = "spot.css"
+keyboard = "exclusive"
+
+[[items]]
+type    = "tiles"
+id      = "action"
+columns = 3
+
+[[items.tiles]]
+icon  = ""
+label = "Lock"
+value = "lock"
+
+[[items.tiles]]
+icon  = ""
+label = "Suspend"
+value = "suspend"
+
+[[items.tiles]]
+icon  = ""
+label = "Hibernate"
+value = "hibernate"
+
+[[items.tiles]]
+icon  = ""
+label = "Logout"
+value = "logout"
+
+[[items.tiles]]
+icon  = ""
+label = "Restart"
+value = "restart"
+
+[[items.tiles]]
+icon  = ""
+label = "Shutdown"
+value = "shutdown"
+
+[submit]
+stdout = "{action}"
