@@ -1,0 +1,22 @@
+#!/bin/bash
+# arch-floatterm — spawn a floating alacritty window with the given window class.
+# The class is what Hyprland windowrules match on to float/style the spawn.
+#
+# Usage:
+#   arch-floatterm <class> <command...>
+#
+# Examples:
+#   arch-floatterm arch-btop btop
+#   arch-floatterm arch-impala sh -c 'rfkill unblock wifi; exec impala'
+#   setsid -f arch-floatterm ssh-session ssh user@host & disown
+#
+# Replaces the verbose `uwsm-app -- alacritty --class X -e Y` pattern.
+
+if [[ $# -lt 2 ]]; then
+  echo "usage: arch-floatterm <class> <command...>" >&2
+  exit 2
+fi
+
+class=$1
+shift
+exec uwsm-app -- alacritty --class "$class" -e "$@"

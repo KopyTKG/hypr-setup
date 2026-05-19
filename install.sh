@@ -6,10 +6,7 @@ set -e
 REPO=$(dirname "$(readlink -f "$0")")
 TS=$(date +%s)
 
-cyan()  { printf '\033[36m%s\033[0m\n' "$*"; }
-green() { printf '\033[32m%s\033[0m\n' "$*"; }
-gray()  { printf '\033[90m%s\033[0m\n' "$*"; }
-red()   { printf '\033[31m%s\033[0m\n' "$*" >&2; }
+source "$REPO/lib/colors.sh"
 
 link_to() {
   local src=$1 dst=$2

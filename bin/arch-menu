@@ -41,7 +41,7 @@ show_main() {
     *System*)  show_system ;;
     *Remote*)  show_remote ;;
     *Work*)    show_work ;;
-    *Keybinds*) uwsm-app -- alacritty --class arch-installer -e arch-keybinds ;;
+    *Keybinds*) arch-floatterm arch-installer arch-keybinds ;;
     *Bookmarks*) show_bookmarks ;;
     *Power*)   arch-power-menu ;;
   esac
@@ -142,14 +142,14 @@ show_install() {
     "  Font" \
     "  ProtonGE" \
     "  Back") in
-    *Pacman*)      uwsm-app -- alacritty --class arch-installer -e arch-pacman-install ;;
-    *AUR*)         uwsm-app -- alacritty --class arch-installer -e arch-aur-install ;;
+    *Pacman*)      arch-floatterm arch-installer arch-pacman-install ;;
+    *AUR*)         arch-floatterm arch-installer arch-aur-install ;;
     *Terminal*)    show_install_terminal ;;
     *Gaming*)      show_install_gaming ;;
     *Font*)        show_install_font ;;
-    *Development*) uwsm-app -- alacritty --class arch-installer -e arch-mise-install ;;
+    *Development*) arch-floatterm arch-installer arch-mise-install ;;
     *Webapp*)      show_install_webapp ;;
-    *ProtonGE*)   uwsm-app -- alacritty --class arch-installer -e arch-protonge-install ;;
+    *ProtonGE*)   arch-floatterm arch-installer arch-protonge-install ;;
     *Back*)        show_main ;;
   esac
 }
@@ -212,8 +212,8 @@ show_install_webapp() {
     "  Install" \
     "  Remove" \
     "  Back") in
-    *Install*) uwsm-app -- alacritty --class arch-installer -e arch-webapp-install ;;
-    *Remove*)  uwsm-app -- alacritty --class arch-installer -e arch-webapp-remove ;;
+    *Install*) arch-floatterm arch-installer arch-webapp-install ;;
+    *Remove*)  arch-floatterm arch-installer arch-webapp-remove ;;
     *Back*)    show_install ;;
   esac
 }
@@ -233,7 +233,7 @@ show_system() {
     *Time*)         notify-send -u low "$(date +"%A %H:%M  ·  %d %B %Y  ·  Week %V")" ;;
     *"Power menu"*) arch-power-menu ;;
     *Info*)         uwsm-app -- xdg-terminal-exec bash -c "fastfetch; read -p 'Press Enter to close.'" ;;
-    *Files*)        uwsm-app -- alacritty --class yazi -e yazi ;;
+    *Files*)        arch-floatterm yazi yazi ;;
     *Back*)         show_main ;;
   esac
 }
@@ -274,7 +274,7 @@ show_remote() {
   pick=$(menu "Remote" "${items[@]}")
   case "$pick" in
     *Back*)   show_main ;;
-    *Custom*) uwsm-app -- alacritty --class arch-installer -e arch-remote-custom ;;
+    *Custom*) arch-floatterm arch-installer arch-remote-custom ;;
     "")       : ;;
     *)        group="${pick#*  }"; show_remote_group "$group" ;;
   esac
@@ -293,7 +293,7 @@ show_remote_group() {
     *Back*)  show_remote ;;
     "")      : ;;
     *)       host="${pick##* }"
-             [[ -n $host ]] && setsid -f uwsm-app -- alacritty --class ssh-session -e ssh "$host" >/dev/null 2>&1 & disown ;;
+             [[ -n $host ]] && setsid -f arch-floatterm ssh-session ssh "$host" >/dev/null 2>&1 & disown ;;
   esac
 }
 
@@ -353,14 +353,14 @@ show_remove() {
     "  Font" \
     "  ProtonGE" \
     "  Back") in
-    *Pacman*)      uwsm-app -- alacritty --class arch-installer -e arch-pacman-remove ;;
-    *AUR*)         uwsm-app -- alacritty --class arch-installer -e arch-aur-remove ;;
-    *Webapp*)      uwsm-app -- alacritty --class arch-installer -e arch-webapp-remove ;;
-    *Development*) uwsm-app -- alacritty --class arch-installer -e arch-mise-remove ;;
+    *Pacman*)      arch-floatterm arch-installer arch-pacman-remove ;;
+    *AUR*)         arch-floatterm arch-installer arch-aur-remove ;;
+    *Webapp*)      arch-floatterm arch-installer arch-webapp-remove ;;
+    *Development*) arch-floatterm arch-installer arch-mise-remove ;;
     *Gaming*)      show_remove_gaming ;;
     *Terminal*)    show_remove_terminal ;;
     *Font*)        show_remove_font ;;
-    *ProtonGE*)    uwsm-app -- alacritty --class arch-installer -e arch-protonge-remove ;;
+    *ProtonGE*)    arch-floatterm arch-installer arch-protonge-remove ;;
     *Back*)        show_main ;;
   esac
 }
@@ -425,7 +425,7 @@ show_work() {
   case $(menu "Work" \
     "  API gen" \
     "  Back") in
-    *"API gen"*) uwsm-app -- alacritty --class arch-installer -e "$WORK_DIR/work-apigen" ;;
+    *"API gen"*) arch-floatterm arch-installer "$WORK_DIR/work-apigen" ;;
     *Back*)      show_main ;;
   esac
 }

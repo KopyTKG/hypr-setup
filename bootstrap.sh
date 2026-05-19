@@ -17,10 +17,7 @@
 set -e
 REPO=$(dirname "$(readlink -f "$0")")
 
-cyan()  { printf '\033[36m%s\033[0m\n' "$*"; }
-green() { printf '\033[32m%s\033[0m\n' "$*"; }
-gray()  { printf '\033[90m%s\033[0m\n' "$*"; }
-red()   { printf '\033[31m%s\033[0m\n' "$*" >&2; }
+source "$REPO/lib/colors.sh"
 
 if [[ $EUID -eq 0 ]]; then
   red "Don't run as root. yay refuses, and install.sh expects to write into \$HOME."

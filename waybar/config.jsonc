@@ -48,7 +48,7 @@
   "cpu": {
     "interval": 5,
     "format": "󰍛",
-    "on-click": "uwsm-app -- alacritty --class arch-btop -e btop"
+    "on-click": "arch-floatterm arch-btop btop"
   },
   "clock": {
     "format": "{:L%A %H:%M (%d.%m.%Y)}",
@@ -66,7 +66,7 @@
     "tooltip-format-disconnected": "Disconnected",
     "interval": 3,
     "spacing": 1,
-    "on-click": "uwsm-app -- alacritty --class arch-impala -e sh -c 'rfkill unblock wifi; exec impala'"
+    "on-click": "arch-floatterm arch-impala sh -c 'rfkill unblock wifi; exec impala'"
   },
   "battery": {
     "format": "{capacity}% {icon}",
@@ -95,12 +95,12 @@
     "format-connected": "󰂱",
     "format-no-controller": "󰂲",
     "tooltip-format": "Devices connected: {num_connections}",
-    "on-click": "uwsm-app -- alacritty --class arch-bluetui -e sh -c 'rfkill unblock bluetooth; exec bluetui'"
+    "on-click": "arch-floatterm arch-bluetui sh -c 'rfkill unblock bluetooth; exec bluetui'"
   },
   "pulseaudio": {
     "format": "{icon}",
     "format-bluetooth": "{icon}",
-    "on-click": "uwsm-app -- alacritty --class arch-wiremix -e wiremix",
+    "on-click": "arch-floatterm arch-wiremix wiremix",
     "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
     "tooltip-format": "Playing at {volume}%",
     "scroll-step": 5,

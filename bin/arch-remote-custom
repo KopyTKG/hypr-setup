@@ -25,7 +25,6 @@ PORT="${PORT:-22}"
 
 # Spawn the real ssh session in a tiled terminal and exit so the floating
 # form window closes.
-setsid -f uwsm-app -- alacritty --class ssh-session \
-    -e ssh "${USER}@${HOST}" -p "${PORT}" >/dev/null 2>&1 &
+setsid -f arch-floatterm ssh-session ssh "${USER}@${HOST}" -p "${PORT}" >/dev/null 2>&1 &
 disown
 exit 0
