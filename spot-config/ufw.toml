@@ -1,0 +1,34 @@
+# UFW picker — 3-tile enable / disable / reload.
+#
+#   spot ~/.config/spot/ufw.toml
+#
+# Caller (arch-ufw) sets SPOT_TITLE to reflect the live status, e.g.
+#   SPOT_TITLE="UFW: active"  spot ~/.config/spot/ufw.toml
+
+anchor   = "center"
+width    = 380
+style    = "spot.css"
+keyboard = "exclusive"
+
+[[items]]
+type    = "tiles"
+id      = "action"
+columns = 3
+
+[[items.tiles]]
+icon  = "󰐧"
+label = "Enable"
+value = "enable"
+
+[[items.tiles]]
+icon  = "󰐨"
+label = "Disable"
+value = "disable"
+
+[[items.tiles]]
+icon  = "󰑐"
+label = "Reload"
+value = "reload"
+
+[submit]
+stdout = "{action}"

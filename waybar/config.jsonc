@@ -14,7 +14,7 @@
   ],
   "group/connectivity": {
     "orientation": "horizontal",
-    "modules": ["bluetooth", "network"]
+    "modules": ["custom/firewall", "bluetooth", "network"]
   },
   "group/system": {
     "orientation": "horizontal",
@@ -127,6 +127,12 @@
   "custom/expand-icon": {
     "format": " ",
     "tooltip": false
+  },
+  "custom/firewall": {
+    "exec": "arch-indicator-firewall",
+    "on-click": "arch-ufw",
+    "return-type": "json",
+    "interval": 5
   },
   "custom/idle-indicator": {
     "exec": "arch-indicator-idle",

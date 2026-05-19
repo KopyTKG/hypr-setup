@@ -1,0 +1,35 @@
+#!/bin/bash
+# arch-ufw — UFW state picker via spot, applied through pkexec.
+#
+# UFW's systemd unit is Type=oneshot + RemainAfterExit=yes, so
+# `systemctl is-active ufw` stays "active" forever after first start —
+# it does NOT reflect `ufw enable/disable`. /etc/ufw/ufw.conf is the
+# persisted truth (ENABLED=yes/no), readable without sudo.
+#
+# Output of the ufw command is captured and shown via notify-send on
+# both success and failure so the user can see what happened.
+
+ufw_state() {
+  if grep -q '^ENABLED=yes' /etc/ufw/ufw.conf 2>/dev/null; then echo active
+  else echo inactive; fi
+}
+
+status=$(ufw_state)
+
+choice=$(SPOT_TITLE="UFW: $status" spot ~/.config/spot/ufw.toml) || exit 0
+[[ -z $choice ]] && exit 0
+
+case "$choice" in
+  enable)  cmd=(pkexec ufw --force enable) ;;
+  disable) cmd=(pkexec ufw disable) ;;
+  reload)  cmd=(pkexec ufw reload) ;;
+  *)       notify-send -u critical "UFW" "unknown action: $choice"; exit 1 ;;
+esac
+
+if output=$("${cmd[@]}" 2>&1); then
+  new_status=$(ufw_state)
+  notify-send -u low "UFW" "$choice → $new_status"
+else
+  rc=$?
+  notify-send -u critical "UFW: $choice failed (exit $rc)" "${output:-no output}"
+fi
