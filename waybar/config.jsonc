@@ -101,7 +101,7 @@
     "format": "{icon}",
     "format-bluetooth": "{icon}",
     "on-click": "uwsm-app -- alacritty --class arch-wiremix -e wiremix",
-    "on-click-right": "pamixer -t",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
     "tooltip-format": "Playing at {volume}%",
     "scroll-step": 5,
     "format-muted": "",

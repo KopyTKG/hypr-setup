@@ -16,6 +16,8 @@ hypr/                      Hyprland config (inputs, monitors, windowrules, binds
 arch-menu/                 user-editable arch-menu config (bookmarks.conf)
 mako/                      notification daemon (stone-styled)
 nvim/                      submodule → gitlab.com/kopytkg/nvim
+spot/                      submodule → gitlab.com/kopytkg/spot (TOML+CSS dialog runtime)
+spot-config/               linked into ~/.config/spot/ (menu, power, password, keyboard, …)
 plymouth-theme-arch-stone/ boot/shutdown splash (Arch logo on stone-950)
 sddm-theme-stone/          Qt6 login-screen theme
 swayosd/                   audio/brightness OSD
@@ -120,7 +122,7 @@ Existing files are backed up to `<path>.bak.<timestamp>` before linking.
 
 ## Keyring / SSH agent
 
-`environment.d/ssh-agent.conf` points `SSH_AUTH_SOCK` at `gcr-ssh-agent` (`/run/user/UID/gcr/ssh`) and sets `SSH_ASKPASS=arch-askpass`. From a terminal (`ssh-add` typed at a shell) `arch-askpass` uses `gum input --password` inline. From a no-TTY caller (the `exec-once` in `hypr/autostart.conf`, gcr-ssh-agent, etc.) it pops `walker --password` — same GTK4 launcher widget that powers `arch-menu`, default spotlight theme; the key name shows in the input placeholder.
+`environment.d/ssh-agent.conf` points `SSH_AUTH_SOCK` at `gcr-ssh-agent` (`/run/user/UID/gcr/ssh`) and sets `SSH_ASKPASS=arch-askpass`. From a terminal (`ssh-add` typed at a shell) `arch-askpass` uses `gum input --password` inline. From a no-TTY caller (the `exec-once` in `hypr/autostart.conf`, gcr-ssh-agent, etc.) it pops `spot ~/.config/spot/password.toml` — a layer-shell GTK4 dialog with a single password field, styled with the same stone palette; the key name shows in the input placeholder.
 
 `arch-askpass` reads/writes the keyring via `secret-tool` (libsecret). PAM unlocks the gnome-keyring at SDDM login (`pam_gnome_keyring.so auto_start` is already in `/etc/pam.d/sddm`), so:
 
@@ -136,7 +138,7 @@ Host *
 
 ## arch-menu (SUPER+ALT+SPACE)
 
-Hierarchical walker-dmenu launcher. Top level: **Apps · Install · Remove · Capture · Toggle · Setup · Bookmarks · System · Remote · Keybinds · Learn · Power**.
+Hierarchical menu rendered by `spot` (TOML+CSS layer-shell dialog runtime; submodule at `spot/`). Top level: **Apps · Install · Remove · Capture · Toggle · Setup · Bookmarks · System · Remote · Keybinds · Learn · Power**.
 
 Notable submenus:
 
@@ -170,7 +172,7 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-killactive`               | SUPER+W; closes walker layer if visible, else `killactive`         |
 | `arch-launch-webapp <class> <url>` | focus existing chromium-app window by class, else launch it    |
 | `arch-apply-browser-theme`      | copy `chromium/policies/managed/color.json` to system policy dir   |
-| `arch-askpass`                  | Password prompt (`SSH_ASKPASS`); libsecret-cached. Inline `gum` from a TTY, `walker --password` headless |
+| `arch-askpass`                  | Password prompt (`SSH_ASKPASS`); libsecret-cached. Inline `gum` from a TTY, `spot` password dialog headless |
 
 ## Themes
 

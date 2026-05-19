@@ -231,6 +231,15 @@ green "bootstrap complete."
 green "  → reboot to land in SDDM with the stone theme + Plymouth splash"
 green "  → first time wifi:   iwctl  (or impala — SUPER+CTRL+W in the new session)"
 green "  → run nvim/install.sh once for the Neovim submodule's extras"
+
+if ! command -v spot >/dev/null 2>&1; then
+  echo
+  red "  !! spot binary not found on \$PATH"
+  red "     arch-menu, arch-askpass, arch-power-menu, arch-keyboard, and arch-power-profile-menu all need it."
+  red "     Build it from the submodule:"
+  red "       cd $REPO/spot && go build -o spot . && ln -sf \"\$PWD/spot\" ~/.local/bin/spot"
+  echo
+fi
 if pacman -Q linux-lts >/dev/null 2>&1; then
   if pacman -Q limine-mkinitcpio-hook >/dev/null 2>&1 && [[ -f /boot/limine.conf ]]; then
     if grep -q 'linux-lts' /boot/limine.conf 2>/dev/null; then

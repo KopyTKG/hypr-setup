@@ -19,7 +19,7 @@ esac
 # OH-MY-BASH CONFIGURATION
 # ===================================================================
 if [[ -d "$HOME/.oh-my-bash" ]]; then
-    export OSH='/home/kopy/.oh-my-bash'
+    export OSH="$HOME/.oh-my-bash"
 
     OSH_THEME="lambda"
     ENABLE_CORRECTION="true"
@@ -54,7 +54,6 @@ fi
 export EDITOR='nvim'
 export VISUAL='nvim'
 export SUDO_EDITOR='nvim'
-export TERM='linux'
 
 # ===================================================================
 # HISTORY CONFIGURATION
