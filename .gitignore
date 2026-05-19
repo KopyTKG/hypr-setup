@@ -16,3 +16,7 @@
 
 # Nested side-repos (own .git, tracked elsewhere)
 /work-scripts/
+
+# Old monolithic .bashrc location — replaced by bash/.bashrc.
+# Apps occasionally touch ~/.bashrc which resolves here via symlink.
+/.bashrc

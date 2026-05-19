@@ -23,7 +23,7 @@ sddm-theme-stone/          Qt6 login-screen theme
 swayosd/                   audio/brightness OSD
 walker/                    launcher (dmenu mode for arch-menu)
 waybar/                    status bar + tray-menu CSS
-.bashrc                    interactive bash config (aliases, completions, language env)
+bash/                      interactive bash config — boot .bashrc + 8 topic files (env, shell opts, aliases, dev stack, utils, tools, prompt)
 starship.toml              starship prompt (Tokyo Night, current dev stack)
 bootstrap.sh               vanilla Arch → desktop: yay, pacman/AUR, GPU pick, services, install.sh
 install.sh                 wire everything into ~/.config/, ~/.local/bin/, system theme
