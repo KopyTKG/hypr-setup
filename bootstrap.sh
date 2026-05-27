@@ -208,6 +208,34 @@ else
   green "  → $RESOLV → $STUB"
 fi
 
+# Btrfs snapshots: snapper `root` config + limine boot-menu rollback.
+# Powers the `update` shell command (pre/post snapshot bracket around yay -Syyu)
+# and lets you boot a pre-upgrade snapshot straight from the limine menu.
+if [[ "$(findmnt -no FSTYPE /)" == btrfs ]]; then
+  if sudo snapper list-configs 2>/dev/null | grep -qw root; then
+    gray "  ✓ snapper 'root' config already present"
+  else
+    sudo snapper -c root create-config / \
+      && green "  → snapper 'root' config created" \
+      || red "  ! snapper create-config failed"
+  fi
+
+  # Prunes the numbered pre/post pairs the `update` command leaves behind
+  # (it tags them --cleanup-algorithm number); without this they accumulate.
+  enable_unit snapper-cleanup.timer
+
+  # limine-snapper-sync (chaotic-aur) rewrites limine.conf with snapshot entries;
+  # only meaningful when limine is the bootloader.
+  if [[ -f /boot/limine.conf ]]; then
+    yay -S --needed --noconfirm limine-snapper-sync
+    enable_unit limine-snapper-sync.service
+  else
+    gray "  limine.conf not found — skipping limine-snapper-sync (not on limine?)"
+  fi
+else
+  gray "  / is not btrfs — skipping snapper/limine snapshot setup"
+fi
+
 # Populate ~/Documents, ~/Downloads, ... (only on first run)
 if [[ ! -f $HOME/.config/user-dirs.dirs ]]; then
   xdg-user-dirs-update

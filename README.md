@@ -54,7 +54,9 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Apps reached from default keybinds** — `chromium` (used by `arch-launch-webapp` + the Enterprise theme policy; `brave` works as a swap) · `nautilus` · optional: `discord-canary` `spotify`
 
-**Installer / migrator only** — `yay` (AUR helper for `term_install`) · `mise` (Development install menu) · `snapper` (pre-migration snapshot)
+**Installer / migrator only** — `yay` (AUR helper for `term_install`) · `mise` (Development install menu) · `snapper` (migrator pre-snapshot + the `update` command's pre/post bracket)
+
+**Snapshots / rollback** (btrfs root only) — `snapper` (config `root`, created by `bootstrap.sh`) · `limine-snapper-sync` (chaotic-aur — surfaces snapshots as bootable entries in the limine menu). The `update` command (a function in `bash/30-aliases.bash`) brackets every `yay -Syyu` with a snapper `pre`/`post` snapshot pair, so a bad upgrade is one boot-menu pick away from rollback.
 
 **GPU** — picked interactively in `bootstrap.sh` phase 4. AMD: `vulkan-radeon` `lib32-vulkan-radeon` `mesa-utils` `libva-mesa-driver` (no RADV ⇒ no DXVK ⇒ Proton/Unity games fail at graphics init). Intel: `vulkan-intel` `lib32-vulkan-intel` `intel-media-driver`. Nvidia: `nvidia(-open)` `nvidia-utils` `lib32-nvidia-utils` `nvidia-settings` (+ manual Wayland env tweaks).
 
@@ -66,7 +68,7 @@ One-shot bootstrap — `./bootstrap.sh` takes a vanilla Arch box (post-`pacstrap
 2. **pacman** — `--needed` install of the extra/multilib stack (Hyprland session, pipewire+wireplumber, qt6-wayland, xorg-xwayland, terminals, fonts, dev toolchains, keyring, tray TUIs `bluetui`/`impala`/`wiremix`, `linux-lts` + headers, …)
 3. **AUR** — `walker-bin`, full `elephant-*-bin` stack, `xdg-terminal-exec-git` (prefers `-bin`/stable variants when upstream offers them; only `xdg-terminal-exec` is `-git` because no stable release exists)
 4. **GPU** — `lspci` detect, then `gum choose` between **AMD** / **Intel** / **Nvidia open** / **Nvidia closed** / **Skip**
-5. **Services + network** — enables `sddm`, `bluetooth`, `iwd`, `systemd-resolved`; writes `/etc/iwd/main.conf` (DHCP+DNS via systemd) and points `/etc/resolv.conf` at the systemd stub; runs `xdg-user-dirs-update`
+5. **Services + network** — enables `sddm`, `bluetooth`, `iwd`, `systemd-resolved`; writes `/etc/iwd/main.conf` (DHCP+DNS via systemd) and points `/etc/resolv.conf` at the systemd stub; on a btrfs root creates the snapper `root` config, enables `snapper-cleanup.timer` (prunes the `update` snapshots), and (on limine) installs + enables `limine-snapper-sync`; runs `xdg-user-dirs-update`
 6. **install.sh** — symlink configs, browser policy, systemd user env, gcr-ssh-agent, SDDM + Plymouth themes
 
 The package lists are inline at the top of `bootstrap.sh`. Re-running is safe: pacman/yay use `--needed`, services are `is-enabled`-checked, config files are only written when missing.

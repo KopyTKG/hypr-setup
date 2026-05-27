@@ -43,7 +43,14 @@ alias df='df -h'
 alias du='du -h'
 
 # System management
-alias update='yay -Syyu --noconfirm --useask --cleanafter'
+function update() {
+    local pre
+    pre=$(sudo snapper -c root create --type pre --cleanup-algorithm number \
+        --print-number --description "yay update") || return 1
+    yay -Syyu --noconfirm --useask --cleanafter
+    sudo snapper -c root create --type post --pre-number "$pre" \
+        --cleanup-algorithm number --description "yay update"
+}
 alias vaultInfo='sudo mdadm --detail /dev/md0'
 alias raidStatus='sudo mdadm --detail --scan'
 alias tree='tree -C'
