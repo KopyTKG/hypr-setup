@@ -100,8 +100,7 @@ sudo pacman -S --needed --noconfirm "${PACMAN_PKGS[@]}"
 # [3/6] AUR packages
 # ============================================================================
 cyan "[3/6] yay -S --needed (AUR / chaotic-aur)"
-# Prefer -bin (prebuilt) variants when upstream offers them — no compile
-# step, no Go/Rust toolchain pulled in just for the install.
+# walker + elephant are built from source (not the -bin variants).
 # xdg-terminal-exec is AUR-only-as-git (no stable release exists).
 AUR_PKGS=(
   walker
