@@ -104,12 +104,12 @@ cyan "[3/6] yay -S --needed (AUR / chaotic-aur)"
 # step, no Go/Rust toolchain pulled in just for the install.
 # xdg-terminal-exec is AUR-only-as-git (no stable release exists).
 AUR_PKGS=(
-  walker-bin
-  elephant-bin
-  elephant-bluetooth-bin elephant-calc-bin elephant-clipboard-bin
-  elephant-desktopapplications-bin elephant-files-bin elephant-menus-bin
-  elephant-providerlist-bin elephant-runner-bin elephant-symbols-bin
-  elephant-todo-bin elephant-unicode-bin elephant-websearch-bin
+  walker
+  elephant
+  elephant-bluetooth elephant-calc elephant-clipboard
+  elephant-desktopapplications elephant-files elephant-menus
+  elephant-providerlist elephant-runner elephant-symbols
+  elephant-todo elephant-unicode elephant-websearch
   xdg-terminal-exec-git
 )
 yay -S --needed --noconfirm "${AUR_PKGS[@]}"
