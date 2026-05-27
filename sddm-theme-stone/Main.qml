@@ -8,6 +8,15 @@ Rectangle {
     height: 1080
     color: config.bgColor
 
+    // Wallpaper — same image hyprlock uses, lives next to this QML.
+    Image {
+        anchors.fill: parent
+        source: "background.jpg"
+        fillMode: Image.PreserveAspectCrop
+        smooth: true
+        asynchronous: true
+    }
+
     // Time / date in top-right
     ColumnLayout {
         anchors.top: parent.top
@@ -44,30 +53,17 @@ Rectangle {
         }
     }
 
-    // Centered login card
-    Rectangle {
+    // Centered password input — no surrounding card, no username label.
+    Item {
         id: card
         anchors.centerIn: parent
         width: 460
-        height: 280
-        color: config.cardColor
-        border.color: config.borderColor
-        border.width: 1
-        radius: 14
+        height: 120
 
         ColumnLayout {
             anchors.centerIn: parent
             width: parent.width - 60
-            spacing: 18
-
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: userModel.lastUser || ""
-                color: config.textColor
-                font.family: config.font
-                font.pixelSize: 20
-                font.weight: Font.Medium
-            }
+            spacing: 12
 
             TextField {
                 id: passwordField
