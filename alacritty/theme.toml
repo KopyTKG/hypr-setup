@@ -1,5 +1,6 @@
 # Chrome: monochrome stone (Tailwind stone-50..950)
-# ANSI normal/bright: untouched — keeps syntax highlighting readable
+# ANSI normal/bright: vivid Tokyo Night — saturation cranked so the accents
+# (esp. purple + orange) pop instead of looking flat/washed.
 
 [colors.primary]
 background = "#0c0a09"   # stone-950
@@ -30,21 +31,21 @@ text       = "#fafaf9"
 background = "#44403c"   # stone-700 — subtle selection
 
 [colors.normal]
-black   = "#32344a"
-red     = "#f7768e"
-green   = "#9ece6a"
-yellow  = "#e0af68"
-blue    = "#7aa2f7"
-magenta = "#ad8ee6"
-cyan    = "#449dab"
-white   = "#787c99"
+black   = "#3b4261"   # tokyonight terminal black (bit more blue than before)
+red     = "#ff5d7a"   # was #f7768e — hotter rose-red
+green   = "#9fef57"   # was #9ece6a — punchier lime
+yellow  = "#f7be50"   # was #e0af68 — vivid amber (no longer muddy gold)
+blue    = "#6aa2ff"   # was #7aa2f7 — brighter electric blue
+magenta = "#c07dff"   # was #ad8ee6 — POP purple (the flat lavender is gone)
+cyan    = "#2bc4d6"   # was #449dab — POP teal/cyan (was dim)
+white   = "#a9b1d6"   # tokyonight white
 
 [colors.bright]
-black   = "#444b6a"
-red     = "#ff7a93"
-green   = "#b9f27c"
-yellow  = "#ff9e64"
-blue    = "#7da6ff"
-magenta = "#bb9af7"
-cyan    = "#0db9d7"
-white   = "#acb0d0"
+black   = "#565f89"   # comment gray
+red     = "#ff6b8a"
+green   = "#b6f367"
+yellow  = "#ff9538"   # was #ff9e64 — POP orange
+blue    = "#82aaff"
+magenta = "#d08bff"   # bright pop purple
+cyan    = "#25d0e0"   # bright pop cyan
+white   = "#c0c6e8"
