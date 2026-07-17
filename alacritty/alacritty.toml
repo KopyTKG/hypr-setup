@@ -12,6 +12,7 @@ size = 9
 [window]
 padding.x = 14
 padding.y = 14
+opacity = 0.9
 decorations = "None"
 
 [keyboard]
@@ -24,3 +25,7 @@ bindings = [
 
 [terminal]
 osc52 = "CopyPaste"
+# Launch fish regardless of the session's $SHELL (chsh sets it globally, but a
+# session started before chsh still exports the old shell). Remove this line if
+# you'd rather rely purely on the login shell after a relog.
+shell = { program = "/usr/bin/fish" }

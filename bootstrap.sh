@@ -64,7 +64,8 @@ PACMAN_PKGS=(
   waybar mako swaybg swayosd
   # terminal & CLI (xdg-terminal-exec is AUR-only as -git, installed below)
   alacritty fzf gum jq python neovim fastfetch starship
-  bash-completion
+  # fish is the login shell (config in fish/); bash kept as fallback
+  fish bash-completion
   # tray TUIs (bluetui/impala/wiremix moved out of AUR — they're in extra now)
   btop yazi libnotify brightnessctl fcitx5 bluetui impala wiremix
   # audio (pipewire stack — wireplumber is REQUIRED on modern Arch)
@@ -252,6 +253,13 @@ if [[ ! -x $REPO/install.sh ]]; then
   exit 1
 fi
 "$REPO/install.sh"
+
+# Make fish the login shell (bash config stays as fallback).
+FISH_BIN=$(command -v fish || true)
+if [[ -n $FISH_BIN && "$SHELL" != "$FISH_BIN" ]]; then
+  grep -qxF "$FISH_BIN" /etc/shells || echo "$FISH_BIN" | sudo tee -a /etc/shells >/dev/null
+  chsh -s "$FISH_BIN" && green "  → login shell set to fish (re-login to take effect)"
+fi
 
 green "bootstrap complete."
 green "  → reboot to land in SDDM with the stone theme + Plymouth splash"
