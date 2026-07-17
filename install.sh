@@ -76,6 +76,18 @@ if systemctl --user list-unit-files gcr-ssh-agent.socket >/dev/null 2>&1; then
     || gray "  gcr-ssh-agent.socket: already enabled or failed (check 'systemctl --user status gcr-ssh-agent.socket')"
 fi
 
+# Update-check timer (feeds waybar's custom/updates module): link the units,
+# reload, and enable the timer so it fires on boot + every 30 min.
+if [[ -d "$REPO/systemd/user" ]]; then
+  for unit in "$REPO/systemd/user"/*; do
+    link_to "$unit" "$HOME/.config/systemd/user/$(basename "$unit")"
+  done
+  systemctl --user daemon-reload 2>/dev/null || true
+  systemctl --user enable --now arch-update-check.timer 2>/dev/null \
+    && gray "  arch-update-check.timer enabled" \
+    || gray "  arch-update-check.timer: enable failed (check 'systemctl --user status arch-update-check.timer')"
+fi
+
 # GTK / libadwaita theme
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'  || true
 gsettings set org.gnome.desktop.interface accent-color 'slate'         || true

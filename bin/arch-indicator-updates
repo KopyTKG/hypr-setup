@@ -1,0 +1,30 @@
+#!/bin/bash
+# arch-indicator-updates — waybar JSON for custom/updates. Reads the cache written
+# by arch-update-check (no network here, so waybar never blocks). Empty text hides
+# the module when the system is up to date.
+
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/arch-updates"
+
+# No cache yet (first boot before the timer fired) → kick off a check in the
+# background and render nothing this tick.
+if [[ ! -f $CACHE ]]; then
+  arch-update-check >/dev/null 2>&1 &
+  echo '{"text": ""}'
+  exit 0
+fi
+
+mapfile -t c <"$CACHE"
+total=${c[0]:-0}
+pac=${c[1]:-0}
+aur=${c[2]:-0}
+flat=${c[3]:-0}
+
+if (( total > 0 )); then
+  tip="$total update(s) available"
+  (( pac  > 0 )) && tip+="\n  $pac pacman"
+  (( aur  > 0 )) && tip+="\n  $aur AUR"
+  (( flat > 0 )) && tip+="\n  $flat flatpak"
+  printf '{"text": "󰚰 %s", "tooltip": "%s", "class": "updates"}\n' "$total" "$tip"
+else
+  echo '{"text": ""}'
+fi

@@ -1,0 +1,13 @@
+[Unit]
+Description=Periodically check for updates (feeds waybar custom/updates)
+
+[Timer]
+# On boot (a couple minutes in, once the network is up) …
+OnBootSec=2min
+# … and every 30 minutes thereafter.
+OnUnitActiveSec=30min
+# Catch up on a missed run if the machine was asleep/off.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

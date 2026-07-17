@@ -7,6 +7,7 @@
   "modules-left": ["custom/launcher", "hyprland/workspaces"],
   "modules-center": ["clock", "custom/idle-indicator", "custom/notification-silencing-indicator"],
   "modules-right": [
+    "custom/updates",
     "group/tray-expander",
     "hyprland/language",
     "group/connectivity",
@@ -147,6 +148,15 @@
     "return-type": "json",
     "interval": 5,
     "signal": 10
+  },
+  "custom/updates": {
+    "exec": "arch-indicator-updates",
+    "on-click": "uwsm-app -- xdg-terminal-exec bash -c \"fish -c update; read -p 'Press Enter to close.'\"",
+    "on-click-right": "arch-update-check",
+    "return-type": "json",
+    "interval": 1800,
+    "signal": 11,
+    "tooltip": true
   },
   "tray": {
     "icon-size": 12,

@@ -1,0 +1,9 @@
+[Unit]
+Description=Check for pacman/AUR/flatpak updates and refresh waybar
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Full path: systemd user services don't inherit the interactive-shell PATH.
+ExecStart=%h/.local/bin/arch-update-check

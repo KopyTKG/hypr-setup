@@ -20,6 +20,7 @@ show_main() {
   case $(menu "Menu" \
     "  Apps" \
     "  Install" \
+    "  Update" \
     "  Remove" \
     "  Capture" \
     "  Toggle" \
@@ -37,6 +38,7 @@ show_main() {
     *Toggle*)  show_toggle ;;
     *Setup*)   show_setup ;;
     *Install*) show_install ;;
+    *Update*)  uwsm-app -- xdg-terminal-exec bash -c "fish -c update; read -p 'Press Enter to close.'" ;;
     *Remove*)  show_remove ;;
     *System*)  show_system ;;
     *Remote*)  show_remote ;;

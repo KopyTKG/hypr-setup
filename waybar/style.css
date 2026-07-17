@@ -83,6 +83,16 @@ tooltip label {
   color: #a8a29e;            /* stone-400 — muted active indicator */
 }
 
+/* Update indicator — hidden (empty text) when up to date; amber when pending */
+#custom-updates {
+  min-width: 12px;
+  margin: 0 7.5px;
+}
+
+#custom-updates.updates {
+  color: #e0af68;            /* amber — matches the mise-active accent */
+}
+
 /* Tray right-click context menus (Steam, Discord, etc.) */
 menu {
   background-color: rgba(28, 25, 23, 0.97);     /* stone-900 @ 97% */

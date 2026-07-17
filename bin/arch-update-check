@@ -1,0 +1,43 @@
+#!/bin/bash
+# arch-update-check — count available updates (pacman + AUR + flatpak), cache the
+# result, and nudge waybar to redraw. Cheap enough to run on a timer; the network
+# work lives here so the waybar reader (arch-indicator-updates) stays instant.
+#
+# Run by:
+#   - systemd user timer arch-update-check.timer (on boot + every 30 min)
+#   - the `update` shell function, at the end (resets the count to 0)
+#   - waybar custom/updates right-click (force refresh)
+
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/arch-updates"
+WAYBAR_SIGNAL=11   # must match custom/updates "signal" in waybar/config.jsonc
+
+pac=0
+aur=0
+flat=0
+
+# Official repos — checkupdates (pacman-contrib) syncs a *temporary* DB, so it
+# needs no sudo and never touches the real pacman database.
+if command -v checkupdates >/dev/null 2>&1; then
+  pac=$(checkupdates 2>/dev/null | grep -c .)
+fi
+
+# AUR — yay -Qua lists installed foreign packages with a newer AUR version.
+if command -v yay >/dev/null 2>&1; then
+  aur=$(yay -Qua 2>/dev/null | grep -c .)
+fi
+
+# Flatpak — no-op if flatpak isn't installed.
+if command -v flatpak >/dev/null 2>&1; then
+  flat=$(flatpak remote-ls --updates --columns=application 2>/dev/null | grep -c .)
+fi
+
+total=$((pac + aur + flat))
+
+# Cache as four lines: total, pacman, aur, flatpak.
+printf '%s\n%s\n%s\n%s\n' "$total" "$pac" "$aur" "$flat" >"$CACHE"
+
+# Ask waybar to re-run the reader immediately (ignored if waybar isn't running).
+pkill -RTMIN+$WAYBAR_SIGNAL waybar 2>/dev/null
+
+# Echo the total for CLI/debug use.
+echo "$total"
