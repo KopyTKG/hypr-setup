@@ -8,6 +8,8 @@
 **/Caches/
 **/logs/
 **/*.log
+# Scratch journalctl/dmesg dumps pasted at the repo root while debugging
+/log.txt
 
 # Editor scratch
 .DS_Store
