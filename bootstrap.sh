@@ -59,7 +59,7 @@ cyan "[2/6] pacman -S --needed (extra/multilib)"
 PACMAN_PKGS=(
   # Hyprland session
   hyprland hypridle hyprlock hyprpicker hyprshot hyprsunset uwsm
-  xdg-desktop-portal-hyprland sddm polkit-gnome plymouth
+  xdg-desktop-portal-hyprland sddm polkit-kde-agent plymouth
   # bar / launcher / notifications
   waybar mako swaybg swayosd
   # terminal & CLI (xdg-terminal-exec is AUR-only as -git, installed below)
@@ -87,7 +87,13 @@ PACMAN_PKGS=(
   # spot build deps (GTK4 layer-shell dialog runtime in spot/ submodule)
   gtk4-layer-shell
   # default-keybind apps
-  chromium nautilus
+  chromium
+  # KDE utilities: dolphin (files, SUPER+F) · kcalc (calc key) · okular (PDF) · ark (archives) · gwenview (images)
+  dolphin kcalc okular ark gwenview
+  # dolphin thumbnails (images + video) + Breeze Dark Qt theme/icons to match the dark GTK look
+  kdegraphics-thumbnailers ffmpegthumbs breeze breeze-icons
+  # plasma-integration = the KDE Qt platform theme; without it kdeglobals colours are ignored
+  plasma-integration
   # installer/migrator helpers
   mise snapper
   # LTS kernel (in addition to whatever the user pacstrapped with)

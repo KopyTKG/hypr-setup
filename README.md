@@ -34,7 +34,7 @@ arch-strip-omarchy-system.sh  one-shot system migrator (snapper snapshot, repo s
 
 Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-strip-omarchy-system.sh`) wires up `chaotic-aur` automatically; on a fresh box add it manually first.
 
-**Hyprland session** — `hyprland` `hypridle` `hyprlock` `hyprpicker` `hyprshot` `hyprsunset` `uwsm` `xdg-desktop-portal-hyprland` `sddm` `polkit-gnome` `plymouth`
+**Hyprland session** — `hyprland` `hypridle` `hyprlock` `hyprpicker` `hyprshot` `hyprsunset` `uwsm` `xdg-desktop-portal-hyprland` `sddm` `polkit-kde-agent` `plymouth`
 
 **Bar / launcher / notifications** — `waybar` `walker` `elephant` `mako` `swaybg` `swayosd`
 
@@ -52,7 +52,9 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Dev toolchains (work stack)** — most are managed by `mise` (`mise use --global …`); pacman covers the rest: `jdk-openjdk` `kotlin` `maven` `gradle` (Java/Kotlin/Android) · `texlive-meta` (LaTeX) · `bun` (RN/Expo/Preact). The Development install entry in `arch-menu` wraps `mise use --global` over a fzf-pick.
 
-**Apps reached from default keybinds** — `chromium` (used by `arch-launch-webapp` + the Enterprise theme policy; `brave` works as a swap) · `nautilus` · optional: `discord-canary` `spotify`
+**Apps reached from default keybinds** — `chromium` (used by `arch-launch-webapp` + the Enterprise theme policy; `brave` works as a swap) · optional: `discord-canary` `spotify`
+
+**KDE utilities & Qt theme** — `dolphin` (file manager, SUPER+F) · `kcalc` (calculator key) · `okular` (PDF) · `ark` (archives) · `gwenview` (images) · `kdegraphics-thumbnailers` + `ffmpegthumbs` (dolphin thumbnails). Theming is Breeze Dark: `breeze` + `breeze-icons` supply the style/icons, `plasma-integration` supplies the Qt **platform theme** (`KDEPlasmaPlatformTheme6.so`) — without it Qt apps ignore the colour scheme and stay light. `envs.conf` sets `QT_STYLE_OVERRIDE=Breeze` + `QT_QPA_PLATFORMTHEME=kde`; `install.sh` writes the full palette to `~/.config/kdeglobals`, creates `~/.config/menus/applications.menu` (else Dolphin's "Open With" list is empty), rebuilds `kbuildsycoca6`, and points `xdg-mime` at these apps (folders/PDFs/images/archives, plus CSV + office docs → `onlyoffice`).
 
 **Installer / migrator only** — `yay` (AUR helper for `term_install`) · `mise` (Development install menu) · `snapper` (migrator pre-snapshot + the `update` command's pre/post bracket)
 
