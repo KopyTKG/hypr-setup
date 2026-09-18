@@ -1,7 +1,7 @@
 #!/bin/bash
 # arch-keyboard — pick keyboard layout via spot tile picker, apply via hyprctl.
 #
-# Layouts and their order are defined in ~/.config/hypr/input.conf (kb_layout).
+# Layouts and their order are defined in ~/.config/hypr/input.lua (kb_layout).
 # Keep ~/.config/spot/keyboard.toml in sync with that list — tile values are
 # 0-based indices into kb_layout.
 

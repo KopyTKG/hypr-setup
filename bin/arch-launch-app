@@ -6,7 +6,7 @@ cmd="${*:-uwsm-app -- $pat}"
 [[ -z $pat ]] && { echo "Usage: $0 <pattern> [cmd]" >&2; exit 1; }
 addr=$(hyprctl clients -j | jq -r --arg p "$pat" '.[] | select((.class|test("\\b" + $p + "\\b";"i")) or (.title|test("\\b" + $p + "\\b";"i"))) | .address' | head -n1)
 if [[ -n $addr ]]; then
-  hyprctl dispatch focuswindow "address:$addr"
+  hyprctl dispatch "hl.dsp.focus({ window = \"address:$addr\" })"
 else
   eval exec setsid $cmd
 fi

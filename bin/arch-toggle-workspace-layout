@@ -5,5 +5,5 @@ case "$current" in
   dwindle) new=scrolling ;;
   *)       new=dwindle ;;
 esac
-hyprctl keyword workspace "$ws, layout:$new"
+hyprctl eval "hl.workspace_rule({ workspace = \"$ws\", layout = \"$new\" })"
 notify-send -u low "Workspace layout: $new"

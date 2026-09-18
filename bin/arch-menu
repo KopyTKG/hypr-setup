@@ -121,8 +121,8 @@ show_setup() {
     "  Hypridle" \
     "  Hyprlock" \
     "  Back") in
-    *Hyprland*) editor ~/.config/hypr/hyprland.conf ;;
-    *Bindings*) editor ~/.config/hypr/bindings.conf ;;
+    *Hyprland*) editor ~/.config/hypr/hyprland.lua ;;
+    *Bindings*) editor ~/.config/hypr/bindings.lua ;;
     *Waybar*)   editor ~/.config/waybar/config.jsonc ;;
     *Walker*)   editor ~/.config/walker/config.toml ;;
     *Hypridle*) editor ~/.config/hypr/hypridle.conf ;;

@@ -7,5 +7,5 @@ if grep -q 'namespace: spot' <<<"$layers"; then
 elif grep -q 'namespace: walker' <<<"$layers"; then
   walker --close
 else
-  hyprctl dispatch killactive
+  hyprctl dispatch 'hl.dsp.window.close()'
 fi

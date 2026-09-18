@@ -1,3 +1,8 @@
 #!/bin/bash
 addr=$(hyprctl activewindow -j | jq -r '.address')
-hyprctl dispatch setprop "address:$addr" opaque toggle
+[[ -z $addr || $addr == null ]] && exit 0
+case "$(hyprctl getprop "address:$addr" opaque)" in
+  1|true) value=0 ;;
+  *)      value=1 ;;
+esac
+hyprctl dispatch "hl.dsp.window.set_prop({ window = \"address:$addr\", prop = \"opaque\", value = \"$value\" })"

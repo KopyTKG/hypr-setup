@@ -13,5 +13,5 @@ else
   new=$(( (idx + 1) % ${#SCALES[@]} ))
 fi
 ns=${SCALES[$new]}
-hyprctl keyword monitor "$name,${w}x${h}@${hz},auto,$ns"
+hyprctl eval "hl.monitor({ output = \"$name\", mode = \"${w}x${h}@${hz}\", position = \"auto\", scale = $ns })"
 notify-send -u low "Display scaling: ${ns}x"

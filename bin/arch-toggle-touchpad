@@ -1,12 +1,23 @@
 #!/bin/bash
-# Toggle touchpad enabled/disabled via hyprctl.
+# Toggle touchpad enabled/disabled via a per-device hl.device() rule.
+# Hyprland has no getter for per-device state, so it's tracked in a cache flag
+# (cleared on login — a fresh session always starts with the touchpad on).
 device=$(hyprctl devices -j | jq -r '.mice[] | select(.name | test("touchpad"; "i")).name' | head -n1)
 [[ -z $device ]] && { notify-send -u low "No touchpad detected"; exit 1; }
-state=$(hyprctl getoption "device[$device]:enabled" -j 2>/dev/null | jq -r '.int')
-if [[ $state == "1" ]]; then
-  hyprctl keyword "device[$device]:enabled" false
+STATE=${XDG_RUNTIME_DIR:-/tmp}/hypr-touchpad-off
+
+set_enabled() { hyprctl -q eval "hl.device({ name = \"$device\", enabled = $1 })"; }
+
+case "${1:-toggle}" in
+  on)  want=on ;;
+  off) want=off ;;
+  *)   [[ -f $STATE ]] && want=on || want=off ;;
+esac
+
+if [[ $want == off ]]; then
+  set_enabled false; touch "$STATE"
   notify-send -u low "Touchpad: disabled"
 else
-  hyprctl keyword "device[$device]:enabled" true
+  set_enabled true; rm -f "$STATE"
   notify-send -u low "Touchpad: enabled"
 fi

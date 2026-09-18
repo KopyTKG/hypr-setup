@@ -1,0 +1,23 @@
+-- Learn how to configure Hyprland: https://wiki.hypr.land/Configuring/
+-- API stubs for the LSP: /usr/share/hypr/stubs (see .luarc.json)
+
+-- Baseline defaults (edit to change global behavior)
+require("defaults.autostart")
+require("defaults.bindings.media")
+require("defaults.bindings.clipboard")
+require("defaults.bindings.tiling")
+require("defaults.bindings.utilities")
+require("defaults.envs")
+require("defaults.looknfeel")
+require("defaults.input")
+require("defaults.windows")
+require("theme.hyprland")
+
+-- Change your own setup in these files (and overwrite any settings from defaults!)
+require("monitors")
+require("input")
+require("bindings")
+require("envs")
+require("looknfeel")
+require("windows")
+require("autostart")

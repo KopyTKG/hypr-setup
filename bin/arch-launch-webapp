@@ -8,7 +8,7 @@ if [[ -z $CLASS || -z $URL ]]; then
   exit 1
 fi
 if hyprctl clients -j | grep -q "\"class\": \"$CLASS\""; then
-  hyprctl dispatch focuswindow "class:$CLASS"
+  hyprctl dispatch "hl.dsp.focus({ window = \"class:^$CLASS\$\" })"
 else
   exec uwsm-app -- chromium --app="$URL" --class="$CLASS"
 fi

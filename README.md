@@ -12,7 +12,7 @@ chromium/                  flags + system policy for browser theme color
 elephant/                  walker data provider config
 environment.d/             systemd user env (FZF_DEFAULT_OPTS, ...)
 fastfetch/                 system info (no Omarchy branding)
-hypr/                      Hyprland config (inputs, monitors, windowrules, binds)
+hypr/                      Hyprland Lua config (hyprland.lua → defaults/ + personal overrides) + hyprlock/hypridle
 arch-menu/                 user-editable arch-menu config (bookmarks.conf)
 mako/                      notification daemon (stone-styled)
 nvim/                      submodule → gitlab.com/kopytkg/nvim
@@ -54,7 +54,7 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Apps reached from default keybinds** — `chromium` (used by `arch-launch-webapp` + the Enterprise theme policy; `brave` works as a swap) · optional: `discord-canary` `spotify`
 
-**KDE utilities & Qt theme** — `dolphin` (file manager, SUPER+F) · `kcalc` (calculator key) · `okular` (PDF) · `ark` (archives) · `gwenview` (images) · `kdegraphics-thumbnailers` + `ffmpegthumbs` (dolphin thumbnails). Theming is Breeze Dark: `breeze` + `breeze-icons` supply the style/icons, `plasma-integration` supplies the Qt **platform theme** (`KDEPlasmaPlatformTheme6.so`) — without it Qt apps ignore the colour scheme and stay light. `envs.conf` sets `QT_STYLE_OVERRIDE=Breeze` + `QT_QPA_PLATFORMTHEME=kde`; `install.sh` writes the full palette to `~/.config/kdeglobals`, creates `~/.config/menus/applications.menu` (else Dolphin's "Open With" list is empty), rebuilds `kbuildsycoca6`, and points `xdg-mime` at these apps (folders/PDFs/images/archives, plus CSV + office docs → `onlyoffice`).
+**KDE utilities & Qt theme** — `dolphin` (file manager, SUPER+F) · `kcalc` (calculator key) · `okular` (PDF) · `ark` (archives) · `gwenview` (images) · `kdegraphics-thumbnailers` + `ffmpegthumbs` (dolphin thumbnails). Theming is Breeze Dark: `breeze` + `breeze-icons` supply the style/icons, `plasma-integration` supplies the Qt **platform theme** (`KDEPlasmaPlatformTheme6.so`) — without it Qt apps ignore the colour scheme and stay light. `hypr/defaults/envs.lua` sets `QT_STYLE_OVERRIDE=Breeze` + `QT_QPA_PLATFORMTHEME=kde`; `install.sh` writes the full palette to `~/.config/kdeglobals`, creates `~/.config/menus/applications.menu` (else Dolphin's "Open With" list is empty), rebuilds `kbuildsycoca6`, and points `xdg-mime` at these apps (folders/PDFs/images/archives, plus CSV + office docs → `onlyoffice`).
 
 **Installer / migrator only** — `yay` (AUR helper for `term_install`) · `mise` (Development install menu) · `snapper` (migrator pre-snapshot + the `update` command's pre/post bracket)
 
@@ -126,11 +126,11 @@ Existing files are backed up to `<path>.bak.<timestamp>` before linking.
 
 ## Keyring / SSH agent
 
-`environment.d/ssh-agent.conf` points `SSH_AUTH_SOCK` at `gcr-ssh-agent` (`/run/user/UID/gcr/ssh`) and sets `SSH_ASKPASS=arch-askpass`. From a terminal (`ssh-add` typed at a shell) `arch-askpass` uses `gum input --password` inline. From a no-TTY caller (the `exec-once` in `hypr/autostart.conf`, gcr-ssh-agent, etc.) it pops `spot ~/.config/spot/password.toml` — a layer-shell GTK4 dialog with a single password field, styled with the same stone palette; the key name shows in the input placeholder.
+`environment.d/ssh-agent.conf` points `SSH_AUTH_SOCK` at `gcr-ssh-agent` (`/run/user/UID/gcr/ssh`) and sets `SSH_ASKPASS=arch-askpass`. From a terminal (`ssh-add` typed at a shell) `arch-askpass` uses `gum input --password` inline. From a no-TTY caller (the `hyprland.start` hook in `hypr/autostart.lua`, gcr-ssh-agent, etc.) it pops `spot ~/.config/spot/password.toml` — a layer-shell GTK4 dialog with a single password field, styled with the same stone palette; the key name shows in the input placeholder.
 
 `arch-askpass` reads/writes the keyring via `secret-tool` (libsecret). PAM unlocks the gnome-keyring at SDDM login (`pam_gnome_keyring.so auto_start` is already in `/etc/pam.d/sddm`), so:
 
-- **First boot** — hypr's `exec-once = ssh-add ~/.ssh/dev/dev_sign` (in `hypr/autostart.conf`) triggers `arch-askpass`; a floating TUI prompt asks for the passphrase and stores it under `unique=ssh-store:<keypath>`.
+- **First boot** — hypr's `ssh-add ~/.ssh/dev/dev_sign` on `hyprland.start` (in `hypr/autostart.lua`) triggers `arch-askpass`; a floating TUI prompt asks for the passphrase and stores it under `unique=ssh-store:<keypath>`.
 - **Every later boot** — keyring is unlocked at SDDM login → `arch-askpass` returns the cached passphrase silently → keys ready before the first commit / push.
 
 For other keys to lazy-load on first SSH use, add this to your `~/.ssh/config` (top of file, outside any `Host` block):
@@ -182,7 +182,7 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 
 Stone palette (`#0c0a09` bg, `#f5f5f4` border, `#fafaf9` fg, `#a8a29e` muted) is used everywhere:
 
-- **Hyprland** — `looknfeel.conf` overrides for border / opacity / dim
+- **Hyprland** — `looknfeel.lua` overrides for border / opacity / dim
 - **Waybar** — pill bg `rgba(28,25,23,0.7)` with `stone-100 @ 50%` border, matching tooltip + tray menu styles
 - **Walker** — solid stone-900 box-wrapper
 - **Alacritty** — stone chrome (`primary/cursor/selection/...`); ANSI 16 colors preserved (Tokyo Night)
@@ -208,6 +208,6 @@ Stone palette (`#0c0a09` bg, `#f5f5f4` border, `#fafaf9` fg, `#a8a29e` muted) is
 ## Conventions
 
 - `bin/arch-*` scripts are namespaced replacements for the previous `omarchy-*` calls
-- All Hyprland config errors gated on v0.54.3 (`pseudotile` / `col.border_locked_*` are commented out in `hypr/defaults/looknfeel.conf`)
+- Hyprland config is Lua (0.56+; the hyprlang `.conf` format is legacy). Validate with `Hyprland --verify-config -c ~/.config/hypr/hyprland.lua`; LSP stubs via `hypr/.luarc.json`. Scripts talk to it with `hyprctl dispatch 'hl.dsp.…'` / `hyprctl eval 'hl.config(…)'` — the old `dispatch <name> <args>` / `keyword` forms no longer work
 - Steam compatibility tools install path: `~/.steam/root/compatibilitytools.d/`
 - AMD requires `vulkan-radeon` + `lib32-vulkan-radeon` for Proton games (no RADV = no DXVK = no Unity)

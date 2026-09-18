@@ -1,15 +1,16 @@
 #!/bin/bash
 INTERNAL=$(hyprctl monitors -j | jq -r '.[] | select(.name | contains("eDP")).name' | head -n1)
+dpms() { hyprctl dispatch "hl.dsp.dpms({ monitor = \"$INTERNAL\", action = \"$1\" })"; }
 [[ -z $INTERNAL ]] && { notify-send -u low "No internal display detected"; exit 1; }
 case "${1:-toggle}" in
-  on)     hyprctl dispatch dpms on "$INTERNAL"; notify-send -u low "Laptop display: on" ;;
-  off)    hyprctl dispatch dpms off "$INTERNAL"; notify-send -u low "Laptop display: off" ;;
+  on)     dpms enable; notify-send -u low "Laptop display: on" ;;
+  off)    dpms disable; notify-send -u low "Laptop display: off" ;;
   toggle)
     state=$(hyprctl monitors -j | jq -r ".[] | select(.name==\"$INTERNAL\").dpmsStatus")
     if [[ $state == "true" ]]; then
-      hyprctl dispatch dpms off "$INTERNAL"; notify-send -u low "Laptop display: off"
+      dpms disable; notify-send -u low "Laptop display: off"
     else
-      hyprctl dispatch dpms on  "$INTERNAL"; notify-send -u low "Laptop display: on"
+      dpms enable; notify-send -u low "Laptop display: on"
     fi ;;
   *) echo "Usage: $(basename "$0") {on|off|toggle}" >&2; exit 1 ;;
 esac

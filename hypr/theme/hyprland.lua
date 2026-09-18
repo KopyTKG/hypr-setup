@@ -1,0 +1,10 @@
+local activeBorderColor = "rgb(7aa2f7)"
+
+hl.config({
+    general = {
+        col = { active_border = activeBorderColor },
+    },
+    group = {
+        col = { border_active = activeBorderColor },
+    },
+})

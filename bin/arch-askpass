@@ -6,7 +6,7 @@
 #   2. Look up the passphrase in the gnome-keyring (via libsecret / secret-tool).
 #   3. Hit → print it on stdout, exit. Caller never sees a prompt.
 #   4. Miss → TUI gum prompt. Inline if we have a TTY; else a floating
-#      `arch-askpass`-class alacritty (sized in hypr/windows.conf). Store the
+#      `arch-askpass`-class alacritty (sized in hypr/windows.lua). Store the
 #      result in the keyring so the next session is silent.
 #
 # Schema matches openssh's `ssh-add -K` (so a passphrase entered here is

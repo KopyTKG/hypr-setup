@@ -3,12 +3,14 @@ W=${1:-1300}; H=${2:-900}
 active=$(hyprctl activewindow -j)
 addr=$(jq -r '.address' <<<"$active")
 pinned=$(jq -r '.pinned' <<<"$active")
-[[ -z $addr ]] && exit 0
+[[ -z $addr || $addr == null ]] && exit 0
+win="window = \"address:$addr\""
 if [[ $pinned == "true" ]]; then
-  hyprctl -q --batch "dispatch pin address:$addr; dispatch togglefloating address:$addr"
+  hyprctl -q eval "hl.dispatch(hl.dsp.window.pin({ $win })); hl.dispatch(hl.dsp.window.float({ $win }))"
 else
-  hyprctl dispatch togglefloating address:$addr
-  hyprctl dispatch resizeactive exact $W $H
-  hyprctl dispatch centerwindow
-  hyprctl -q --batch "dispatch pin address:$addr; dispatch alterzorder top address:$addr"
+  hyprctl -q eval "hl.dispatch(hl.dsp.window.float({ $win }))
+    hl.dispatch(hl.dsp.window.resize({ $win, x = $W, y = $H }))
+    hl.dispatch(hl.dsp.window.center({ $win }))
+    hl.dispatch(hl.dsp.window.pin({ $win }))
+    hl.dispatch(hl.dsp.window.alter_zorder({ $win, mode = \"top\" }))"
 fi

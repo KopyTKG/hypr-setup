@@ -3,12 +3,10 @@ STATE=~/.cache/hypr/gaps-off
 mkdir -p ~/.cache/hypr
 if [[ -f $STATE ]]; then
   rm "$STATE"
-  hyprctl keyword general:gaps_in 5
-  hyprctl keyword general:gaps_out 10
+  hyprctl eval 'hl.config({ general = { gaps_in = 5, gaps_out = 10 } })'
   notify-send -u low "Window gaps: on"
 else
   touch "$STATE"
-  hyprctl keyword general:gaps_in 0
-  hyprctl keyword general:gaps_out 0
+  hyprctl eval 'hl.config({ general = { gaps_in = 0, gaps_out = 0 } })'
   notify-send -u low "Window gaps: off"
 fi

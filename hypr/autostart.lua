@@ -1,0 +1,11 @@
+-- Extra autostart processes
+hl.on("hyprland.start", function()
+    -- hl.exec_cmd("uwsm app -- my-service")
+
+    -- Load the git-signing SSH key into gcr-ssh-agent at session start.
+    -- First boot: arch-askpass (TUI gum prompt in a floating arch-askpass window)
+    -- asks for the passphrase, stores it in gnome-keyring via libsecret.
+    -- Every later session: the keyring is unlocked at SDDM login → arch-askpass
+    -- pulls the passphrase silently, ssh-add succeeds without a prompt.
+    hl.exec_cmd("[ -f ~/.ssh/dev/dev_sign ] && ssh-add ~/.ssh/dev/dev_sign")
+end)
