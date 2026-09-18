@@ -38,7 +38,7 @@ bind("SUPER + SHIFT + B", exec(browser .. " --incognito"), "Browser (private)")
 bind("SUPER + F", exec("uwsm app -- dolphin"), "File manager")
 
 -- Apps
-bind("SUPER + M", exec("arch-launch-app spotify"), "Music")
+bind("SUPER + M", exec('arch-launch-app spotify "uwsm-app -- flatpak run com.spotify.Client"'), "Music")
 bind("SUPER + N", exec("uwsm-app -- xdg-terminal-exec nvim"), "Editor")
 bind("SUPER + SHIFT + D", exec("uwsm-app -- xdg-terminal-exec lazydocker"), "Docker")
 bind("SUPER + D", exec("discord-canary"), "Discord")
