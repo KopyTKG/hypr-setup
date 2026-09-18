@@ -3,4 +3,4 @@
 	url = git@github.com:KopyTKG/nvim.git
 [submodule "spot"]
 	path = spot
-	url = git@gitlab.com:kopytkg/spot.git
+	url = git@github.com:KopyTKG/spot.git
