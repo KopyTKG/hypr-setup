@@ -145,8 +145,15 @@ if command -v xdg-mime >/dev/null 2>&1; then
   gray "  default apps → dolphin / okular / gwenview / ark"
 
   # Spreadsheets / office docs → OnlyOffice (else Krita hijacks text/csv, etc.)
-  if [[ -f /usr/share/applications/onlyoffice-desktopeditors.desktop ]]; then
-    xdg-mime default onlyoffice-desktopeditors.desktop \
+  # Flatpak build preferred; the native onlyoffice-bin entry is the fallback.
+  onlyoffice=
+  for id in org.onlyoffice.desktopeditors onlyoffice-desktopeditors; do
+    for dir in /var/lib/flatpak/exports/share/applications "$HOME/.local/share/flatpak/exports/share/applications" /usr/share/applications; do
+      [[ -f $dir/$id.desktop ]] && { onlyoffice=$id.desktop; break 2; }
+    done
+  done
+  if [[ -n $onlyoffice ]]; then
+    xdg-mime default "$onlyoffice" \
       text/csv application/csv text/comma-separated-values \
       application/vnd.oasis.opendocument.spreadsheet \
       application/vnd.openxmlformats-officedocument.spreadsheetml.sheet \

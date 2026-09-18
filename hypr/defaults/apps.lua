@@ -42,9 +42,10 @@ hl.layer_rule({ match = { namespace = "walker" }, no_anim = true })
 ---- Dev ----
 rule({ name = "jetbrains-focus", match = { class = "^(jetbrains-.*)$" }, no_follow_mouse = true })
 
----- LocalSend and fzf file picker ----
-rule({ match = { class = "(Share|localsend)" }, float = true, center = true })
-rule({ match = { class = "localsend" }, size = { 1100, 700 } })
+---- LocalSend (flatpak) and fzf file picker ----
+local localsend = "(localsend|org.localsend.localsend_app)"
+rule({ match = { class = "(Share|" .. localsend .. ")" }, float = true, center = true })
+rule({ match = { class = localsend }, size = { 1100, 700 } })
 
 ---- Picture-in-picture overlays ----
 rule({ match = { title = "(Picture.?in.?[Pp]icture)" }, tag = "+pip" })
@@ -81,7 +82,7 @@ rule({ match = { tag = "floating-window" }, float = true, center = true, size = 
 rule({ match = { class = "(org.codeberg.dnkl.foot|org.kde.okular|com.gabm.satty|org.kde.gwenview|mpv)" }, tag = "+floating-window" })
 rule({
     match = {
-        class = "(xdg-desktop-portal-gtk|sublime_text|DesktopEditors)",
+        class = "(xdg-desktop-portal-gtk|sublime_text|DesktopEditors|ONLYOFFICE)",
         title = "^(Open.*Files?|Open [F|f]older.*|Save.*Files?|Save.*As|Save|All Files|.*wants to [open|save].*|[C|c]hoose.*)",
     },
     tag = "+floating-window",
