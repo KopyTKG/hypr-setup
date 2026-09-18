@@ -18,6 +18,16 @@ hl.env("XDG_SESSION_TYPE", "wayland")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 
+-- Flatpak app launchers: the session env arrives without flatpak's export dirs,
+-- so walker/elephant can't see flatpak .desktop files. Prepend any that are missing.
+local dataDirs = os.getenv("XDG_DATA_DIRS") or "/usr/local/share:/usr/share"
+for _, dir in ipairs({ "/var/lib/flatpak/exports/share", os.getenv("HOME") .. "/.local/share/flatpak/exports/share" }) do
+    if not (":" .. dataDirs .. ":"):find(":" .. dir .. ":", 1, true) then
+        dataDirs = dir .. ":" .. dataDirs
+    end
+end
+hl.env("XDG_DATA_DIRS", dataDirs)
+
 -- Use XCompose file
 hl.env("XCOMPOSEFILE", os.getenv("HOME") .. "/.XCompose")
 
