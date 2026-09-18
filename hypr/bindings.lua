@@ -41,7 +41,7 @@ bind("SUPER + F", exec("uwsm app -- dolphin"), "File manager")
 bind("SUPER + M", exec('arch-launch-app spotify "uwsm-app -- flatpak run com.spotify.Client"'), "Music")
 bind("SUPER + N", exec("uwsm-app -- xdg-terminal-exec nvim"), "Editor")
 bind("SUPER + SHIFT + D", exec("uwsm-app -- xdg-terminal-exec lazydocker"), "Docker")
-bind("SUPER + D", exec("discord-canary"), "Discord")
+bind("SUPER + D", exec('arch-launch-app discord "uwsm-app -- flatpak run com.discordapp.Discord"'), "Discord")
 
 -- Proton stuff
 webapp("SUPER + C", "Calendar", "proton-calendar", "https://calendar.proton.me/u/0/")

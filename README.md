@@ -52,7 +52,7 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Dev toolchains (work stack)** — most are managed by `mise` (`mise use --global …`); pacman covers the rest: `jdk-openjdk` `kotlin` `maven` `gradle` (Java/Kotlin/Android) · `texlive-meta` (LaTeX) · `bun` (RN/Expo/Preact). The Development install entry in `arch-menu` wraps `mise use --global` over a fzf-pick.
 
-**Apps reached from default keybinds** — `chromium` (used by `arch-launch-webapp` + the Enterprise theme policy; `brave` works as a swap) · optional: `discord-canary` · `com.spotify.Client` (flatpak, SUPER+M)
+**Apps reached from default keybinds** — `chromium` (used by `arch-launch-webapp` + the Enterprise theme policy; `brave` works as a swap) · optional flatpaks: `com.discordapp.Discord` (SUPER+D) · `com.spotify.Client` (SUPER+M)
 
 **KDE utilities & Qt theme** — `dolphin` (file manager, SUPER+F) · `kcalc` (calculator key) · `okular` (PDF) · `ark` (archives) · `gwenview` (images) · `kdegraphics-thumbnailers` + `ffmpegthumbs` (dolphin thumbnails). Theming is Breeze Dark: `breeze` + `breeze-icons` supply the style/icons, `plasma-integration` supplies the Qt **platform theme** (`KDEPlasmaPlatformTheme6.so`) — without it Qt apps ignore the colour scheme and stay light. `hypr/defaults/envs.lua` sets `QT_STYLE_OVERRIDE=Breeze` + `QT_QPA_PLATFORMTHEME=kde`; `install.sh` writes the full palette to `~/.config/kdeglobals`, creates `~/.config/menus/applications.menu` (else Dolphin's "Open With" list is empty), rebuilds `kbuildsycoca6`, and points `xdg-mime` at these apps (folders/PDFs/images/archives, plus CSV + office docs → `onlyoffice`).
 
