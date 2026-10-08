@@ -229,6 +229,7 @@ show_system() {
     "  Power menu" \
     "  Info" \
     "  Files" \
+    "  Firewall" \
     "  Back") in
     *Lock*)         hyprlock ;;
     *Battery*)      notify-send -u low "$(arch-battery-status)" ;;
@@ -236,6 +237,7 @@ show_system() {
     *"Power menu"*) arch-power-menu ;;
     *Info*)         uwsm-app -- xdg-terminal-exec bash -c "fastfetch; read -p 'Press Enter to close.'" ;;
     *Files*)        arch-floatterm yazi yazi ;;
+    *Firewall*)     arch-floatterm arch-installer arch-firewall ;;
     *Back*)         show_main ;;
   esac
 }

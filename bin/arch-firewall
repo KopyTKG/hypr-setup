@@ -1,0 +1,47 @@
+#!/bin/bash
+# arch-firewall — gum-driven UFW manager (status, rules, allow/deny ports, delete, toggle).
+# Run inside a terminal: arch-floatterm arch-installer arch-firewall
+
+sudo -v || exit 1
+
+pause() { echo; read -rp 'Press Enter to continue.'; }
+
+# Ask for port (80, 8000:8100) + protocol, echo "<port>[/proto]".
+ask_rule() {
+  local port proto
+  port=$(gum input --placeholder "Port or range (80, 443, 8000:8100)") || return 1
+  [[ $port =~ ^[0-9]+(:[0-9]+)?$ ]] || { echo "Invalid port: '$port'" >&2; return 1; }
+  proto=$(gum choose --header "Protocol" tcp udp both) || return 1
+  [[ $proto == both ]] && echo "$port" || echo "$port/$proto"
+}
+
+while true; do
+  clear
+  state=$(sudo ufw status | head -1)
+  choice=$(gum choose --header "Firewall — $state" \
+    "Status (verbose)" "Rules (numbered)" "Allow port" "Deny port" \
+    "Limit port (rate-limit)" "Delete rule" "Enable / Disable" "Reset" "Quit") || exit 0
+  case $choice in
+    Status*)  sudo ufw status verbose; pause ;;
+    Rules*)   sudo ufw status numbered; pause ;;
+    Allow*)   rule=$(ask_rule) && sudo ufw allow "$rule"; pause ;;
+    Deny*)    rule=$(ask_rule) && sudo ufw deny "$rule"; pause ;;
+    Limit*)   rule=$(ask_rule) && sudo ufw limit "$rule"; pause ;;
+    Delete*)
+      sudo ufw status numbered
+      echo
+      n=$(gum input --placeholder "Rule number to delete") || continue
+      [[ $n =~ ^[0-9]+$ ]] || { echo "Invalid number"; pause; continue; }
+      gum confirm "Delete rule $n?" && sudo ufw --force delete "$n"
+      pause ;;
+    Enable*)
+      if grep -q '^ENABLED=yes' /etc/ufw/ufw.conf; then
+        gum confirm "Disable firewall?" && sudo ufw disable
+      else
+        gum confirm "Enable firewall?" && sudo ufw enable
+      fi
+      pause ;;
+    Reset*)   gum confirm "Delete ALL rules and disable?" && sudo ufw --force reset; pause ;;
+    Quit*)    exit 0 ;;
+  esac
+done
