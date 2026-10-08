@@ -1,47 +1,67 @@
 #!/bin/bash
-# arch-firewall — gum-driven UFW manager (status, rules, allow/deny ports, delete, toggle).
+# arch-firewall — fzf-based UFW TUI: live rule list, single-key actions.
 # Run inside a terminal: arch-floatterm arch-installer arch-firewall
+#
+#   a allow · d deny · l limit · x delete · e enable/disable · R reset · r refresh · ? details · q quit
+#
+# Internal subcommands (_list, _head, _add, _del, _toggle, _reset) are the fzf
+# bind targets; they re-invoke this script so the TUI refreshes after each action.
 
-sudo -v || exit 1
+self=$(readlink -f "$0")
 
 pause() { echo; read -rp 'Press Enter to continue.'; }
 
-# Ask for port (80, 8000:8100) + protocol, echo "<port>[/proto]".
-ask_rule() {
-  local port proto
-  port=$(gum input --placeholder "Port or range (80, 443, 8000:8100)") || return 1
-  [[ $port =~ ^[0-9]+(:[0-9]+)?$ ]] || { echo "Invalid port: '$port'" >&2; return 1; }
-  proto=$(gum choose --header "Protocol" tcp udp both) || return 1
-  [[ $proto == both ]] && echo "$port" || echo "$port/$proto"
-}
+enabled() { grep -q '^ENABLED=yes' /etc/ufw/ufw.conf 2>/dev/null; }
 
-while true; do
-  clear
-  state=$(sudo ufw status | head -1)
-  choice=$(gum choose --header "Firewall — $state" \
-    "Status (verbose)" "Rules (numbered)" "Allow port" "Deny port" \
-    "Limit port (rate-limit)" "Delete rule" "Enable / Disable" "Reset" "Quit") || exit 0
-  case $choice in
-    Status*)  sudo ufw status verbose; pause ;;
-    Rules*)   sudo ufw status numbered; pause ;;
-    Allow*)   rule=$(ask_rule) && sudo ufw allow "$rule"; pause ;;
-    Deny*)    rule=$(ask_rule) && sudo ufw deny "$rule"; pause ;;
-    Limit*)   rule=$(ask_rule) && sudo ufw limit "$rule"; pause ;;
-    Delete*)
-      sudo ufw status numbered
-      echo
-      n=$(gum input --placeholder "Rule number to delete") || continue
-      [[ $n =~ ^[0-9]+$ ]] || { echo "Invalid number"; pause; continue; }
-      gum confirm "Delete rule $n?" && sudo ufw --force delete "$n"
-      pause ;;
-    Enable*)
-      if grep -q '^ENABLED=yes' /etc/ufw/ufw.conf; then
-        gum confirm "Disable firewall?" && sudo ufw disable
-      else
-        gum confirm "Enable firewall?" && sudo ufw enable
-      fi
-      pause ;;
-    Reset*)   gum confirm "Delete ALL rules and disable?" && sudo ufw --force reset; pause ;;
-    Quit*)    exit 0 ;;
-  esac
-done
+case ${1:-} in
+  _list)
+    sudo ufw status numbered | grep '^\[' ;;
+  _head)
+    if enabled; then s="ACTIVE"; else s="INACTIVE"; fi
+    echo "Firewall: $s   (default: $(sudo ufw status verbose | sed -n 's/^Default: //p'))"
+    echo "a allow · d deny · l limit · x delete · e enable/disable · R reset · r refresh · ? details · q quit" ;;
+  _add)
+    action=$2
+    clear
+    read -rp "$action — port or range (80, 8000:8100): " port
+    [[ $port =~ ^[0-9]+(:[0-9]+)?$ ]] || { echo "Invalid port: '$port'"; pause; exit 0; }
+    proto=$(gum choose --header "Protocol" tcp udp both) || exit 0
+    [[ $proto == both ]] && rule=$port || rule=$port/$proto
+    sudo ufw "$action" "$rule"
+    pause ;;
+  _del)
+    n=$(sed -n 's/^\[ *\([0-9]\+\)\].*/\1/p' <<<"$2")
+    [[ -n $n ]] || exit 0
+    clear
+    gum confirm "Delete rule: $2 ?" && sudo ufw --force delete "$n"
+    pause ;;
+  _toggle)
+    clear
+    if enabled; then
+      gum confirm "Disable firewall?" && sudo ufw disable
+    else
+      gum confirm "Enable firewall?" && sudo ufw enable
+    fi
+    pause ;;
+  _reset)
+    clear
+    gum confirm "Delete ALL rules and disable?" && sudo ufw --force reset
+    pause ;;
+  "")
+    sudo -v || exit 1
+    "$self" _list | fzf --disabled --no-sort --reverse --border \
+      --prompt='ufw> ' \
+      --header-first --header "$("$self" _head)" \
+      --preview='sudo ufw status verbose' --preview-window=right:45%:wrap:hidden \
+      --bind "start,load:transform-header($self _head)" \
+      --bind "a:execute($self _add allow)+reload($self _list)" \
+      --bind "d:execute($self _add deny)+reload($self _list)" \
+      --bind "l:execute($self _add limit)+reload($self _list)" \
+      --bind "x:execute($self _del {})+reload($self _list)" \
+      --bind "e:execute($self _toggle)+reload($self _list)" \
+      --bind "R:execute($self _reset)+reload($self _list)" \
+      --bind "r:reload($self _list)" \
+      --bind "?:toggle-preview" \
+      --bind "q:abort,enter:ignore"
+    ;;
+esac
