@@ -82,7 +82,7 @@ rule({ match = { tag = "floating-window" }, float = true, center = true, size = 
 rule({ match = { class = "(org.codeberg.dnkl.foot|org.kde.okular|com.gabm.satty|org.kde.gwenview|mpv)" }, tag = "+floating-window" })
 rule({
     match = {
-        class = "(xdg-desktop-portal-gtk|sublime_text|DesktopEditors|ONLYOFFICE)",
+        class = "(xdg-desktop-portal-gtk|org.freedesktop.impl.portal.desktop.kde|sublime_text|DesktopEditors|ONLYOFFICE)",
         title = "^(Open.*Files?|Open [F|f]older.*|Save.*Files?|Save.*As|Save|All Files|.*wants to [open|save].*|[C|c]hoose.*)",
     },
     tag = "+floating-window",

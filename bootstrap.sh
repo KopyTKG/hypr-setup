@@ -89,7 +89,7 @@ PACMAN_PKGS=(
   # default-keybind apps
   chromium
   # KDE utilities: dolphin (files, SUPER+F) · kcalc (calc key) · okular (PDF) · ark (archives) · gwenview (images)
-  dolphin kcalc okular ark gwenview
+  dolphin kcalc okular ark gwenview xdg-desktop-portal-kde
   # dolphin thumbnails (images + video) + Breeze Dark Qt theme/icons to match the dark GTK look
   kdegraphics-thumbnailers ffmpegthumbs breeze breeze-icons
   # plasma-integration = the KDE Qt platform theme; without it kdeglobals colours are ignored
