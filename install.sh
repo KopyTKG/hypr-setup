@@ -39,18 +39,10 @@ for f in "$REPO/bin"/*; do
   link_to "$f" "$HOME/.local/bin/$(basename "$f")"
 done
 
-# spot is a Go binary built from the submodule; build + link only when no spot
-# is already on $PATH (respects external/dev-tree installs).
+# spot itself is the spot-bin AUR package (installed by bootstrap.sh); only its
+# config is linked above.
 if ! command -v spot >/dev/null 2>&1; then
-  cyan "    spot not on \$PATH — building from $REPO/spot…"
-  if ! command -v go >/dev/null 2>&1; then
-    red "    go not installed; pacman -S go, then re-run install.sh"
-  elif (cd "$REPO/spot" && go build -o spot . 2>&1 | tail -5); then
-    green "    ✓ spot built"
-    link_to "$REPO/spot/spot" "$HOME/.local/bin/spot"
-  else
-    red "    spot build failed — ensure gtk4 / gtk4-layer-shell / go are installed and rerun"
-  fi
+  red "    spot not installed — yay -S spot-bin (bootstrap.sh does this)"
 fi
 
 cyan "[4/7] Apply system-wide browser theme policy"

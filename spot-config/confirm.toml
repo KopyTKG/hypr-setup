@@ -1,0 +1,30 @@
+# Yes / No prompt for the ssh host-key confirmation (arch-askpass). Two tiles;
+# the caller sets the title (it carries the fingerprint to verify) and the safe
+# answer is pre-selected.
+#
+#   ans=$(SPOT_TITLE="SSH host key — SHA256:..." spot ~/.config/spot/confirm.toml) || exit 1
+
+title    = "Confirm"
+anchor   = "center"
+width    = 300
+style    = "spot.css"
+keyboard = "exclusive"
+
+[[items]]
+type    = "tiles"
+id      = "answer"
+columns = 2
+default = "no"
+
+[[items.tiles]]
+icon  = "✓"
+label = "Yes"
+value = "yes"
+
+[[items.tiles]]
+icon  = "✗"
+label = "No"
+value = "no"
+
+[submit]
+stdout = "{answer}"

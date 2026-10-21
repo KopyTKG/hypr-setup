@@ -144,3 +144,21 @@
   color: rgba(214, 211, 209, 0.5);
   margin: 6px 2px 0 2px;
 }
+
+/* Validation (required / pattern): red border + message under the item. */
+.spot-invalid {
+  border-color: #f7768e;
+}
+
+.spot-item-error {
+  font-size: 9pt;
+  color: #f7768e;
+  margin-left: 2px;
+}
+
+/* Failed exec (on_error = "show"). */
+.spot-error {
+  font-size: 9pt;
+  color: #f7768e;
+  margin-top: 6px;
+}

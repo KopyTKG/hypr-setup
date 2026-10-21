@@ -16,7 +16,6 @@ hypr/                      Hyprland Lua config (hyprland.lua → defaults/ + per
 arch-menu/                 user-editable arch-menu config (bookmarks.conf)
 mako/                      notification daemon (stone-styled)
 nvim/                      submodule → gitlab.com/kopytkg/nvim
-spot/                      submodule → gitlab.com/kopytkg/spot (TOML+CSS dialog runtime)
 spot-config/               linked into ~/.config/spot/ (menu, power, password, keyboard, …)
 plymouth-theme-arch-stone/ boot/shutdown splash (Arch logo on stone-950)
 sddm-theme-stone/          Qt6 login-screen theme
@@ -142,7 +141,7 @@ Host *
 
 ## arch-menu (SUPER+ALT+SPACE)
 
-Hierarchical menu rendered by `spot` (TOML+CSS layer-shell dialog runtime; submodule at `spot/`). Top level: **Apps · Install · Remove · Capture · Toggle · Setup · Bookmarks · System · Remote · Keybinds · Learn · Power**.
+Hierarchical menu rendered by `spot` (TOML+CSS layer-shell dialog runtime, from the `spot-bin` AUR package — github.com/KopyTKG/spot). Top level: **Apps · Install · Remove · Capture · Toggle · Setup · Bookmarks · System · Remote · Keybinds · Learn · Power**.
 
 Notable submenus:
 

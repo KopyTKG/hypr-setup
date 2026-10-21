@@ -1,4 +1,4 @@
-# Power menu — two-section tile picker: session/machine power actions, battery (profile + monitor).
+# Power menu — two-section tile picker: session/machine power actions, battery (power profile).
 #
 #   spot ~/.config/spot/power.toml
 
@@ -54,8 +54,8 @@ value = "shutdown"
 label   = "Battery"
 type    = "tiles"
 id      = "battery"
-columns = 4
-default = "balanced"
+columns = 3
+default = "balanced"   # fallback; arch-power-menu sets SPOT_DEFAULT_BATTERY to the active profile
 
 [[items.tiles]]
 icon  = ""
@@ -72,11 +72,7 @@ icon  = ""
 label = "Performance"
 value = "performance"
 
-[[items.tiles]]
-icon  = ""
-label = "Monitor"
-value = "jolt"
-
 [submit]
-# {_active} = id of the tile group last interacted with (needs spot with _active support)
-stdout = "{_active} {action} {battery}"
+# One JSON object: {"_active":"battery","action":"lock","battery":"balanced"}.
+# _active = id of the tile section last used. arch-power-menu parses it with jq.
+format = "json"

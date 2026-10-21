@@ -84,8 +84,6 @@ PACMAN_PKGS=(
   lazygit eza bat fd ripgrep git-delta tree net-tools lsof
   # dev toolchains
   jdk-openjdk kotlin maven gradle texlive-meta bun go
-  # spot build deps (GTK4 layer-shell dialog runtime in spot/ submodule)
-  gtk4-layer-shell
   # default-keybind apps
   chromium
   # KDE utilities: dolphin (files, SUPER+F) · kcalc (calc key) · okular (PDF) · ark (archives) · gwenview (images)
@@ -117,6 +115,8 @@ AUR_PKGS=(
   elephant-providerlist elephant-runner elephant-symbols
   elephant-todo elephant-unicode elephant-websearch
   xdg-terminal-exec-git
+  # spot: TOML+CSS layer-shell dialog runtime (prebuilt release; spot-git builds from head)
+  spot-bin
 )
 yay -S --needed --noconfirm "${AUR_PKGS[@]}"
 
