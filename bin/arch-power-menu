@@ -1,9 +1,18 @@
 #!/bin/bash
-# Power menu: spot tile picker, dispatches to systemctl/hyprlock/uwsm/waybar.
+# Power menu (Power + Battery sections): spot tile picker, dispatches to systemctl/hyprlock/uwsm/waybar.
 
-choice=$(spot ~/.config/spot/power.toml) || exit 0
+out=$(spot ~/.config/spot/power.toml) || exit 0
+read -r section action battery <<<"$out"
 
-case "$choice" in
+if [[ $section == battery ]]; then
+  case $battery in
+    jolt) arch-floatterm arch-jolt jolt ;;
+    *)    powerprofilesctl set "$battery" ;;
+  esac
+  exit 0
+fi
+
+case "$action" in
   lock)      hyprlock ;;
   suspend)   systemctl suspend ;;
   hibernate) systemctl hibernate ;;

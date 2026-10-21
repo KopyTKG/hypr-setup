@@ -1,14 +1,21 @@
-# Power menu — 3×2 tile picker for session/machine power actions.
+# Power menu — two-section tile picker: session/machine power actions, battery (profile + monitor).
 #
 #   spot ~/.config/spot/power.toml
 
 title    = "Power Menu"
 anchor   = "center"
-width    = 440
+width    = 480
 style    = "spot.css"
 keyboard = "exclusive"
 
+# Fade the menu itself while the pointer is outside it.
+[opacity]
+inside     = 100
+outside    = 85
+transition = 150
+
 [[items]]
+label   = "Power"
 type    = "tiles"
 id      = "action"
 columns = 3
@@ -43,5 +50,33 @@ icon  = ""
 label = "Shutdown"
 value = "shutdown"
 
+[[items]]
+label   = "Battery"
+type    = "tiles"
+id      = "battery"
+columns = 4
+default = "balanced"
+
+[[items.tiles]]
+icon  = ""
+label = "Power saver"
+value = "power-saver"
+
+[[items.tiles]]
+icon  = ""
+label = "Balanced"
+value = "balanced"
+
+[[items.tiles]]
+icon  = ""
+label = "Performance"
+value = "performance"
+
+[[items.tiles]]
+icon  = ""
+label = "Monitor"
+value = "jolt"
+
 [submit]
-stdout = "{action}"
+# {_active} = id of the tile group last interacted with (needs spot with _active support)
+stdout = "{_active} {action} {battery}"

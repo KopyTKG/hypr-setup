@@ -45,6 +45,7 @@ bind("SUPER + CTRL + A", exec("arch-floatterm arch-wiremix wiremix"), "Audio con
 bind("SUPER + CTRL + B", exec("arch-floatterm arch-bluetui sh -c 'rfkill unblock bluetooth; exec bluetui'"),
     "Bluetooth controls")
 bind("SUPER + CTRL + W", exec("arch-floatterm arch-impala sh -c 'rfkill unblock wifi; exec impala'"), "Wifi controls")
+bind("SUPER + CTRL + P", exec("arch-floatterm arch-jolt jolt"), "Battery / power")
 bind("SUPER + CTRL + T", exec("arch-floatterm arch-btop btop"), "Activity")
 
 -- Zoom

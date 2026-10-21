@@ -66,8 +66,8 @@ PACMAN_PKGS=(
   alacritty fzf gum jq python neovim fastfetch starship
   # fish is the login shell (config in fish/); bash kept as fallback
   fish bash-completion
-  # tray TUIs (bluetui/impala/wiremix moved out of AUR — they're in extra now)
-  btop yazi libnotify brightnessctl fcitx5 bluetui impala wiremix
+  # tray TUIs (bluetui/impala/wiremix/jolt moved out of AUR — they're in extra now)
+  btop yazi libnotify brightnessctl fcitx5 bluetui impala wiremix jolt
   # audio (pipewire stack — wireplumber is REQUIRED on modern Arch)
   pipewire pipewire-alsa pipewire-pulse wireplumber
   # wayland fallbacks for Qt + X11 apps

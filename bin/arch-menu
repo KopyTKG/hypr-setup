@@ -232,7 +232,7 @@ show_system() {
     "  Firewall" \
     "  Back") in
     *Lock*)         hyprlock ;;
-    *Battery*)      notify-send -u low "$(arch-battery-status)" ;;
+    *Battery*)      arch-floatterm arch-jolt jolt ;;
     *Time*)         notify-send -u low "$(date +"%A %H:%M  ·  %d %B %Y  ·  Week %V")" ;;
     *"Power menu"*) arch-power-menu ;;
     *Info*)         uwsm-app -- xdg-terminal-exec bash -c "fastfetch; read -p 'Press Enter to close.'" ;;
