@@ -141,7 +141,7 @@ Host *
 
 ## arch-menu (SUPER+ALT+SPACE)
 
-Hierarchical menu rendered by `spot` (TOML+CSS layer-shell dialog runtime, from the `spot-bin` AUR package — github.com/KopyTKG/spot). Top level: **Apps · Install · Remove · Capture · Toggle · Setup · Bookmarks · System · Remote · Keybinds · Learn · Power**.
+Hierarchical menu rendered by `spot` (type to filter; smart matching understands abbreviations — `rmt` → Remote, `sys` → System) (TOML+CSS layer-shell dialog runtime, from the `spot-bin` AUR package — github.com/KopyTKG/spot). Top level: **Apps · Install · Remove · Capture · Toggle · Setup · Bookmarks · System · Remote · Keybinds · Learn · Power**.
 
 Notable submenus:
 
@@ -149,7 +149,7 @@ Notable submenus:
 - **Remove** — mirrors Install: Pacman (fzf over `pacman -Qq`) / AUR (foreign packages only, `pacman -Qqm`) / Webapp / Development (`mise uninstall`) / Gaming/Terminal/Font (curated `pacman -Rns`) / ProtonGE (rm from `compatibilitytools.d/`)
 - **Bookmarks** — reads `~/.config/arch-menu/bookmarks.conf` (one `Label | URL` per line, `#` comments OK). Selecting opens the URL in chromium.
 - **System** — TUI control panels via floating alacritty: bluetui, impala, wiremix, jolt, btop · **Firewall** (`arch-firewall`: fzf TUI over `ufw` — live rule list; `a` allow · `d` deny · `l` limit · `x` delete · `e` enable/disable · `?` details)
-- **Remote** — parses `~/.ssh/config` for `# group: NAME` markers; picks a group, then a host, and spawns ssh in a tiled `ssh-session` terminal. **Custom…** gum-prompts for User/Host/Port.
+- **Remote** — reads `~/.ssh/config` and everything it `Include`s; a host's group is its nearest `# group: NAME` marker, else the folder its config lives in (`~/.ssh/infra/config` → *infra*); git forges (github/gitlab/bitbucket/aur) are skipped; picks a group, then a host, and spawns ssh in a tiled `ssh-session` terminal. **Custom…** gum-prompts for User/Host/Port.
 - **Keybinds** — also bound to SUPER+F1; fzf-list of every described Hyprland bind (live from `hyprctl binds`), colored per modifier
 - **Power** — sleep / lock / logout / restart / shutdown
 

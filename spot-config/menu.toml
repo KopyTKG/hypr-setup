@@ -14,6 +14,7 @@ keyboard = "exclusive"
 type        = "list"
 id          = "choice"
 placeholder = "Search…"
+match       = "smart"   # abbreviations: "rmt" -> Remote, "sf" -> System Firewall (needs spot >= 0.3, ignored by older)
 stdin       = true
 height      = 480
 

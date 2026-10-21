@@ -244,11 +244,36 @@ show_system() {
 
 
 # ---------- Remote ----------
-# Parses ~/.ssh/config for "# group: NAME" markers and groups Host entries
-# under whatever marker preceded them. Wildcard hosts are filtered out.
+# Builds the host list from ~/.ssh/config and every file it Includes (relative
+# paths resolve against ~/.ssh, globs and ~ work, nesting is followed).
+# A host's group is the nearest "# group: NAME" marker above it in its file;
+# without one, the folder the file lives in (~/.ssh/infra/config -> "infra"),
+# or "Ungrouped" for ~/.ssh/config itself. Wildcard hosts and git forges
+# (github.com & co: nothing to log in to) are left out.
+_ssh_config_files() {
+  local f=$1 depth=${2:-0} kw rest p g
+  [[ -f $f && $depth -lt 8 ]] || return 0
+  echo "$f"
+  while read -r kw rest; do
+    [[ ${kw,,} == include ]] || continue
+    for p in $rest; do
+      p=${p/#\~/$HOME}
+      [[ $p == /* ]] || p="$HOME/.ssh/$p"
+      for g in $p; do _ssh_config_files "$g" $((depth + 1)); done
+    done
+  done < "$f"
+}
+
 _ssh_grouped() {
-  awk '
-    BEGIN { group = "Ungrouped" }
+  local files=()
+  mapfile -t files < <(_ssh_config_files "$HOME/.ssh/config")
+  [[ ${#files[@]} -gt 0 ]] || return 0
+  awk -v root="$HOME/.ssh/" '
+    FNR == 1 {
+      rel = FILENAME
+      if (index(rel, root) == 1) rel = substr(rel, length(root) + 1)
+      group = (rel ~ /\//) ? substr(rel, 1, index(rel, "/") - 1) : "Ungrouped"
+    }
     /^[[:space:]]*#[[:space:]]*[Gg]roup[[:space:]]*:/ {
       sub(/^[[:space:]]*#[[:space:]]*[Gg]roup[[:space:]]*:[[:space:]]*/, "")
       sub(/[[:space:]]+$/, "")
@@ -257,10 +282,10 @@ _ssh_grouped() {
     }
     tolower($1) == "host" {
       for (i = 2; i <= NF; i++)
-        if ($i !~ /[*?!]/)
+        if ($i !~ /[*?!]/ && $i !~ /^(github\.com|gitlab\.com|bitbucket\.org|aur\.archlinux\.org)$/)
           printf "%s\t%s\n", group, $i
     }
-  ' "$HOME/.ssh/config" 2>/dev/null
+  ' "${files[@]}" 2>/dev/null
 }
 
 show_remote() {
