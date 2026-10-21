@@ -20,6 +20,22 @@ set -u
 prompt=${1:-Password:}
 title=${prompt%%:*}
 
+# ----- 0. yes/no host-key confirmation (not a secret: visible input, no caching) --
+if [[ $prompt == *"(yes/no"* || $prompt == *"type 'yes'"* ]]; then
+  if [[ -t 0 && -t 1 ]]; then
+    printf '%s\n' "$prompt" >&2
+    read -r ans </dev/tty || exit 1
+  else
+    command -v spot >/dev/null || exit 1
+    # first prompt line carries the host; the fingerprint line is the one to verify
+    fp=$(grep -m1 -oE 'SHA256:[^ ]+' <<<"$prompt")
+    ans=$(SPOT_TITLE="SSH host key ${fp:+— $fp}" spot ~/.config/spot/confirm.toml 2>/dev/null) || exit 1
+  fi
+  [[ -z $ans ]] && exit 1
+  printf '%s\n' "$ans"
+  exit 0
+fi
+
 # ----- 1. parse keyfile path from openssh's standard prompt --------------------
 keyfile=
 if [[ $prompt =~ Enter\ passphrase\ for\ (.*) ]]; then
