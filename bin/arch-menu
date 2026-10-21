@@ -58,6 +58,7 @@ show_learn() {
     "  Waybar Wiki" \
     "  Walker" \
     "  Elephant" \
+    "  Spot" \
     "  Bash cheatsheet" \
     "  Back") in
     *"Arch Wiki"*) open_url "https://wiki.archlinux.org/title/Main_page" ;;
@@ -65,6 +66,7 @@ show_learn() {
     *Waybar*)      open_url "https://github.com/Alexays/Waybar/wiki" ;;
     *Walker*)      open_url "https://github.com/abenz1267/walker" ;;
     *Elephant*)    open_url "https://github.com/abenz1267/elephant" ;;
+    *Spot*)        open_url "https://github.com/KopyTKG/spot/tree/main/docs" ;;   # TOML + CSS reference
     *Bash*)        open_url "https://devhints.io/bash" ;;
     *Back*)        show_main ;;
   esac
