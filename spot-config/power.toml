@@ -8,12 +8,6 @@ width    = 480
 style    = "spot.css"
 keyboard = "exclusive"
 
-# Fade the menu itself while the pointer is outside it.
-[opacity]
-inside     = 100
-outside    = 85
-transition = 150
-
 [[items]]
 label   = "Power"
 type    = "tiles"
