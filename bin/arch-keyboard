@@ -19,6 +19,6 @@ mapping = {"English (US)": "0", "Czech": "1"}
 print(mapping.get(keymap, "0"))
 ' 2>/dev/null || echo 0)
 
-choice=$(SPOT_DEFAULT="$current" spot ~/.config/spot/keyboard.toml) || exit 0
+choice=$(SPOT_DEFAULT="$current" SPOT_CURRENT_LAYOUT="$current" spot ~/.config/spot/keyboard.toml) || exit 0
 
 [[ -n $choice ]] && hyprctl switchxkblayout all "$choice" >/dev/null

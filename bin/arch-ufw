@@ -16,7 +16,12 @@ ufw_state() {
 
 status=$(ufw_state)
 
-choice=$(SPOT_TITLE="UFW: $status" spot ~/.config/spot/ufw.toml) || exit 0
+# The tile for the live state gets spot's "active" badge, and the cursor/pick
+# starts on it (not on whichever tile happens to be first). Needs spot >= 0.3.
+live=disable; [[ $status == active ]] && live=enable
+
+choice=$(SPOT_TITLE="UFW: $status" SPOT_DEFAULT="$live" SPOT_CURRENT_ACTION="$live" \
+  spot ~/.config/spot/ufw.toml) || exit 0
 [[ -z $choice ]] && exit 0
 
 case "$choice" in

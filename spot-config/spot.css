@@ -116,11 +116,6 @@
   background: rgba(245, 245, 244, 0.05);
 }
 
-.spot-tile:selected {
-  background: rgba(122, 162, 247, 0.16);
-  border-color: rgba(122, 162, 247, 0.55);
-}
-
 .spot-tile-body {
   padding: 14px 10px;
 }
@@ -135,8 +130,37 @@
   color: #d6d3d1;
 }
 
-.spot-tile:selected .spot-tile-label {
+.spot-tile.spot-cursor .spot-tile-label {
   color: #fafaf9;
+}
+
+/* The highlight follows the keyboard cursor (arrow keys, across all sections).
+   spot's "picked" state is just the section's first/default tile until Enter,
+   so it gets no styling: a filled "Lock" before any key press would be noise. */
+.spot-tile.spot-cursor {
+  background: rgba(122, 162, 247, 0.16);
+  border-color: rgba(122, 162, 247, 0.55);
+  outline: 2px solid rgba(122, 162, 247, 0.9);
+  outline-offset: -2px;
+}
+
+/* The blue dot means "this is the live state", and only that. Callers set the
+   live tile with SPOT_CURRENT_<ID>; it gets .spot-active and the badge below.
+   spot's own "picked" marker (a dot on whichever tile is selected) is hidden:
+   a dot on e.g. "Lock" would read as "active". */
+.spot-tile.spot-active {
+  background: rgba(122, 162, 247, 0.08);
+  border-color: rgba(122, 162, 247, 0.6);
+}
+
+.spot-tile-pick {
+  opacity: 0;
+  font-size: 1px;   /* collapse it too, so the picked tile doesn't sit higher than the others */
+}
+
+.spot-tile-badge {
+  font-size: 8pt;
+  color: rgba(122, 162, 247, 0.95);
 }
 
 .spot-footer {

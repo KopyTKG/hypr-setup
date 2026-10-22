@@ -1,11 +1,11 @@
 #!/bin/bash
 # Power menu (Power + Battery sections): spot tile picker, dispatches to systemctl/hyprlock/uwsm/waybar.
 
-# Battery section opens on the active power profile (needs spot >= 0.2.1; older
-# spot ignores the variable and uses the config's default).
+# Battery section opens on the active power profile and badges it as active
+# (needs spot >= 0.3; older spot ignores the variables and uses the config's default).
 current=$(powerprofilesctl get 2>/dev/null || echo balanced)
 
-out=$(SPOT_DEFAULT_BATTERY="$current" spot ~/.config/spot/power.toml) || exit 0
+out=$(SPOT_DEFAULT_BATTERY="$current" SPOT_CURRENT_BATTERY="$current" spot ~/.config/spot/power.toml) || exit 0
 section=$(jq -r '._active' <<<"$out")
 action=$(jq -r '.action' <<<"$out")
 battery=$(jq -r '.battery' <<<"$out")
