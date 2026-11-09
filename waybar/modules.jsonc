@@ -1,0 +1,133 @@
+// Shared module definitions for every bar in config.jsonc (pulled in via "include").
+// Anything a bar defines itself (hyprland/workspaces) wins over this file.
+{
+  "group/connectivity": {
+    "orientation": "horizontal",
+    "modules": ["custom/firewall", "bluetooth", "network"]
+  },
+  "group/system": {
+    "orientation": "horizontal",
+    "modules": ["pulseaudio", "cpu", "battery"]
+  },
+  "cpu": {
+    "interval": 5,
+    "format": "󰍛",
+    "on-click": "arch-floatterm arch-btop btop"
+  },
+  "clock": {
+    "format": "{:L%A %H:%M (%d.%m.%Y)}",
+    "format-alt": "{:L%d %B W%V %Y}",
+    "tooltip": false
+  },
+  "network": {
+    "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+    "format": "{icon}",
+    "format-wifi": "{icon}",
+    "format-ethernet": "󰀂",
+    "format-disconnected": "󰤮",
+    "tooltip-format-wifi": "{essid} ({frequency} GHz)",
+    "tooltip-format-ethernet": "Connected",
+    "tooltip-format-disconnected": "Disconnected",
+    "interval": 3,
+    "spacing": 1,
+    "on-click": "arch-floatterm arch-impala sh -c 'rfkill unblock wifi; exec impala'"
+  },
+  "battery": {
+    "format": "{capacity}% {icon}",
+    "format-discharging": "{capacity}% {icon}",
+    "format-charging": "{capacity}% {icon}",
+    "format-plugged": "{capacity}% {icon}",
+    "format-icons": {
+      "charging": ["󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"],
+      "default": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
+    },
+    "format-full": "{capacity}% 󰂅",
+    "tooltip-format-discharging": "{power:>1.0f}W↓ {capacity}%",
+    "tooltip-format-charging": "{power:>1.0f}W↑ {capacity}%",
+    "interval": 5,
+    "on-click": "arch-floatterm arch-jolt jolt",
+    "states": {
+      "warning": 20,
+      "critical": 10
+    }
+  },
+  "bluetooth": {
+    "format": "󰂯",
+    "format-disabled": "󰂲",
+    "format-off": "󰂲",
+    "format-connected": "󰂱",
+    "format-no-controller": "󰂲",
+    "tooltip-format": "Devices connected: {num_connections}",
+    "on-click": "arch-floatterm arch-bluetui sh -c 'rfkill unblock bluetooth; exec bluetui'"
+  },
+  "pulseaudio": {
+    "format": "{icon}",
+    "format-bluetooth": "{icon}",
+    "on-click": "arch-floatterm arch-wiremix wiremix",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "tooltip-format": "Playing at {volume}%",
+    "scroll-step": 5,
+    "format-muted": "",
+    "format-icons": {
+      "headphone": "",
+      "headset": "",
+      "default": ["", "", ""]
+    }
+  },
+  "group/tray-expander": {
+    "orientation": "inherit",
+    "drawer": {
+      "transition-duration": 600,
+      "children-class": "tray-group-item"
+    },
+    "modules": ["custom/expand-icon", "tray"]
+  },
+  "custom/launcher": {
+    "format": "",
+    "on-click": "arch-power-menu",
+    "tooltip": false
+  },
+  "custom/expand-icon": {
+    "format": " ",
+    "tooltip": false
+  },
+  "custom/firewall": {
+    "exec": "arch-indicator-firewall",
+    "on-click": "arch-ufw",
+    "return-type": "json",
+    "interval": 5
+  },
+  "custom/idle-indicator": {
+    "exec": "arch-indicator-idle",
+    "on-click": "arch-toggle-idle",
+    "return-type": "json",
+    "interval": 5,
+    "signal": 9
+  },
+  "custom/notification-silencing-indicator": {
+    "exec": "arch-indicator-notifications",
+    "on-click": "arch-toggle-notification-silencing",
+    "return-type": "json",
+    "interval": 5,
+    "signal": 10
+  },
+  "custom/updates": {
+    "exec": "arch-indicator-updates",
+    "on-click": "uwsm-app -- xdg-terminal-exec bash -c \"fish -c update; read -p 'Press Enter to close.'\"",
+    "on-click-right": "arch-update-check",
+    "return-type": "json",
+    "interval": 1800,
+    "signal": 11,
+    "tooltip": true
+  },
+  "tray": {
+    "icon-size": 12,
+    "spacing": 12
+  },
+  "hyprland/language": {
+    "format": "{}",
+    "format-cs": "CZ",
+    "format-en": "US",
+    "on-click": "arch-keyboard"
+  }
+}

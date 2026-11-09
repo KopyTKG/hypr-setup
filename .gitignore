@@ -22,3 +22,6 @@
 # Old monolithic .bashrc location — replaced by bash/.bashrc.
 # Apps occasionally touch ~/.bashrc which resolves here via symlink.
 /.bashrc
+
+# Written at runtime by bin/arch-display (per-machine monitor layout)
+/hypr/display.lua

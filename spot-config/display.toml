@@ -1,0 +1,86 @@
+# Display layout picker — tiles in three sections: what to show (mode),
+# where the external sits (placement), and per-monitor settings.
+#
+#   spot ~/.config/spot/display.toml     (driven by bin/arch-display)
+
+title    = "Display"
+anchor   = "center"
+width    = 600
+style    = "spot.css"
+keyboard = "exclusive"
+
+[[items]]
+type    = "tiles"
+id      = "mode"
+label   = "Mode"
+columns = 4
+
+[[items.tiles]]
+icon  = "󰩠"
+label = "Extend"
+value = "extend"
+
+[[items.tiles]]
+icon  = "󱃧"
+label = "Mirror"
+value = "mirror"
+
+[[items.tiles]]
+icon  = "󰌢"
+label = "Laptop only"
+value = "internal"
+
+[[items.tiles]]
+icon  = "󰍹"
+label = "External only"
+value = "external"
+
+[[items]]
+type    = "tiles"
+id      = "placement"
+label   = "Placement"
+columns = 4
+
+[[items.tiles]]
+icon  = "󰁔"
+label = "Right"
+value = "extend-right"
+
+[[items.tiles]]
+icon  = "󰁍"
+label = "Left"
+value = "extend-left"
+
+[[items.tiles]]
+icon  = "󰅃"
+label = "Above"
+value = "extend-top"
+
+[[items.tiles]]
+icon  = "󰁅"
+label = "Below"
+value = "extend-bottom"
+
+[[items]]
+type    = "tiles"
+id      = "settings"
+label   = "Settings"
+columns = 3
+
+[[items.tiles]]
+icon  = "󰩟"
+label = "Resolution"
+value = "resolution"
+
+[[items.tiles]]
+icon  = "󰍉"
+label = "Scale"
+value = "scale"
+
+[[items.tiles]]
+icon  = "󰦛"
+label = "Reset"
+value = "reset"
+
+[submit]
+format = "json"

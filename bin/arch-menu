@@ -118,6 +118,8 @@ show_setup() {
   case $(menu "Setup" \
     "  Hyprland" \
     "  Bindings" \
+    "󰍹  Display" \
+    "  Reload" \
     "  Waybar" \
     "  Walker" \
     "  Hypridle" \
@@ -125,11 +127,36 @@ show_setup() {
     "  Back") in
     *Hyprland*) editor ~/.config/hypr/hyprland.lua ;;
     *Bindings*) editor ~/.config/hypr/bindings.lua ;;
+    *Display*)  arch-display ;;
+    *Reload*)   show_reload ;;
     *Waybar*)   editor ~/.config/waybar/config.jsonc ;;
     *Walker*)   editor ~/.config/walker/config.toml ;;
     *Hypridle*) editor ~/.config/hypr/hypridle.conf ;;
     *Hyprlock*) editor ~/.config/hypr/hyprlock.conf ;;
     *Back*)     show_main ;;
+  esac
+}
+
+
+# ---------- Reload ----------
+show_reload() {
+  case $(menu "Reload" \
+    "  Hyprland" \
+    "  Waybar" \
+    "  Mako" \
+    "  Hypridle" \
+    "  Walker" \
+    "  Wallpaper" \
+    "  All" \
+    "  Back") in
+    *Hyprland*)  arch-reload hyprland ;;
+    *Waybar*)    arch-reload waybar ;;
+    *Mako*)      arch-reload mako ;;
+    *Hypridle*)  arch-reload hypridle ;;
+    *Walker*)    arch-reload walker ;;
+    *Wallpaper*) arch-reload wallpaper ;;
+    *All*)       arch-reload all ;;
+    *Back*)      show_setup ;;
   esac
 }
 

@@ -18,3 +18,6 @@ hl.monitor({ output = "DP-1", mode = "preferred", position = "auto", scale = 1.3
 -- Example for Framework 13 w/ 6K XDR Apple display
 -- hl.monitor({ output = "DP-5", mode = "6016x3384@60", position = "auto", scale = 2 })
 -- hl.monitor({ output = "eDP-1", mode = "2880x1920@120", position = "auto", scale = 2 })
+
+-- Layout saved by arch-display (Setup > Display); overrides the rules above.
+pcall(require, "display")

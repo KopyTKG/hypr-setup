@@ -16,7 +16,7 @@ hypr/                      Hyprland Lua config (hyprland.lua → defaults/ + per
 arch-menu/                 user-editable arch-menu config (bookmarks.conf)
 mako/                      notification daemon (stone-styled)
 nvim/                      submodule → gitlab.com/kopytkg/nvim
-spot-config/               linked into ~/.config/spot/ (menu, power, password, keyboard, …)
+spot-config/               linked into ~/.config/spot/ (menu, power, password, keyboard, display, …)
 plymouth-theme-arch-stone/ boot/shutdown splash (Arch logo on stone-950)
 sddm-theme-stone/          Qt6 login-screen theme
 swayosd/                   audio/brightness OSD

@@ -1,0 +1,129 @@
+#!/bin/bash
+# arch-display — monitor layout picker via spot (extend / mirror / single /
+# resolution / scale), applied live with `hyprctl eval` and saved to
+# ~/.config/hypr/display.lua (gitignored, required last by monitors.lua).
+#
+# The Lua rules are built by the python block from the live `hyprctl monitors
+# all -j`, so monitors you don't touch keep their current mode/scale/position.
+
+set -e
+SAVE="$HOME/.config/hypr/display.lua"
+mons=$(hyprctl monitors all -j)
+
+# Mode list ("2560x1600@60.00") for one monitor.
+modes_of() {
+  jq -r --arg n "$1" '.[] | select(.name==$n) | .availableModes[]' <<<"$mons" | sed 's/Hz$//' | awk '!s[$0]++'
+}
+
+# Pick a monitor (skips the question when there is only one).
+pick_monitor() {
+  local n
+  n=$(jq 'length' <<<"$mons")
+  if (( n == 1 )); then jq -r '.[0].name' <<<"$mons"; return; fi
+  jq -r '.[] | "\(.name)  (\(.description))"' <<<"$mons" \
+    | SPOT_TITLE="Monitor" spot ~/.config/spot/menu.toml | awk '{print $1}'
+}
+
+gen() {  # gen ACTION [MONITOR] [VALUE] -> Lua on stdout
+  python3 -I -c '
+import sys, json
+action, target, value = (sys.argv[1:] + ["", ""])[:3]
+mons = json.load(sys.stdin)
+internal = next((m for m in mons if m["name"].startswith(("eDP", "LVDS", "DSI"))), mons[0])
+ext = [m for m in mons if m is not internal]
+
+def spec(m, **kw):
+    d = dict(output=m["name"], mode="%dx%d@%.2f" % (m["width"], m["height"], m["refreshRate"]),
+             position="%dx%d" % (m["x"], m["y"]), scale=m["scale"], mirror="")  # "" clears a live mirror
+    d.update(kw)
+    return d
+
+def lw(m):  # logical width
+    return round(m["width"] / m["scale"])
+
+def lh(m):  # logical height
+    return round(m["height"] / m["scale"])
+
+out = []
+if action.startswith("extend-"):
+    if not ext: sys.exit("no external monitor connected")
+    side = action[7:]
+    if side not in ("right", "left", "top", "bottom"): sys.exit("unknown action: " + action)
+    row = ext + [internal] if side in ("left", "top") else [internal] + ext
+    p = 0
+    for m in row:
+        if side in ("left", "right"):
+            out.append(spec(m, position="%dx0" % p)); p += lw(m)
+        else:
+            out.append(spec(m, position="0x%d" % p)); p += lh(m)
+elif action == "extend":
+    if not ext: sys.exit("no external monitor connected")
+    out.append(spec(internal, position="0x0"))
+    for m in ext:
+        out.append(spec(m, position="auto"))
+elif action == "mirror":
+    if not ext: sys.exit("no external monitor connected")
+    out.append(spec(internal, position="0x0"))
+    for m in ext:
+        out.append(spec(m, position="auto", mirror=internal["name"]))
+elif action in ("internal", "external"):
+    if not ext: sys.exit("no external monitor connected")
+    keep, drop = (internal, ext) if action == "internal" else (ext, [internal])
+    x = 0
+    for m in keep:
+        out.append(spec(m, position="%dx0" % x)); x += lw(m)
+    for m in drop:
+        out.append(dict(output=m["name"], disabled=True))
+elif action in ("resolution", "scale"):
+    for m in mons:
+        if m["name"] == target:
+            out.append(spec(m, **({"mode": value} if action == "resolution" else {"scale": float(value)})))
+        elif not m.get("disabled"):
+            out.append(spec(m))
+else:
+    sys.exit("unknown action: " + action)
+
+def lua(v):
+    return "true" if v is True else json.dumps(v)
+for d in out:
+    print("hl.monitor({ " + ", ".join("%s = %s" % (k, lua(v)) for k, v in d.items()) + " })")
+' "$@" <<<"$mons"
+}
+
+out=$(spot ~/.config/spot/display.toml) || exit 0
+choice=$(jq -r '.[._active] // empty' <<<"$out")
+[[ -z $choice ]] && exit 0
+
+if [[ $choice == reset ]]; then
+  rm -f "$SAVE"
+  hyprctl reload >/dev/null
+  notify-send -u low "Display" "reset to defaults"
+  exit 0
+fi
+
+target="" value=""
+case "$choice" in
+  resolution)
+    target=$(pick_monitor) || exit 0
+    [[ -z $target ]] && exit 0
+    value=$(modes_of "$target" | SPOT_TITLE="Resolution: $target" spot ~/.config/spot/menu.toml) || exit 0
+    ;;
+  scale)
+    target=$(pick_monitor) || exit 0
+    [[ -z $target ]] && exit 0
+    value=$(printf '%s\n' 1 1.25 1.333333 1.5 1.666667 2 | SPOT_TITLE="Scale: $target" spot ~/.config/spot/menu.toml) || exit 0
+    ;;
+esac
+[[ $choice =~ ^(resolution|scale)$ && -z $value ]] && exit 0
+
+if ! lua=$(gen "$choice" "$target" "$value" 2>&1); then
+  notify-send -u critical "Display" "$lua"
+  exit 1
+fi
+
+if ! err=$(hyprctl eval "$lua" 2>&1) || [[ -n $err && $err != ok ]]; then
+  notify-send -u critical "Display: apply failed" "$err"
+  exit 1
+fi
+printf -- '-- Written by arch-display; delete (or Setup > Display > Reset) to go back to monitors.lua.\n%s\n' "$lua" > "$SAVE"
+notify-send -u low "Display" "$choice ${target:+$target }${value}"

@@ -15,6 +15,7 @@ require("theme.hyprland")
 
 -- Change your own setup in these files (and overwrite any settings from defaults!)
 require("monitors")
+require("workspaces")
 require("input")
 require("bindings")
 require("envs")
