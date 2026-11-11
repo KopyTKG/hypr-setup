@@ -11,6 +11,11 @@ abbr -a -- .... 'cd ../../..'
 abbr -a -- ..... 'cd ../../../..'
 abbr -a reload 'exec fish'          # was `source ~/.bashrc`
 
+# --- History expansion (bash-style) ---------------------------------
+# `sudo !!` → sudo <last command>;  `!$` → last argument of the last command
+abbr -a '!!' --position anywhere --function last_history_item
+abbr -a '!$' --position anywhere --function last_history_arg
+
 # --- System monitoring ---------------------------------------------
 abbr -a ports 'netstat -tulanp'
 abbr -a meminfo 'free -mth'
@@ -18,6 +23,14 @@ abbr -a psmem 'ps auxf | sort -nr -k 4 | head -10'
 abbr -a pscpu 'ps auxf | sort -nr -k 3 | head -10'
 abbr -a vaultInfo 'sudo mdadm --detail /dev/md0'
 abbr -a raidStatus 'sudo mdadm --detail --scan'
+
+# --- Trash (trash-cli) — `rm` itself trashes (functions/rm.fish); rmperm = real delete
+abbr -a tp trash-put
+abbr -a tl trash-list
+abbr -a te 'trash-empty 30'         # purge items trashed 30+ days ago (plain `trash-empty` asks first)
+abbr -a tre trestore                # fzf restore   (functions/trestore.fish)
+abbr -a tpg tpurge                  # fzf permanent delete (functions/tpurge.fish)
+abbr -a rmperm 'command rm -I --preserve-root'   # bypass the trash-backed rm
 
 # --- Git ------------------------------------------------------------
 abbr -a lz lazygit
@@ -81,32 +94,12 @@ abbr -a ntest 'npm test'
 abbr -a nup 'npm update'
 abbr -a nout 'npm outdated'
 abbr -a nls 'npm list --depth=0'
-abbr -a nclean 'rm -rf node_modules package-lock.json && npm install'
-abbr -a bi 'bun install'
-abbr -a ba 'bun add'
-abbr -a bad 'bun add --dev'
-abbr -a br 'bun run'
-abbr -a bx bunx
-abbr -a bdev 'bun run dev'
-abbr -a bbuild 'bun run build'
-abbr -a btest 'bun test'
-abbr -a bup 'bun update'
-abbr -a dr 'deno run'
-abbr -a dt 'deno task'
-abbr -a dtest 'deno test'
-abbr -a dfmt 'deno fmt'
-abbr -a dlint 'deno lint'
+abbr -a nclean 'command rm -rf node_modules package-lock.json && npm install'
+abbr -a yi 'yarn'
 abbr -a ya 'yarn add'
 abbr -a yad 'yarn add --dev'
 abbr -a yr 'yarn run'
 abbr -a yup 'yarn upgrade'
-abbr -a pi 'pnpm install'
-abbr -a pa 'pnpm add'
-abbr -a pr 'pnpm run'
-abbr -a cra 'bunx create-react-app'
-abbr -a cnext 'bunx create-next-app'
-abbr -a cvite 'bunx create-vite'
-abbr -a cpreact 'bunx create-preact'
 
 # --- Python ---------------------------------------------------------
 abbr -a py python
@@ -171,8 +164,6 @@ abbr -a texmkclean 'latexmk -c'
 abbr -a cmake-build 'cmake -B build && cmake --build build'
 
 # --- Dev utilities --------------------------------------------------
-abbr -a serve 'python -m http.server'
-abbr -a serve-bun 'bunx serve'
 abbr -a fhere 'find . -name'
 abbr -a grephere 'grep -r'
 abbr -a ka killall

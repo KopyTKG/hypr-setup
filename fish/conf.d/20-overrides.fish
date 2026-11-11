@@ -59,7 +59,7 @@ function egrep; command grep -E --color=auto $argv; end
 function fgrep; command grep -F --color=auto $argv; end
 
 # --- Safety nets ----------------------------------------------------
-function rm;    command rm -I --preserve-root $argv; end
+# rm itself lives in functions/rm.fish (moves to trash; `command rm` / rmperm = real delete)
 function cp;    command cp -i $argv; end
 function mv;    command mv -i $argv; end
 function mkdir; command mkdir -pv $argv; end

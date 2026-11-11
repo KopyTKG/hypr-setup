@@ -63,7 +63,9 @@ PACMAN_PKGS=(
   # bar / launcher / notifications
   waybar mako swaybg swayosd
   # terminal & CLI (xdg-terminal-exec is AUR-only as -git, installed below)
-  alacritty fzf gum jq python neovim fastfetch starship
+  alacritty fzf gum jq python neovim fastfetch starship trash-cli
+  # fish helpers: frecency cd, per-project env, searchable history
+  zoxide direnv atuin
   # fish is the login shell (config in fish/); bash kept as fallback
   fish bash-completion
   # tray TUIs (bluetui/impala/wiremix/jolt moved out of AUR — they're in extra now)
@@ -132,12 +134,25 @@ else
   gray "  lspci returned no GPU lines (running in a VM?)"
 fi
 
-gpu_pick=$(gum choose --header="Which GPU drivers?" \
-  "AMD            (vulkan-radeon + lib32 + mesa-utils)" \
-  "Intel          (vulkan-intel + intel-media-driver)" \
-  "Nvidia open    (nvidia-open + nvidia-utils)" \
-  "Nvidia closed  (nvidia + nvidia-utils)" \
-  "Skip" 2>/dev/null) || gpu_pick=""
+# Only offer drivers for hardware lspci actually found (vendor ids: 1002 AMD,
+# 8086 Intel, 10de NVIDIA) and pre-select the first match, so a stray Enter
+# can't install the wrong stack. No GPU lines at all (VM) → offer everything.
+opts=()
+want_amd=0 want_intel=0 want_nvidia=0
+[[ $detected == *"[1002:"* ]] && want_amd=1
+[[ $detected == *"[8086:"* ]] && want_intel=1
+[[ $detected == *"[10de:"* ]] && want_nvidia=1
+if (( !want_amd && !want_intel && !want_nvidia )); then
+  want_amd=1 want_intel=1 want_nvidia=1
+fi
+(( want_amd ))    && opts+=("AMD            (vulkan-radeon + lib32 + mesa-utils)")
+(( want_intel ))  && opts+=("Intel          (vulkan-intel + intel-media-driver)")
+(( want_nvidia )) && opts+=("Nvidia open    (nvidia-open + nvidia-utils)" \
+                            "Nvidia closed  (nvidia + nvidia-utils)")
+opts+=("Skip")
+
+gpu_pick=$(gum choose --header="Which GPU drivers? (detected hardware only)" \
+  --selected="${opts[0]}" "${opts[@]}" 2>/dev/null) || gpu_pick=""
 
 case "$gpu_pick" in
   AMD*)
