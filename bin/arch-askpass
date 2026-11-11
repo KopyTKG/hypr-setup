@@ -38,11 +38,14 @@ fi
 
 # ----- 1. parse keyfile path from openssh's standard prompt --------------------
 keyfile=
-if [[ $prompt =~ Enter\ passphrase\ for\ (.*) ]]; then
-  k=${BASH_REMATCH[1]}
+# openssh >= 8.x prompts "Enter passphrase for key '/path': "; older/ssh-add
+# variants omit "key " or the quotes. Take what is between "for" and the colon.
+if [[ $prompt =~ Enter\ passphrase\ for\ (key\ )?(.*) ]]; then
+  k=${BASH_REMATCH[2]}
   k=${k%$'\n'}                  # trailing newline (some askpass callers)
-  k=${k% (will confirm)}        # confirm-prompt variant
+  k=${k%' '}                    # trailing space after the colon
   k=${k%:}                      # trailing colon
+  k=${k% (will confirm)}        # confirm-prompt variant
   k=${k%\"}; k=${k%\'}          # trailing quote (ssh-add wraps paths in '...')
   k=${k#\"}; k=${k#\'}          # leading quote
   keyfile=$k
@@ -84,7 +87,10 @@ fi
 [[ -z $pw ]] && exit 1
 
 # ----- 4. store in keyring -----------------------------------------------------
-if [[ -n $keyfile ]] && command -v secret-tool >/dev/null 2>&1; then
+# Only cache a passphrase that actually decrypts the key, so a typo is never
+# replayed silently on every later ssh.
+if [[ -n $keyfile && -f $keyfile ]] && command -v secret-tool >/dev/null 2>&1 &&
+   ssh-keygen -y -P "$pw" -f "$keyfile" >/dev/null 2>&1; then
   printf '%s' "$pw" | secret-tool store --label "Unlock password for $keyfile" \
     unique "ssh-store:$keyfile" 2>/dev/null || true
 fi

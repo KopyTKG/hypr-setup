@@ -16,6 +16,7 @@ end
 bind("SUPER + F1", exec("arch-floatterm arch-installer arch-keybinds"), "Keybinds")
 
 bind("SUPER + ALT + SPACE", exec("arch-menu"), "Arch menu")
+bind("SUPER + SHIFT + P", exec("arch-display"), "Display settings")
 
 -- Cleanup: drop defaults that get rebound below
 hl.unbind("SUPER + T")
@@ -44,8 +45,8 @@ bind("SUPER + SHIFT + D", exec("uwsm-app -- xdg-terminal-exec lazydocker"), "Doc
 bind("SUPER + D", exec('arch-launch-app discord "uwsm-app -- flatpak run com.discordapp.Discord"'), "Discord")
 
 -- Proton stuff
-webapp("SUPER + C", "Calendar", "proton-calendar", "https://calendar.proton.me/u/0/")
-webapp("SUPER + E", "Email", "proton-mail", "https://mail.proton.me/u/0/inbox")
+webapp("SUPER + C", "Calendar", "thekrew-calendar", "https://cloud.thekrew.app/apps/calendar/dayGridMonth/now")
+bind("SUPER + E", exec('arch-launch-app thunderbird "uwsm-app -- flatpak run org.mozilla.thunderbird"'), "Email")
 
 -- AI stuff
 webapp("SUPER + A", "Claude", "claude-ai", "https://claude.ai/")

@@ -1,11 +1,12 @@
-# Display layout picker — tiles in three sections: what to show (mode),
-# where the external sits (placement), and per-monitor settings.
+# Unified display settings (Setup > Display), tiles in four sections:
+# mode, placement, per-monitor settings and the rest.
 #
-#   spot ~/.config/spot/display.toml     (driven by bin/arch-display)
+#   spot ~/.config/spot/display.toml     (driven by bin/arch-display, which sets
+#                                         SPOT_FOOTER to the live monitor summary)
 
 title    = "Display"
 anchor   = "center"
-width    = 600
+width    = 640
 style    = "spot.css"
 keyboard = "exclusive"
 
@@ -63,9 +64,9 @@ value = "extend-bottom"
 
 [[items]]
 type    = "tiles"
-id      = "settings"
-label   = "Settings"
-columns = 3
+id      = "monitor"
+label   = "Monitor"
+columns = 4
 
 [[items.tiles]]
 icon  = "󰩟"
@@ -76,6 +77,27 @@ value = "resolution"
 icon  = "󰍉"
 label = "Scale"
 value = "scale"
+
+[[items.tiles]]
+icon  = "󰑧"
+label = "Rotate"
+value = "rotate"
+
+[[items.tiles]]
+icon  = "󰓦"
+label = "Sync"
+value = "vrr"
+
+[[items]]
+type    = "tiles"
+id      = "other"
+label   = "Other"
+columns = 4
+
+[[items.tiles]]
+icon  = "󰖔"
+label = "Night light"
+value = "nightlight"
 
 [[items.tiles]]
 icon  = "󰦛"

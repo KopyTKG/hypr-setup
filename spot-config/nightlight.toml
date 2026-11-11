@@ -1,0 +1,49 @@
+# Night light picker — colour temperature tiles (hyprsunset).
+#
+#   spot ~/.config/spot/nightlight.toml     (driven by bin/arch-nightlight)
+#
+# The caller sets SPOT_CURRENT_TEMP / SPOT_DEFAULT_TEMP to the live temperature.
+
+title    = "Night light"
+anchor   = "center"
+width    = 560
+style    = "spot.css"
+keyboard = "exclusive"
+
+[[items]]
+type    = "tiles"
+id      = "temp"
+columns = 3
+
+[[items.tiles]]
+icon  = "󰖙"
+label = "Off"
+value = "6000"
+
+[[items.tiles]]
+icon  = "󰖙"
+label = "5000K"
+value = "5000"
+
+[[items.tiles]]
+icon  = "󰖔"
+label = "4500K"
+value = "4500"
+
+[[items.tiles]]
+icon  = "󰖔"
+label = "4000K"
+value = "4000"
+
+[[items.tiles]]
+icon  = "󰖔"
+label = "3500K"
+value = "3500"
+
+[[items.tiles]]
+icon  = "󰖔"
+label = "3000K"
+value = "3000"
+
+[submit]
+stdout = "{temp}"

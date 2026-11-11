@@ -1,12 +1,13 @@
 #!/bin/bash
-# arch-display — monitor layout picker via spot (extend / mirror / single /
+# arch-display [resolution|scale|rotate|vrr|nightlight] — monitor layout picker via spot (extend / mirror / single /
 # resolution / scale), applied live with `hyprctl eval` and saved to
 # ~/.config/hypr/display.lua (gitignored, required last by monitors.lua).
+#
+# With an argument it skips the tile screen and goes straight to that setting.
 #
 # The Lua rules are built by the python block from the live `hyprctl monitors
 # all -j`, so monitors you don't touch keep their current mode/scale/position.
 
-set -e
 SAVE="$HOME/.config/hypr/display.lua"
 mons=$(hyprctl monitors all -j)
 
@@ -15,34 +16,114 @@ modes_of() {
   jq -r --arg n "$1" '.[] | select(.name==$n) | .availableModes[]' <<<"$mons" | sed 's/Hz$//' | awk '!s[$0]++'
 }
 
+# Scales Hyprland accepts for a monitor at its current mode: both logical sizes must
+# be whole pixels (anything else gets silently nudged). Limited to round-looking
+# values between 1 and 3 so the list stays short. Output: "SCALE  LOGICALxLOGICAL".
+scales_of() {
+  python3 -I -c '
+import sys, json
+from math import gcd
+name = sys.argv[1]
+m = next(x for x in json.load(sys.stdin) if x["name"] == name)
+w, h = m["width"], m["height"]
+step = w // gcd(w, h)          # logical widths must be multiples of this
+seen = set()
+lw = step
+while lw <= w:
+    sc = w / lw
+    lh = lw * h // w
+    nice = any(abs(sc * k - round(sc * k)) < 0.002 for k in (4, 12, 20))
+    if 1 <= sc <= 3 and lw * h % w == 0 and nice and round(sc, 3) not in seen:
+        seen.add(round(sc, 3))
+        print("%.6f  %dx%d" % (sc, lw, lh))
+    lw += step
+' "$1" <<<"$mons" | sort -n
+}
+
+# Every list ends with a Back entry. select_list returns 0 with the pick on
+# stdout, 2 for Back, 1 when the dialog was cancelled (Esc / click outside).
+BACK="  Back"
+select_list() {  # select_list TITLE  (items on stdin)
+  local r
+  r=$({ cat; printf '%s\n' "$BACK"; } | SPOT_TITLE="$1" spot ~/.config/spot/menu.toml) || return 1
+  [[ $r == "$BACK" ]] && return 2
+  printf '%s\n' "$r"
+}
+
 # Pick a monitor (skips the question when there is only one).
 pick_monitor() {
-  local n
-  n=$(jq 'length' <<<"$mons")
-  if (( n == 1 )); then jq -r '.[0].name' <<<"$mons"; return; fi
-  jq -r '.[] | "\(.name)  (\(.description))"' <<<"$mons" \
-    | SPOT_TITLE="Monitor" spot ~/.config/spot/menu.toml | awk '{print $1}'
+  if (( $(jq length <<<"$mons") == 1 )); then jq -r '.[0].name' <<<"$mons"; return 0; fi
+  local r
+  r=$(jq -r '.[] | "\(.name)  (\(.description))"' <<<"$mons" | select_list "Monitor") || return $?
+  awk '{print $1}' <<<"$r"
+}
+
+# The list for one setting of one monitor; first token of the pick is the value.
+value_list() {  # value_list SETTING MONITOR
+  local r items title
+  case "$1" in
+    resolution) items=$(modes_of "$2");  title="Resolution: $2" ;;
+    scale)      items=$(scales_of "$2"); title="Scale: $2" ;;
+    rotate)     items=$(printf '%s\n' "0  Normal" "1  90°" "2  180°" "3  270°"); title="Rotate: $2" ;;
+    vrr)        items=$(printf '%s\n' "0  Off" "1  Always on" "2  Fullscreen only"); title="Adaptive sync: $2" ;;
+  esac
+  r=$(select_list "$title" <<<"$items") || return $?
+  awk '{print $1}' <<<"$r"
 }
 
 gen() {  # gen ACTION [MONITOR] [VALUE] -> Lua on stdout
-  python3 -I -c '
-import sys, json
+  SAVE="$SAVE" python3 -I -c '
+import sys, json, os, re
 action, target, value = (sys.argv[1:] + ["", ""])[:3]
 mons = json.load(sys.stdin)
+# vrr is not reported as a setting by hyprctl, so carry it over from the last saved layout
+saved_vrr = {}
+try:
+    for line in open(os.environ["SAVE"]):
+        m = re.search(r"output = \"([^\"]+)\".*vrr = (\d)", line)
+        if m: saved_vrr[m.group(1)] = int(m.group(2))
+except OSError:
+    pass
 internal = next((m for m in mons if m["name"].startswith(("eDP", "LVDS", "DSI"))), mons[0])
 ext = [m for m in mons if m is not internal]
 
 def spec(m, **kw):
     d = dict(output=m["name"], mode="%dx%d@%.2f" % (m["width"], m["height"], m["refreshRate"]),
-             position="%dx%d" % (m["x"], m["y"]), scale=m["scale"], mirror="")  # "" clears a live mirror
+             position="%dx%d" % (m["x"], m["y"]), scale=m["scale"], mirror="",  # "" clears a live mirror
+             transform=m.get("transform", 0))
+    if m["name"] in saved_vrr: d["vrr"] = saved_vrr[m["name"]]
     d.update(kw)
     return d
 
-def lw(m):  # logical width
-    return round(m["width"] / m["scale"])
+def lw(m):  # logical width (swapped when rotated 90/270)
+    return round((m["height"] if m.get("transform", 0) % 2 else m["width"]) / m["scale"])
 
 def lh(m):  # logical height
-    return round(m["height"] / m["scale"])
+    return round((m["width"] if m.get("transform", 0) % 2 else m["height"]) / m["scale"])
+
+def regrid(specs):
+    # A scale/resolution/rotation change alters one monitor logical size, so
+    # re-pack the monitors along the axis they are laid out on (keeps order and
+    # the cross-axis offsets) instead of leaving a gap or an overlap.
+    live = [d for d in specs if not d.get("disabled") and not d.get("mirror")]
+    if len(live) < 2: return
+    def size(d):
+        w, h = (int(n) for n in d["mode"].split("@")[0].split("x"))
+        if d["transform"] % 2: w, h = h, w
+        return round(w / d["scale"]), round(h / d["scale"])
+    def pos(d):
+        x, y = d["position"].split("x"); return int(x), int(y)
+    xs, ys = [pos(d)[0] for d in live], [pos(d)[1] for d in live]
+    horiz = max(xs) - min(xs) >= max(ys) - min(ys)
+    axis = 0 if horiz else 1
+    live.sort(key=lambda d: pos(d)[axis])
+    cur = pos(live[0])[axis]
+    for d in live:
+        x, y = pos(d)
+        if horiz: x = cur
+        else: y = cur
+        d["position"] = "%dx%d" % (x, y)
+        cur += size(d)[axis]
 
 out = []
 if action.startswith("extend-"):
@@ -74,12 +155,15 @@ elif action in ("internal", "external"):
         out.append(spec(m, position="%dx0" % x)); x += lw(m)
     for m in drop:
         out.append(dict(output=m["name"], disabled=True))
-elif action in ("resolution", "scale"):
+elif action in ("resolution", "scale", "rotate", "vrr", "relayout"):
+    change = {"relayout": lambda: {},"resolution": lambda: {"mode": value}, "scale": lambda: {"scale": float(value)},
+              "rotate": lambda: {"transform": int(value)}, "vrr": lambda: {"vrr": int(value)}}[action]
     for m in mons:
         if m["name"] == target:
-            out.append(spec(m, **({"mode": value} if action == "resolution" else {"scale": float(value)})))
+            out.append(spec(m, **change()))
         elif not m.get("disabled"):
             out.append(spec(m))
+    if action != "vrr": regrid(out)
 else:
     sys.exit("unknown action: " + action)
 
@@ -90,40 +174,76 @@ for d in out:
 ' "$@" <<<"$mons"
 }
 
-out=$(spot ~/.config/spot/display.toml) || exit 0
-choice=$(jq -r '.[._active] // empty' <<<"$out")
-[[ -z $choice ]] && exit 0
+# Apply one action (CHOICE [MONITOR] [VALUE]), re-pack against what Hyprland
+# really chose, save the layout. Returns non-zero (after notifying) on failure.
+apply() {
+  local choice=$1 target=$2 value=$3 lua lua2 err
+  if ! lua=$(gen "$choice" "$target" "$value" 2>&1); then
+    notify-send -u critical "Display" "$lua"; return 1
+  fi
+  if ! err=$(hyprctl eval "$lua" 2>&1) || [[ -n $err && $err != ok ]]; then
+    notify-send -u critical "Display: apply failed" "$err"; return 1
+  fi
+  # Hyprland may adjust a scale that does not divide the resolution evenly
+  # (1.75 on 2560x1440 becomes 1.6666666). Re-read what it really chose and
+  # re-pack against that, so the layout never overlaps.
+  sleep 0.5
+  if [[ $choice =~ ^(resolution|scale|rotate)$ ]]; then
+    mons=$(hyprctl monitors all -j)
+    if lua2=$(gen relayout) && [[ $lua2 != "$lua" ]]; then
+      hyprctl eval "$lua2" >/dev/null 2>&1 && lua=$lua2
+    fi
+  fi
+  printf -- '-- Written by arch-display; delete (or Setup > Display > Reset) to go back to monitors.lua.\n%s\n' "$lua" > "$SAVE"
+  notify-send -u low "Display" "$choice ${target:+$target }${value}"
+}
 
-if [[ $choice == reset ]]; then
-  rm -f "$SAVE"
-  hyprctl reload >/dev/null
-  notify-send -u low "Display" "reset to defaults"
-  exit 0
-fi
+# A per-monitor setting: monitor -> value, with Back stepping up one level.
+# Returns 0 applied, 2 back to the main screen, 1 cancelled.
+setting() {
+  local choice=$1 target value r
+  while true; do
+    target=$(pick_monitor); r=$?
+    (( r == 1 )) && return 1
+    (( r == 2 )) && return 2
+    value=$(value_list "$choice" "$target"); r=$?
+    (( r == 1 )) && return 1
+    if (( r == 2 )); then
+      (( $(jq length <<<"$mons") == 1 )) && return 2   # no monitor step to go back to
+      continue
+    fi
+    [[ -z $value ]] && return 1
+    apply "$choice" "$target" "$value"
+    return 0
+  done
+}
 
-target="" value=""
-case "$choice" in
-  resolution)
-    target=$(pick_monitor) || exit 0
-    [[ -z $target ]] && exit 0
-    value=$(modes_of "$target" | SPOT_TITLE="Resolution: $target" spot ~/.config/spot/menu.toml) || exit 0
-    ;;
-  scale)
-    target=$(pick_monitor) || exit 0
-    [[ -z $target ]] && exit 0
-    value=$(printf '%s\n' 1 1.25 1.333333 1.5 1.666667 2 | SPOT_TITLE="Scale: $target" spot ~/.config/spot/menu.toml) || exit 0
-    ;;
-esac
-[[ $choice =~ ^(resolution|scale)$ && -z $value ]] && exit 0
+# With an argument (arch-display scale) it is one-shot; without, the main screen
+# comes back after every change so several settings can be adjusted in a row.
+ARG=$1
+while true; do
+  mons=$(hyprctl monitors all -j)
+  if [[ -n $ARG ]]; then
+    choice=$ARG
+  else
+    # One line per monitor under the tiles: name, mode and scale as they are now.
+    summary=$(jq -r '[.[] | select(.disabled | not) | "\(.name) \(.width)x\(.height) ×\(.scale * 100 | round / 100)"] | join("  ·  ")' <<<"$mons")
+    out=$(SPOT_FOOTER="$summary" spot ~/.config/spot/display.toml) || exit 0
+    choice=$(jq -r '.[._active] // empty' <<<"$out")
+  fi
+  [[ -z $choice ]] && exit 0
 
-if ! lua=$(gen "$choice" "$target" "$value" 2>&1); then
-  notify-send -u critical "Display" "$lua"
-  exit 1
-fi
-
-if ! err=$(hyprctl eval "$lua" 2>&1) || [[ -n $err && $err != ok ]]; then
-  notify-send -u critical "Display: apply failed" "$err"
-  exit 1
-fi
-printf -- '-- Written by arch-display; delete (or Setup > Display > Reset) to go back to monitors.lua.\n%s\n' "$lua" > "$SAVE"
-notify-send -u low "Display" "$choice ${target:+$target }${value}"
+  case "$choice" in
+    nightlight) arch-nightlight ;;
+    reset)
+      rm -f "$SAVE"
+      hyprctl reload >/dev/null
+      notify-send -u low "Display" "reset to defaults"
+      sleep 0.5 ;;
+    resolution|scale|rotate|vrr)
+      setting "$choice"; r=$?
+      (( r == 1 )) && exit 0 ;;
+    *) apply "$choice" ;;
+  esac
+  [[ -n $ARG ]] && exit 0
+done

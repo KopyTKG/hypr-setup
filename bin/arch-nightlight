@@ -1,0 +1,17 @@
+#!/bin/bash
+# arch-nightlight — pick a colour temperature via spot, apply with hyprsunset.
+# Off = 6000K, the same value arch-toggle-nightlight (Super+Ctrl+N) treats as off.
+
+if ! pgrep -x hyprsunset >/dev/null; then
+  setsid uwsm-app -- hyprsunset >/dev/null 2>&1 & disown
+  sleep 1
+fi
+current=$(hyprctl hyprsunset temperature 2>/dev/null | grep -oE '[0-9]+' | head -1)
+[[ $current =~ ^(6000|5000|4500|4000|3500|3000)$ ]] || current=6000
+
+choice=$(SPOT_DEFAULT_TEMP="$current" SPOT_CURRENT_TEMP="$current" spot ~/.config/spot/nightlight.toml) || exit 0
+[[ -z $choice ]] && exit 0
+
+hyprctl hyprsunset temperature "$choice" >/dev/null
+if [[ $choice == 6000 ]]; then notify-send -u low "Nightlight: off"
+else notify-send -u low "Nightlight: ${choice}K"; fi

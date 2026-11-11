@@ -10,6 +10,11 @@ width    = 320
 style    = "spot.css"
 keyboard = "exclusive"
 
+# No fade: arch-menu opens a fresh spot per category, and the fade restarting on
+# each one shows up as a transparency blink.
+[opacity]
+outside = 100
+
 [[items]]
 type        = "list"
 id          = "choice"
