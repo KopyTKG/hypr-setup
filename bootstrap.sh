@@ -66,6 +66,8 @@ PACMAN_PKGS=(
   alacritty fzf gum jq python neovim fastfetch starship trash-cli
   # fish helpers: frecency cd, per-project env, searchable history
   zoxide direnv atuin
+  # disk usage: gdu = interactive explorer, duf = overview table (System -> Disk, arch-disk)
+  gdu duf
   # fish is the login shell (config in fish/); bash kept as fallback
   fish bash-completion
   # tray TUIs (bluetui/impala/wiremix/jolt moved out of AUR — they're in extra now)

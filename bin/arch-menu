@@ -280,7 +280,8 @@ show_system() {
     "  Power menu" \
     "  Info" \
     "  Files" \
-    "  Firewall") in
+    "  Firewall" \
+    "  Disk") in
     *Lock*)         hyprlock ;;
     *Battery*)      arch-floatterm arch-jolt jolt ;;
     *Time*)         notify-send -u low "$(date +"%A %H:%M  ·  %d %B %Y  ·  Week %V")" ;;
@@ -288,6 +289,7 @@ show_system() {
     *Info*)         uwsm-app -- xdg-terminal-exec bash -c "fastfetch; read -p 'Press Enter to close.'" ;;
     *Files*)        arch-floatterm yazi yazi ;;
     *Firewall*)     arch-floatterm arch-installer arch-firewall ;;
+    *Disk*)         arch-floatterm arch-installer arch-disk ;;
     *Back*)         show_main ;;
   esac
 }

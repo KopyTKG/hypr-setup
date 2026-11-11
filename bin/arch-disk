@@ -1,0 +1,115 @@
+#!/bin/bash
+# arch-disk — where the disk space went.
+#
+#   arch-disk              overview, then pick a place to explore
+#   arch-disk <path>       explore that path directly
+#   arch-disk --overview   overview only (no prompt, no pause)
+#
+# Overview: the filesystems (duf, else df), the btrfs allocation when / is btrfs,
+# and the biggest folders in $HOME (dust).
+# Explorer: gdu (interactive, keyboard-driven; `d` deletes) if installed,
+# otherwise dust through a pager. `sudo pacman -S gdu duf` for the full set.
+#
+# btrfs: du / gdu / dust only count files that exist now. Space still held by
+# snapper snapshots is invisible to them, so after deleting files "free" can stay
+# the same until the snapshots go:  sudo snapper -c root list
+#
+# Needs no root for the overview; the "(sudo)" explorer entries ask for it.
+
+set -u
+have() { command -v "$1" >/dev/null 2>&1; }
+have_gum() { [[ -z ${ARCH_NO_GUM:-} ]] && have gum; }
+interactive=1
+
+overview() {
+  echo "Filesystems"
+  if have duf; then
+    duf / /boot 2>/dev/null
+  else
+    df -hT / /boot 2>/dev/null
+  fi
+
+  if [[ $(findmnt -no FSTYPE / 2>/dev/null) == btrfs ]]; then
+    echo; echo "btrfs (one pool: / /home /var/log and the pacman cache share it)"
+    btrfs filesystem usage -h / 2>/dev/null \
+      | awk '/Device size|Device allocated|Device unallocated|^ +Used:|Free \(estimated\)|Data ratio/ {sub(/^ +/, "  "); print}'
+    btrfs filesystem df -h / 2>/dev/null | sed 's/^/  /'
+    echo "  note: snapshots hold space that du can't see (sudo snapper -c root list)"
+  fi
+
+  echo; echo "Biggest folders in $HOME"
+  if have dust; then
+    timeout 60 dust -d 1 -n 10 -r "$HOME" 2>/dev/null
+  else
+    du -h --max-depth=1 "$HOME" 2>/dev/null | sort -rh | head -11
+  fi
+}
+
+# explore PATH [sudo]
+explore() {
+  local path=$1 as_root=${2:-} run=()
+  [[ -d $path ]] || { echo "not a directory: $path" >&2; return 1; }
+  [[ -n $as_root ]] && run=(sudo)
+  if have gdu; then
+    local x=()
+    gdu --help 2>&1 | grep -q -- --no-cross && x=(--no-cross)   # stay on one filesystem
+    "${run[@]}" gdu "${x[@]}" "$path"
+  elif have dust; then
+    "${run[@]}" dust -d 3 -n 40 -r "$path" 2>/dev/null | ${PAGER:-less -RFX}
+  else
+    "${run[@]}" du -h --max-depth=2 "$path" 2>/dev/null | sort -rh | head -40 | ${PAGER:-less -RFX}
+  fi
+}
+
+pause() { (( interactive )) && read -r -p "[Enter to close]"; return 0; }
+
+choose_target() {
+  local items=(
+    "Home                  ~"
+    "Downloads             ~/Downloads"
+    "Cache                 ~/.cache"
+    "Local data            ~/.local/share"
+    "Pacman cache (sudo)   /var/cache/pacman/pkg"
+    "Whole system (sudo)   /"
+    "Another folder…"
+  )
+  local sel
+  if have_gum; then
+    sel=$(gum choose --header="Explore where?  (enter = open, esc = quit)" "${items[@]}") || return 1
+  else
+    local i=1
+    for it in "${items[@]}"; do printf '  %d) %s\n' "$i" "$it" >&2; i=$((i + 1)); done   # stderr: stdout is the result
+    read -r -p "Explore where? [1-${#items[@]}, q = quit] " n
+    [[ $n =~ ^[1-7]$ ]] || return 1
+    sel=${items[$((n - 1))]}
+  fi
+  case $sel in
+    Home*)        echo "$HOME" ;;
+    Downloads*)   echo "$HOME/Downloads" ;;
+    Cache*)       echo "$HOME/.cache" ;;
+    "Local data"*) echo "$HOME/.local/share" ;;
+    Pacman*)      echo "sudo:/var/cache/pacman/pkg" ;;
+    Whole*)       echo "sudo:/" ;;
+    Another*)
+      local p
+      if have_gum; then p=$(gum input --placeholder="/path/to/folder" --value="$HOME/") || return 1
+      else read -r -e -p "Folder: " -i "$HOME/" p; fi
+      echo "${p/#\~/$HOME}" ;;
+  esac
+}
+
+case ${1:-} in
+  -h|--help)    sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  --overview)   interactive=0; overview; exit 0 ;;
+  "")           ;;
+  *)            interactive=0; explore "${1/#\~/$HOME}"; exit $? ;;
+esac
+
+overview
+echo
+while target=$(choose_target); do
+  [[ -n $target ]] || break
+  if [[ $target == sudo:* ]]; then explore "${target#sudo:}" sudo; else explore "$target"; fi
+  echo
+done
+pause

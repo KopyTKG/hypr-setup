@@ -66,6 +66,7 @@ show_status() {
   yb=$(yay_size); pb=$(bytes "$PAC_CACHE")
   printf 'yay cache     %-8s  %s  (%s package dirs)\n' "$(human "$yb")" "$YAY_CACHE" "$(yay_dirs | wc -l)"
   printf 'pacman cache  %-8s  %s  (%s files)\n' "$(human "${pb:-0}")" "$PAC_CACHE" "$(ls "$PAC_CACHE" 2>/dev/null | wc -l)"
+  df -h --output=avail,size / 2>/dev/null | tail -1 | awk '{printf "disk free     %-8s  of %s on /  (more: System -> Disk)\n", $1, $2}'
 }
 
 clean_yay() {
