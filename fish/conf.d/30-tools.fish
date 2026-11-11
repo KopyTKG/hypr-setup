@@ -14,8 +14,14 @@ if type -q fzf
     # Alt-Shift-S: fuzzy-pick an SSH host and connect (functions/fssh.fish).
     bind \eS 'fssh; commandline -f repaint'
     # Tab: fzf over fish's own completions when there are several candidates
-    # (cd, cat, ssh, git, systemctl, ...). Shift-Tab still opens the native pager.
-    bind \t fzf_complete
+    # (cat, ssh, git, systemctl, ...); on `cd` and on any `**` token it searches
+    # recursively instead (cd e<Tab>, vim src/**<Tab>). See
+    # functions/fzf_tab_complete.fish for the tunables.
+    # NOT named fzf_complete: `fzf --fish` (above) defines that function itself and
+    # binds Shift-Tab to it (fzf's own completer, which also expands `**`). A
+    # function defined in the session beats an autoloaded file, so a same-named
+    # function here would silently never run. Shift-Tab keeps fzf's.
+    bind \t fzf_tab_complete
 end
 
 # --- Alt-S: toggle `sudo` at the start of the current (or previous) command
