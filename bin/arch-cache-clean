@@ -1,0 +1,145 @@
+#!/bin/bash
+# arch-cache-clean — what the package caches cost, and a safe way to clean them.
+#
+#   arch-cache-clean                 pick what to clean (gum), confirm, clean
+#   arch-cache-clean --dry-run       show sizes and what would go; change nothing
+#   arch-cache-clean yay|pacman|all  non-interactive (add -y to skip the question)
+#
+# yay     ~/.cache/yay: the per-package build directories (downloaded sources,
+#         build trees, built .pkg.tar.zst). yay clones and rebuilds again the next
+#         time a package updates; nothing installed is touched. completion.cache
+#         and vcs.json (what `yay -Syu --devel` uses to spot new -git commits)
+#         are kept.
+# pacman  /var/cache/pacman/pkg: keeps the newest $KEEP (default 2) versions of
+#         every installed package, drops every cached version of uninstalled
+#         ones, and removes the leftover download-* directories that interrupted
+#         downloads leave behind (paccache ignores those). Needs sudo and
+#         pacman-contrib (paccache).
+#
+# YAY_CACHE, PAC_CACHE and KEEP can be overridden in the environment.
+
+set -u
+KEEP=${KEEP:-2}
+YAY_CACHE=${YAY_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/yay}
+PAC_CACHE=${PAC_CACHE:-/var/cache/pacman/pkg}
+
+dry=0 yes=0 targets=()
+for a in "$@"; do
+  case $a in
+    -n|--dry-run) dry=1 ;;
+    -y|--yes)     yes=1 ;;
+    yay|pacman)   targets+=("$a") ;;
+    all)          targets=(yay pacman) ;;
+    -h|--help)    sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *)            echo "arch-cache-clean: unknown argument '$a' (see --help)" >&2; exit 2 ;;
+  esac
+done
+interactive=0
+[[ ${#targets[@]} -eq 0 ]] && interactive=1
+
+have_gum() { [[ -z ${ARCH_NO_GUM:-} ]] && command -v gum >/dev/null 2>&1; }
+
+bytes() { du -sb -- "$1" 2>/dev/null | cut -f1; }
+human() { numfmt --to=iec --suffix=B "${1:-0}" 2>/dev/null || echo "${1:-0}B"; }
+
+yay_dirs() { find "$YAY_CACHE" -mindepth 1 -maxdepth 1 -type d 2>/dev/null; }
+
+# Refuse anything that is not plainly a cache directory.
+yay_path_ok() {
+  [[ -n $YAY_CACHE && $YAY_CACHE != / && $YAY_CACHE != "$HOME" && -d $YAY_CACHE ]]
+}
+
+yay_size() { yay_path_ok || { echo 0; return; }; bytes "$YAY_CACHE"; }
+
+# Leftovers of interrupted downloads; root-owned, so they can only be counted here.
+pac_download_dirs() { find "$PAC_CACHE" -mindepth 1 -maxdepth 1 -type d -name 'download-*' 2>/dev/null; }
+
+pacman_candidates() {  # dry-run summary lines from paccache (no sudo needed to read)
+  command -v paccache >/dev/null 2>&1 || { echo "paccache missing (pacman -S pacman-contrib)"; return 1; }
+  paccache -dk"$KEEP" -c "$PAC_CACHE" 2>&1 | tail -1
+  paccache -duk0 -c "$PAC_CACHE" 2>&1 | tail -1
+  echo "$(pac_download_dirs | wc -l) leftover download-* dirs (root-only, not sized)"
+}
+
+show_status() {
+  local yb pb
+  yb=$(yay_size); pb=$(bytes "$PAC_CACHE")
+  printf 'yay cache     %-8s  %s  (%s package dirs)\n' "$(human "$yb")" "$YAY_CACHE" "$(yay_dirs | wc -l)"
+  printf 'pacman cache  %-8s  %s  (%s files)\n' "$(human "${pb:-0}")" "$PAC_CACHE" "$(ls "$PAC_CACHE" 2>/dev/null | wc -l)"
+}
+
+clean_yay() {
+  yay_path_ok || { echo "yay: no cache at $YAY_CACHE"; return 0; }
+  if (( dry )); then
+    echo "yay: would remove $(yay_dirs | wc -l) package dirs; largest:"
+    yay_dirs | xargs -r du -sb 2>/dev/null | sort -rn | head -6 | while read -r b p; do
+      printf '   %8s  %s\n' "$(human "$b")" "$(basename "$p")"
+    done
+    return 0
+  fi
+  yay_dirs | while read -r d; do rm -rf -- "$d"; done
+  echo "yay: package build directories removed (completion.cache and vcs.json kept)"
+}
+
+clean_pacman() {
+  command -v paccache >/dev/null 2>&1 || { echo "pacman: paccache not found — sudo pacman -S pacman-contrib" >&2; return 1; }
+  if (( dry )); then
+    echo "pacman: would run  paccache -rk$KEEP  and  paccache -ruk0:"
+    pacman_candidates | sed 's/^/   /'
+    return 0
+  fi
+  sudo paccache -rk"$KEEP" -c "$PAC_CACHE" && sudo paccache -ruk0 -c "$PAC_CACHE" || return 1
+  # Only when pacman is not running: a live transfer owns one of these.
+  if pgrep -x pacman >/dev/null 2>&1; then
+    echo "pacman: a transaction is running; left the download-* dirs alone"
+  elif [[ -n $(pac_download_dirs | head -1) ]]; then
+    pac_download_dirs | sudo xargs -r rm -rf --
+    echo "pacman: leftover download-* directories removed"
+  fi
+}
+
+pause() { (( interactive )) && read -r -p "[Enter to close]"; return 0; }
+
+if (( interactive )); then
+  echo "Package caches"; echo; show_status; echo
+  if (( dry )); then
+    targets=(yay pacman)
+  elif have_gum; then
+    a="yay build cache ($(human "$(yay_size)"))"
+    b="pacman package cache ($(human "$(bytes "$PAC_CACHE")"), keeps the newest $KEEP versions)"
+    sel=$(gum choose --no-limit --selected="$a,$b" \
+            --header="Clean which cache?  space = toggle · enter = continue · esc = cancel" "$a" "$b") || { echo "Cancelled."; pause; exit 0; }
+    [[ $sel == *yay* ]]    && targets+=(yay)
+    [[ $sel == *pacman* ]] && targets+=(pacman)
+  else
+    read -r -p "Clean [y]ay, [p]acman, [a]ll, [q]uit? " ans
+    case $ans in y) targets=(yay) ;; p) targets=(pacman) ;; a) targets=(yay pacman) ;; *) echo "Cancelled."; exit 0 ;; esac
+  fi
+  [[ ${#targets[@]} -eq 0 ]] && { echo "Nothing selected."; pause; exit 0; }
+fi
+
+if (( ! dry && ! yes && ! interactive )); then
+  read -r -p "Clean ${targets[*]} cache? [y/N] " ok
+  [[ $ok == [yY]* ]] || { echo "Cancelled."; exit 0; }
+elif (( ! dry && interactive )); then
+  if have_gum; then
+    gum confirm "Clean: ${targets[*]}?" || { echo "Cancelled."; pause; exit 0; }
+  fi
+fi
+
+before_y=$(yay_size); before_p=$(bytes "$PAC_CACHE")
+rc=0
+for t in "${targets[@]}"; do
+  case $t in
+    yay)    clean_yay    || rc=1 ;;
+    pacman) clean_pacman || rc=1 ;;
+  esac
+done
+
+if (( ! dry )); then
+  after_y=$(yay_size); after_p=$(bytes "$PAC_CACHE")
+  freed=$(( (before_y - after_y) + (${before_p:-0} - ${after_p:-0}) ))
+  echo; echo "Freed $(human "$freed")"; echo; show_status
+fi
+pause
+exit $rc

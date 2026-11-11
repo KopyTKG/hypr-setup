@@ -427,7 +427,8 @@ show_remove() {
     "  Gaming" \
     "  Terminal" \
     "  Font" \
-    "  ProtonGE") in
+    "  ProtonGE" \
+    "  Cache") in
     *Pacman*)      arch-floatterm arch-installer arch-pacman-remove ;;
     *AUR*)         arch-floatterm arch-installer arch-aur-remove ;;
     *Webapp*)      arch-floatterm arch-installer arch-webapp-remove ;;
@@ -436,6 +437,7 @@ show_remove() {
     *Terminal*)    show_remove_terminal ;;
     *Font*)        show_remove_font ;;
     *ProtonGE*)    arch-floatterm arch-installer arch-protonge-remove ;;
+    *Cache*)       arch-floatterm arch-installer arch-cache-clean ;;
     *Back*)        show_main ;;
   esac
 }

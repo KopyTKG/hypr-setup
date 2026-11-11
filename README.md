@@ -148,7 +148,7 @@ Hierarchical menu rendered by `spot` (type to filter; smart matching understands
 Notable submenus:
 
 - **Install** — fzf-driven installers for Pacman / AUR / Development (mise) / Gaming / Terminal / Font / **Webapp** (create or remove a chromium `--app` desktop launcher) / **ProtonGE** (fzf-pick any GE-Proton release, download into `~/.steam/root/compatibilitytools.d/`)
-- **Remove** — mirrors Install: Pacman (fzf over `pacman -Qq`) / AUR (foreign packages only, `pacman -Qqm`) / Webapp / Development (`mise uninstall`) / Gaming/Terminal/Font (curated `pacman -Rns`) / ProtonGE (rm from `compatibilitytools.d/`)
+- **Remove** — mirrors Install: Pacman (fzf over `pacman -Qq`) / AUR (foreign packages only, `pacman -Qqm`) / Webapp / Development (`mise uninstall`) / Gaming/Terminal/Font (curated `pacman -Rns`) / ProtonGE (rm from `compatibilitytools.d/`) / **Cache** (`arch-cache-clean`: shows the sizes, then cleans yay's build dirs and the pacman package cache)
 - **Bookmarks** — reads `~/.config/arch-menu/bookmarks.conf` (one `Label | URL` per line, `#` comments OK). Selecting opens the URL in chromium.
 - **System** — TUI control panels via floating alacritty: bluetui, impala, wiremix, jolt, btop · **Firewall** (`arch-firewall`: fzf TUI over `ufw` — live rule list; `a` allow · `d` deny · `l` limit · `x` delete · `e` enable/disable · `?` details)
 - **Remote** — reads `~/.ssh/config` and everything it `Include`s; a host's group is its nearest `# group: NAME` marker, else the folder its config lives in (`~/.ssh/infra/config` → *infra*); git forges (github/gitlab/bitbucket/aur) are skipped; picks a group, then a host, and spawns ssh in a tiled `ssh-session` terminal. **Custom…** gum-prompts for User/Host/Port.
@@ -166,6 +166,7 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-aur-install`              | fzf-pick an AUR package                                            |
 | `arch-pacman-remove`            | fzf-pick installed package(s); `sudo pacman -Rns`                  |
 | `arch-aur-remove`               | fzf-pick AUR-installed (foreign) package(s); `sudo pacman -Rns`    |
+| `arch-cache-clean`              | Remove → Cache. Shows what `~/.cache/yay` and `/var/cache/pacman/pkg` cost, then cleans them: yay's per-package build dirs (keeps `completion.cache` and `vcs.json`), and `paccache` (keeps the newest 2 versions, drops uninstalled packages, removes leftover `download-*` dirs). `--dry-run` shows what would go; `yay`, `pacman` or `all` (with `-y`) for scripts |
 | `arch-mise-remove`              | fzf-pick installed mise tool@version; `mise uninstall`             |
 | `arch-protonge-install`         | fzf-pick a GE-Proton release; downloads + sha512-verifies + extracts |
 | `arch-protonge-remove`          | fzf-pick a GE-Proton release in `compatibilitytools.d/`; `rm -rf`  |
