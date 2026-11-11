@@ -18,6 +18,12 @@ hl.env("XDG_SESSION_TYPE", "wayland")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 
+-- KDE apps (dolphin, "Open With") build their application tree from
+-- $XDG_MENU_PREFIX + "applications.menu". uwsm exports "hyprland-", which does
+-- not exist, so the tree came out incomplete. plasma-applications.menu ships
+-- with kservice/plasma-workspace and works outside a Plasma session.
+hl.env("XDG_MENU_PREFIX", "plasma-")
+
 -- Flatpak app launchers: the session env arrives without flatpak's export dirs,
 -- so walker/elephant can't see flatpak .desktop files. Prepend any that are missing.
 local dataDirs = os.getenv("XDG_DATA_DIRS") or "/usr/local/share:/usr/share"

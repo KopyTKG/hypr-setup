@@ -1,0 +1,21 @@
+#!/bin/bash
+# arch-kterm — terminal launcher for KDE apps (kdeglobals: TerminalApplication).
+#
+# KDE (Dolphin's "Open Terminal Here", "Open With" for Terminal=true apps such as
+# nvim.desktop, ...) calls   <TerminalApplication> [options] [-e command args...]
+# with the working directory set to the folder it wants. xdg-terminal-exec takes
+# the command without -e, so translate, and keep to the terminal chosen in
+# ~/.config/xdg-terminals.list instead of hard-wiring one.
+
+hold=()
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -e|--exec|--command) shift; break ;;       # the command starts here
+    --noclose|--hold)    hold=(--hold); shift ;; # konsole's / X-KDE-TerminalOptions
+    --workdir)           cd -- "$2" 2>/dev/null; shift 2 ;;
+    --)                  shift; break ;;
+    *)                   shift ;;               # options of some other terminal: ignore
+  esac
+done
+
+exec xdg-terminal-exec --dir="$PWD" "${hold[@]}" "$@"

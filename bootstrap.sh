@@ -94,6 +94,9 @@ PACMAN_PKGS=(
   kdegraphics-thumbnailers ffmpegthumbs breeze breeze-icons
   # plasma-integration = the KDE Qt platform theme; without it kdeglobals colours are ignored
   plasma-integration
+  # dolphin extras: kimageformats = thumbnails/previews for webp, avif, psd, ... ;
+  # kio-admin = "Open as Administrator" in the context menu
+  kimageformats kio-admin
   # installer/migrator helpers
   mise snapper
   # LTS kernel (in addition to whatever the user pacstrapped with)

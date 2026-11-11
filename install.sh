@@ -126,6 +126,28 @@ EOF
   red "  BreezeDark.colors not found (install 'breeze') — wrote name-only kdeglobals; apps may stay light"
 fi
 
+# Terminal for KDE apps: dolphin's "Open Terminal Here" and every Terminal=true
+# app it opens (nvim.desktop for text files, ...). KDE defaults to konsole, which
+# is not installed; it also calls "<terminal> -e <cmd>", which xdg-terminal-exec
+# does not take, so arch-kterm translates and follows xdg-terminals.list.
+# (Written here, after kdeglobals is regenerated above, or the next run would drop it.)
+if command -v kwriteconfig6 >/dev/null 2>&1; then
+  kwriteconfig6 --file kdeglobals --group General --key TerminalApplication arch-kterm
+else
+  printf '\n[General]\nTerminalApplication=arch-kterm\n' >> "$HOME/.config/kdeglobals"
+fi
+gray "  kdeglobals: TerminalApplication=arch-kterm"
+
+# KDE's application menu: uwsm exports XDG_MENU_PREFIX=hyprland-, which has no
+# menu file; hypr/defaults/envs.lua sets plasma- for new sessions, this fixes the
+# running user manager and rebuilds the cache so dolphin picks it up without a relogin.
+systemctl --user set-environment XDG_MENU_PREFIX=plasma- 2>/dev/null || true
+if command -v kbuildsycoca6 >/dev/null 2>&1; then
+  XDG_MENU_PREFIX=plasma- kbuildsycoca6 --noincremental >/dev/null 2>&1 \
+    && gray "  KDE service cache rebuilt (menu prefix plasma-)" \
+    || gray "  kbuildsycoca6 failed (harmless; it rebuilds on next dolphin start)"
+fi
+
 # Route folders / PDFs / images / archives at the KDE utilities
 if command -v xdg-mime >/dev/null 2>&1; then
   xdg-mime default org.kde.dolphin.desktop inode/directory || true
