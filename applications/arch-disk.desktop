@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Disk Usage
+Comment=Where the disk space went: filesystems, btrfs pool, biggest folders, interactive explorer
+Exec=arch-floatterm arch-installer arch-disk
+Icon=drive-harddisk
+Terminal=false
+Categories=System;Filesystem;
+Keywords=disk;usage;space;storage;btrfs;gdu;dust;
+StartupNotify=false

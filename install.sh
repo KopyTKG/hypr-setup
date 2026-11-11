@@ -39,6 +39,26 @@ for f in "$REPO/bin"/*; do
   link_to "$f" "$HOME/.local/bin/$(basename "$f")"
 done
 
+# Launchers (.desktop) shipped by the repo: walker / the spot launcher list them.
+mkdir -p "$HOME/.local/share/applications"
+for f in "$REPO/applications"/*.desktop; do
+  [[ -e $f ]] || continue
+  link_to "$f" "$HOME/.local/share/applications/$(basename "$f")"
+done
+
+# Omarchy leftovers in ~/.local/share/applications:
+# - "Disk Usage.desktop" ran `dust -r` in a fake TUI.float terminal (xdg-terminal-exec
+#   ignores that class); applications/arch-disk.desktop replaces it. Only the
+#   Omarchy one is moved aside, identified by its command.
+legacy="$HOME/.local/share/applications/Disk Usage.desktop"
+if [[ -f $legacy && ! -L $legacy ]] && grep -q 'dust -r' "$legacy" && grep -q 'TUI\.float' "$legacy"; then
+  mv "$legacy" "$legacy.bak.$TS"
+  gray "    old Disk Usage launcher → $legacy.bak.$TS"
+fi
+# - web apps that still call omarchy-launch-webapp (it only resolves while
+#   ~/.local/share/omarchy/bin is on PATH) -> arch-launch-webapp. Idempotent.
+"$REPO/bin/arch-webapp-migrate" || red "  (webapp launcher migration failed; run arch-webapp-migrate by hand)"
+
 # spot itself is the spot-bin AUR package (installed by bootstrap.sh); only its
 # config is linked above.
 if ! command -v spot >/dev/null 2>&1; then

@@ -17,6 +17,7 @@ arch-menu/                 user-editable arch-menu config (bookmarks.conf)
 mako/                      notification daemon (stone-styled)
 nvim/                      submodule → gitlab.com/kopytkg/nvim
 spot-config/               linked into ~/.config/spot/ (menu, power, password, keyboard, display, …)
+applications/              .desktop launchers linked into ~/.local/share/applications/ (e.g. Disk Usage → arch-disk)
 plymouth-theme-arch-stone/ boot/shutdown splash (Arch logo on stone-950)
 sddm-theme-stone/          Qt6 login-screen theme
 swayosd/                   audio/brightness OSD
@@ -168,6 +169,7 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-aur-remove`               | fzf-pick AUR-installed (foreign) package(s); `sudo pacman -Rns`    |
 | `arch-cache-clean`              | Remove → Cache. Shows what `~/.cache/yay` and `/var/cache/pacman/pkg` cost, then cleans them: yay's per-package build dirs (keeps `completion.cache` and `vcs.json`), and `paccache` (keeps the newest 2 versions, drops uninstalled packages, removes leftover `download-*` dirs). `--dry-run` shows what would go; `yay`, `pacman` or `all` (with `-y`) for scripts |
 | `arch-disk`                     | System → Disk. Overview (filesystems via `duf`/`df`, the btrfs pool, biggest folders in `~` via `dust`), then pick a place to explore with `gdu` (falls back to `dust`). `arch-disk <path>` jumps straight in, `--overview` prints and exits. Note: on btrfs, snapper snapshots hold space `du` can't see |
+| `arch-webapp-migrate`           | Rewrites Omarchy-style web app launchers (`Exec=omarchy-launch-webapp <url>`) in `~/.local/share/applications` to `arch-launch-webapp <class> <url>` (+ `StartupWMClass`), keeping `.bak.<timestamp>` copies; run by `install.sh`, safe to repeat, `--dry-run` previews. The URLs stay in your files, not the repo |
 | `arch-mise-remove`              | fzf-pick installed mise tool@version; `mise uninstall`             |
 | `arch-protonge-install`         | fzf-pick a GE-Proton release; downloads + sha512-verifies + extracts |
 | `arch-protonge-remove`          | fzf-pick a GE-Proton release in `compatibilitytools.d/`; `rm -rf`  |
