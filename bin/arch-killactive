@@ -3,7 +3,9 @@
 # otherwise close the active toplevel window.
 layers=$(hyprctl layers 2>/dev/null)
 if grep -q 'namespace: spot' <<<"$layers"; then
-  pkill -TERM -x spot
+  # spot >= the daemon build: ask the daemon (pkill would kill the daemon too).
+  # Older spot rejects --dismiss, and each dialog is its own process: kill those.
+  spot --dismiss 2>/dev/null || pkill -TERM -x spot
 elif grep -q 'namespace: walker' <<<"$layers"; then
   walker --close
 else

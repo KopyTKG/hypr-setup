@@ -1,11 +1,24 @@
 #!/bin/bash
 # arch-menu — hierarchical spot-based launcher (vanilla, post-omarchy)
 
+# Daemon-era spot understands --chain/--dismiss; older builds reject them, so
+# only use them when present.
+SPOT_FLAGS_CHAIN=
+spot --help 2>&1 | grep -q -- '--chain' && SPOT_FLAGS_CHAIN=--chain
+
 # `menu` takes a title then any number of items. Each item is one menu line.
+# MENU_CHAIN=1 menu ... : most choices here lead to another menu, so keep the
+# window up for it instead of letting it close and reopen.
 menu() {
   local title="$1"; shift
-  printf '%s\n' "$@" | SPOT_TITLE="$title" spot ~/.config/spot/menu.toml
+  local flags=
+  [[ -n ${MENU_CHAIN:-} ]] && flags=$SPOT_FLAGS_CHAIN
+  printf '%s\n' "$@" | SPOT_TITLE="$title" spot $flags ~/.config/spot/menu.toml
 }
+
+# After a choice that does NOT lead to another spot dialog: let go of a window
+# held open for a chain, so it does not linger over whatever opens next.
+release() { spot --dismiss 2>/dev/null || true; }
 
 term_install() {
   uwsm-app -- xdg-terminal-exec bash -c "yay -S $*; echo; read -p 'Press Enter to close.'"
@@ -17,7 +30,7 @@ open_url() { uwsm-app -- chromium "$1"; }
 
 # ---------- Top level ----------
 show_main() {
-  case $(menu "Menu" \
+  case $(MENU_CHAIN=1 menu "Menu" \
     "  Apps" \
     "  Install" \
     "  Update" \
@@ -32,18 +45,18 @@ show_main() {
     "  Keybinds" \
     "  Learn" \
     "  Power") in
-    *Apps*)    walker ;;
+    *Apps*)    release; walker ;;
     *Learn*)   show_learn ;;
     *Capture*) show_capture ;;
     *Toggle*)  show_toggle ;;
     *Setup*)   show_setup ;;
     *Install*) show_install ;;
-    *Update*)  uwsm-app -- xdg-terminal-exec bash -c "fish -c update; read -p 'Press Enter to close.'" ;;
+    *Update*)  release; uwsm-app -- xdg-terminal-exec bash -c "fish -c update; read -p 'Press Enter to close.'" ;;
     *Remove*)  show_remove ;;
     *System*)  show_system ;;
     *Remote*)  show_remote ;;
     *Work*)    show_work ;;
-    *Keybinds*) arch-floatterm arch-installer arch-keybinds ;;
+    *Keybinds*) release; arch-floatterm arch-installer arch-keybinds ;;
     *Bookmarks*) show_bookmarks ;;
     *Power*)   arch-power-menu ;;
   esac
