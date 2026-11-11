@@ -40,6 +40,13 @@ while lw <= w:
 ' "$1" <<<"$mons" | sort -n
 }
 
+# Back to whoever opened us. arch-menu exports SPOT_BACK (the command that
+# returns to it); a keybind exports nothing, so then there is no Back. It must
+# reach only the top-level dialog: the inner pickers below have their own Back
+# entries that return here.
+MENU_BACK=${SPOT_BACK:-}
+unset SPOT_BACK
+
 # Every list ends with a Back entry. select_list returns 0 with the pick on
 # stdout, 2 for Back, 1 when the dialog was cancelled (Esc / click outside).
 BACK="  Back"
@@ -228,7 +235,7 @@ while true; do
   else
     # One line per monitor under the tiles: name, mode and scale as they are now.
     summary=$(jq -r '[.[] | select(.disabled | not) | "\(.name) \(.width)x\(.height) ×\(.scale * 100 | round / 100)"] | join("  ·  ")' <<<"$mons")
-    out=$(SPOT_FOOTER="$summary" spot ~/.config/spot/display.toml) || exit 0
+    out=$(SPOT_BACK=$MENU_BACK SPOT_FOOTER="$summary" spot ~/.config/spot/display.toml) || exit 0
     choice=$(jq -r '.[._active] // empty' <<<"$out")
   fi
   [[ -z $choice ]] && exit 0

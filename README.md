@@ -143,6 +143,8 @@ Host *
 
 Hierarchical menu rendered by `spot` (type to filter; smart matching understands abbreviations — `rmt` → Remote, `sys` → System) (TOML+CSS layer-shell dialog runtime, from the `spot-bin` AUR package — github.com/KopyTKG/spot). Top level: **Apps · Install · Remove · Capture · Toggle · Setup · Bookmarks · System · Remote · Keybinds · Learn · Power**.
 
+**One window, with Back.** With the spot daemon (`spot daemon`, started from `hypr/defaults/autostart.lua`; it also starts itself on first use) every menu step reuses one window, so moving between menus does not flicker. Every submenu has a **‹ Back** button (also **Backspace** on an empty search, **Alt+Left**); **Esc** still closes everything. Scripts the menu launches inherit `SPOT_BACK`, so their dialogs get a Back that returns to the menu: **Setup → Display** goes back to Setup, **System → Power menu** to System. The same dialogs opened from a keybind (SUPER+SHIFT+P, SUPER+ESC) have no Back. `arch-menu <name>` opens a submenu directly (`arch-menu setup`); that is what Back runs. An older spot without Back or the daemon still works: the menu falls back to a "Back" row and one window per step.
+
 Notable submenus:
 
 - **Install** — fzf-driven installers for Pacman / AUR / Development (mise) / Gaming / Terminal / Font / **Webapp** (create or remove a chromium `--app` desktop launcher) / **ProtonGE** (fzf-pick any GE-Proton release, download into `~/.steam/root/compatibilitytools.d/`)
@@ -172,7 +174,7 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-keybinds`                 | SUPER+F1; fzf-list of every Hyprland bind (colored per modifier)   |
 | `arch-remote-custom`            | gum prompt → User/Host/Port → spawns ssh in a tiled `ssh-session` window |
 | `arch-power-menu`               | bound to SUPER+ESC                                                 |
-| `arch-killactive`               | SUPER+W; closes walker layer if visible, else `killactive`         |
+| `arch-killactive`               | SUPER+W; dismisses a spot dialog (`spot --dismiss`), else the walker layer, else closes the window |
 | `arch-launch-webapp <class> <url>` | focus existing chromium-app window by class, else launch it    |
 | `arch-apply-browser-theme`      | copy `chromium/policies/managed/color.json` to system policy dir   |
 | `arch-askpass`                  | Password prompt (`SSH_ASKPASS`); libsecret-cached. Inline `gum` from a TTY, `spot` password dialog headless |
