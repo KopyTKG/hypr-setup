@@ -51,6 +51,7 @@ open_url() { uwsm-app -- chromium "$1"; }
 show_main() {
   case $(MENU_ROOT=1 MENU_CHAIN=1 menu "Menu" \
     "  Apps" \
+    "  Webapps" \
     "  Install" \
     "  Update" \
     "  Remove" \
@@ -65,6 +66,7 @@ show_main() {
     "  Learn" \
     "  Power") in
     *Apps*)    release; walker ;;
+    *Webapps*) show_webapps ;;
     *Learn*)   show_learn ;;
     *Capture*) show_capture ;;
     *Toggle*)  show_toggle ;;
@@ -193,7 +195,6 @@ show_install() {
   case $(menu "Install" \
     "  Pacman" \
     "  AUR" \
-    "  Webapp" \
     "  Development" \
     "  Gaming" \
     "  Terminal" \
@@ -205,7 +206,6 @@ show_install() {
     *Gaming*)      show_install_gaming ;;
     *Font*)        show_install_font ;;
     *Development*) arch-floatterm arch-installer arch-mise-install ;;
-    *Webapp*)      show_install_webapp ;;
     *ProtonGE*)   arch-floatterm arch-installer arch-protonge-install ;;
     *Back*)        show_main ;;
   esac
@@ -261,13 +261,15 @@ show_install_font() {
   esac
 }
 
-show_install_webapp() {
-  case $(menu "Webapp" \
+show_webapps() {
+  case $(menu "Webapps" \
     "  Install" \
+    "  Edit" \
     "  Remove") in
     *Install*) arch-floatterm arch-installer arch-webapp-install ;;
+    *Edit*)    arch-floatterm arch-installer arch-webapp-edit ;;
     *Remove*)  arch-floatterm arch-installer arch-webapp-remove ;;
-    *Back*)    show_install ;;
+    *Back*)    show_main ;;
   esac
 }
 
@@ -424,7 +426,6 @@ show_remove() {
   case $(menu "Remove" \
     "  Pacman" \
     "  AUR" \
-    "  Webapp" \
     "  Development" \
     "  Gaming" \
     "  Terminal" \
@@ -433,7 +434,6 @@ show_remove() {
     "  Cache") in
     *Pacman*)      arch-floatterm arch-installer arch-pacman-remove ;;
     *AUR*)         arch-floatterm arch-installer arch-aur-remove ;;
-    *Webapp*)      arch-floatterm arch-installer arch-webapp-remove ;;
     *Development*) arch-floatterm arch-installer arch-mise-remove ;;
     *Gaming*)      show_remove_gaming ;;
     *Terminal*)    show_remove_terminal ;;

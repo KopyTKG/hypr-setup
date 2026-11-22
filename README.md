@@ -142,14 +142,15 @@ Host *
 
 ## arch-menu (SUPER+ALT+SPACE)
 
-Hierarchical menu rendered by `spot` (type to filter; smart matching understands abbreviations — `rmt` → Remote, `sys` → System) (TOML+CSS layer-shell dialog runtime, from the `spot-bin` AUR package — github.com/KopyTKG/spot). Top level: **Apps · Install · Remove · Capture · Toggle · Setup · Bookmarks · System · Remote · Keybinds · Learn · Power**.
+Hierarchical menu rendered by `spot` (type to filter; smart matching understands abbreviations — `rmt` → Remote, `sys` → System) (TOML+CSS layer-shell dialog runtime, from the `spot-bin` AUR package — github.com/KopyTKG/spot). Top level: **Apps · Webapps · Install · Remove · Capture · Toggle · Setup · Bookmarks · System · Remote · Keybinds · Learn · Power**.
 
 **One window, with Back.** With the spot daemon (`spot daemon`, started from `hypr/defaults/autostart.lua`; it also starts itself on first use) every menu step reuses one window, so moving between menus does not flicker. Every submenu has a **‹ Back** button (also **Backspace** on an empty search, **Alt+Left**); **Esc** still closes everything. Scripts the menu launches inherit `SPOT_BACK`, so their dialogs get a Back that returns to the menu: **Setup → Display** goes back to Setup, **System → Power menu** to System. The same dialogs opened from a keybind (SUPER+SHIFT+P, SUPER+ESC) have no Back. `arch-menu <name>` opens a submenu directly (`arch-menu setup`); that is what Back runs. An older spot without Back or the daemon still works: the menu falls back to a "Back" row and one window per step.
 
 Notable submenus:
 
-- **Install** — fzf-driven installers for Pacman / AUR / Development (mise) / Gaming / Terminal / Font / **Webapp** (create or remove a chromium `--app` desktop launcher) / **ProtonGE** (fzf-pick any GE-Proton release, download into `~/.steam/root/compatibilitytools.d/`)
-- **Remove** — mirrors Install: Pacman (fzf over `pacman -Qq`) / AUR (foreign packages only, `pacman -Qqm`) / Webapp / Development (`mise uninstall`) / Gaming/Terminal/Font (curated `pacman -Rns`) / ProtonGE (rm from `compatibilitytools.d/`) / **Cache** (`arch-cache-clean`: shows the sizes, then cleans yay's build dirs and the pacman package cache)
+- **Webapps** (top level) — everything about chromium `--app` launchers in one place: **Install** (create one from a URL), **Edit** (change a launcher's name, URL or icon; `arch-webapp-edit`), **Remove**. Back returns to the main menu; `arch-menu webapps` opens it directly.
+- **Install** — fzf-driven installers for Pacman / AUR / Development (mise) / Gaming / Terminal / Font / **ProtonGE** (fzf-pick any GE-Proton release, download into `~/.steam/root/compatibilitytools.d/`)
+- **Remove** — mirrors Install: Pacman (fzf over `pacman -Qq`) / AUR (foreign packages only, `pacman -Qqm`) / Development (`mise uninstall`) / Gaming/Terminal/Font (curated `pacman -Rns`) / ProtonGE (rm from `compatibilitytools.d/`) / **Cache** (`arch-cache-clean`: shows the sizes, then cleans yay's build dirs and the pacman package cache)
 - **Bookmarks** — reads `~/.config/arch-menu/bookmarks.conf` (one `Label | URL` per line, `#` comments OK). Selecting opens the URL in chromium.
 - **System** — TUI control panels via floating alacritty: bluetui, impala, wiremix, jolt, btop · **Disk** (`arch-disk`: filesystems + btrfs allocation + biggest folders in `~`, then `gdu` to explore) · **Firewall** (`arch-firewall`: fzf TUI over `ufw` — live rule list; `a` allow · `d` deny · `l` limit · `x` delete · `e` enable/disable · `?` details)
 - **Remote** — reads `~/.ssh/config` and everything it `Include`s; a host's group is its nearest `# group: NAME` marker, else the folder its config lives in (`~/.ssh/infra/config` → *infra*); git forges (github/gitlab/bitbucket/aur) are skipped; picks a group, then a host, and spawns ssh in a tiled `ssh-session` terminal. **Custom…** gum-prompts for User/Host/Port.
@@ -174,6 +175,7 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-protonge-install`         | fzf-pick a GE-Proton release; downloads + sha512-verifies + extracts |
 | `arch-protonge-remove`          | fzf-pick a GE-Proton release in `compatibilitytools.d/`; `rm -rf`  |
 | `arch-webapp-install`           | gum prompt → desktop launcher for any URL via chromium `--app`     |
+| `arch-webapp-edit`              | Menu → Webapps → Edit. Pick a web app and change its name, URL or icon (favicon / icon URL / file); renaming also renames the file, icon and window class. Rewrites only Name/Comment/Exec/Icon/StartupWMClass, keeps the rest. Flags for scripts: `arch-webapp-edit <name> [--name N] [--url U] [--icon favicon\|URL\|FILE]`, `--list` |
 | `arch-webapp "<Name>"`          | launch a webapp by Name (matches `Name=` in any `~/.local/share/applications/*.desktop` whose Exec calls `arch-launch-webapp`); no args → walker picker over all discovered webapps |
 | `arch-keybinds`                 | SUPER+F1; fzf-list of every Hyprland bind (colored per modifier)   |
 | `arch-remote-custom`            | gum prompt → User/Host/Port → spawns ssh in a tiled `ssh-session` window |

@@ -1,0 +1,231 @@
+#!/bin/bash
+# arch-webapp-edit — change an existing web app launcher (name, URL, icon).
+#
+#   arch-webapp-edit                  pick one, then edit it (gum)
+#   arch-webapp-edit <name>           edit that one; <name> is its file name or its Name=
+#   arch-webapp-edit <name> [--name NEW] [--url URL] [--icon favicon|URL|FILE]
+#                                     no prompts: changes only what you pass
+#   arch-webapp-edit --list           print  file<TAB>Name<TAB>URL  for every web app
+#
+# A "web app" is a launcher in ~/.local/share/applications whose Exec is
+# arch-launch-webapp (or the old omarchy-launch-webapp, which an edit migrates).
+#
+# What an edit rewrites: Name, Comment (if it was the old name), Exec, Icon and
+# StartupWMClass. Everything else in the file (MimeType, actions, ...) is kept.
+# Renaming also renames the file and its icon, and gives the window a new class
+# (the slug of the name, like arch-webapp-install); a window that is already open
+# keeps the old class until you close it.
+#
+# APPLICATIONS_DIR overrides the folder (tests). ARCH_NO_GUM=1 forces plain prompts.
+
+set -u
+DESKTOP_DIR=${APPLICATIONS_DIR:-$HOME/.local/share/applications}
+ICON_DIR="$DESKTOP_DIR/icons"
+
+LAST_TARGET=
+have_gum() { [[ -z ${ARCH_NO_GUM:-} ]] && command -v gum >/dev/null 2>&1; }
+die() { printf '\033[31m%s\033[0m\n' "$*" >&2; exit 1; }
+ok()  { printf '\033[32m✓\033[0m %s\n' "$*"; }
+slug() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\+/-/g; s/^-\+//; s/-\+$//'; }
+trim() { local s=$1; s=${s#"${s%%[![:space:]]*}"}; printf '%s' "${s%"${s##*[![:space:]]}"}"; }
+
+is_webapp() { grep -qE '^Exec=.*(arch-launch-webapp|omarchy-launch-webapp)' "$1"; }
+app_name()  { local n; n=$(grep -m1 '^Name=' "$1" | cut -d= -f2-); [[ -n $n ]] && printf '%s' "$n" || basename "${1%.desktop}"; }
+app_icon()  { grep -m1 '^Icon=' "$1" | cut -d= -f2-; }
+app_class() { sed -n 's/^Exec=arch-launch-webapp[[:space:]]\+\([^[:space:]]\+\).*/\1/p' "$1" | head -1; }
+app_url() {
+  local line; line=$(grep -m1 '^Exec=' "$1")
+  if   [[ $line =~ arch-launch-webapp[[:space:]]+[^[:space:]]+[[:space:]]+([^[:space:]]+) ]]; then printf '%s' "${BASH_REMATCH[1]}"
+  elif [[ $line =~ omarchy-launch-webapp[[:space:]]+([^[:space:]]+) ]];                      then printf '%s' "${BASH_REMATCH[1]}"
+  fi
+}
+
+list_apps() {
+  local f
+  while IFS= read -r -d '' f; do
+    is_webapp "$f" && printf '%s\t%s\t%s\n' "$(basename "${f%.desktop}")" "$(app_name "$f")" "$(app_url "$f")"
+  done < <(find "$DESKTOP_DIR" -maxdepth 1 -name '*.desktop' -print0 | sort -z)
+}
+
+# resolve <arg> to a launcher file: by file name first, then by Name= (any case)
+resolve() {
+  local arg=$1 f
+  [[ -f $DESKTOP_DIR/$arg.desktop ]] && is_webapp "$DESKTOP_DIR/$arg.desktop" && { printf '%s' "$DESKTOP_DIR/$arg.desktop"; return 0; }
+  while IFS= read -r -d '' f; do
+    is_webapp "$f" || continue
+    [[ ${f##*/} == "$arg" || $(app_name "$f" | tr '[:upper:]' '[:lower:]') == "$(printf '%s' "$arg" | tr '[:upper:]' '[:lower:]')" ]] && { printf '%s' "$f"; return 0; }
+  done < <(find "$DESKTOP_DIR" -maxdepth 1 -name '*.desktop' -print0)
+  return 1
+}
+
+# fetch_icon <spec> <url> <dest-without-extension>  → prints the icon path, or nothing on failure
+fetch_icon() {
+  local spec=$1 url=$2 base=$3 dest
+  mkdir -p "$ICON_DIR"
+  case $spec in
+    favicon)
+      dest="$base.png"
+      curl -fsSL -o "$dest" "https://www.google.com/s2/favicons?domain=${url}&sz=128" && [[ -s $dest ]] && { printf '%s' "$dest"; return 0; } ;;
+    http://*|https://*)
+      dest="$base.png"
+      curl -fsSL -o "$dest" "$spec" && [[ -s $dest ]] && { printf '%s' "$dest"; return 0; } ;;
+    *)
+      [[ -f $spec ]] || return 1
+      dest="$base.${spec##*.}"
+      cp -f -- "$spec" "$dest" && { printf '%s' "$dest"; return 0; } ;;
+  esac
+  rm -f -- "$dest" 2>/dev/null
+  return 1
+}
+
+# apply <file> <new-name> <new-url> <icon-spec>   ("" = keep that part)
+apply() {
+  local file=$1 new_name=$2 new_url=$3 icon_spec=$4
+  local old_base old_name old_url old_icon new_base class target c other used=()
+  old_base=$(basename "${file%.desktop}")
+  old_name=$(app_name "$file"); old_url=$(app_url "$file"); old_icon=$(app_icon "$file")
+
+  new_name=$(trim "${new_name:-$old_name}")
+  new_url=$(trim "${new_url:-$old_url}")
+  [[ -n $new_name ]]            || { echo "name cannot be empty" >&2; return 1; }
+  [[ $new_name != */* ]]        || { echo "name cannot contain '/'" >&2; return 1; }
+  [[ -n $new_url ]]             || { echo "URL cannot be empty" >&2; return 1; }
+  [[ $new_url =~ ^[a-zA-Z][a-zA-Z0-9+.-]*: ]] || new_url="https://$new_url"
+  [[ $new_url != *[[:space:]]* ]] || { echo "URL cannot contain spaces" >&2; return 1; }
+
+  # keep the file's name unless the display name changed
+  if [[ $new_name == "$old_name" ]]; then new_base=$old_base; else new_base=$new_name; fi
+  target="$DESKTOP_DIR/$new_base.desktop"
+  if [[ $new_base != "$old_base" && -e $target ]]; then echo "a launcher called '$new_base' already exists" >&2; return 1; fi
+
+  # window class: slug of the name, unique among the other web apps
+  while IFS= read -r -d '' other; do
+    [[ $other == "$file" ]] && continue
+    c=$(app_class "$other"); [[ -n $c ]] && used+=("$c")
+  done < <(find "$DESKTOP_DIR" -maxdepth 1 -name '*.desktop' -print0)
+  class=$(slug "$new_name"); [[ -n $class ]] || class="webapp-$(date +%s)"
+  local base=$class n=2
+  while printf '%s\n' "${used[@]:-}" | grep -qx -- "$class"; do class="$base-$n"; n=$((n + 1)); done
+
+  # icon
+  local new_icon=$old_icon icon_msg=""
+  local managed_old="$ICON_DIR/$old_base.png"
+  if [[ -n $icon_spec ]]; then
+    if p=$(fetch_icon "$icon_spec" "$new_url" "$ICON_DIR/$new_base"); then new_icon=$p; icon_msg="icon updated"
+    else echo "could not get the icon ($icon_spec); keeping the old one" >&2; fi
+  elif [[ $new_base != "$old_base" && $old_icon == "$managed_old" && -f $managed_old ]]; then
+    mv -f -- "$managed_old" "$ICON_DIR/$new_base.png" && new_icon="$ICON_DIR/$new_base.png" && icon_msg="icon renamed"
+  fi
+
+  # rewrite the main group only; actions further down are left alone
+  local tmp; tmp=$(mktemp "$DESKTOP_DIR/.edit.XXXXXX") || return 1
+  local have_class=0 have_icon=0
+  grep -q '^StartupWMClass=' "$file" && have_class=1
+  grep -q '^Icon=' "$file" && have_icon=1
+  OLDNAME=$old_name NEWNAME=$new_name EXEC="arch-launch-webapp $class $new_url" ICON=$new_icon \
+  CLASS=$class HAVECLASS=$have_class HAVEICON=$have_icon awk '
+    /^\[/ && $0 != "[Desktop Entry]" { main = 0 }
+    BEGIN { main = 1 }
+    main && /^Name=/            { print "Name=" ENVIRON["NEWNAME"]; next }
+    main && /^Comment=/         { if (substr($0, 9) == ENVIRON["OLDNAME"]) print "Comment=" ENVIRON["NEWNAME"]; else print; next }
+    main && /^Icon=/            { if (ENVIRON["ICON"] != "") print "Icon=" ENVIRON["ICON"]; else print; next }
+    main && /^StartupWMClass=/  { print "StartupWMClass=" ENVIRON["CLASS"]; next }
+    main && /^Exec=/ && !done   { print "Exec=" ENVIRON["EXEC"]
+                                  if (ENVIRON["HAVEICON"] == "0" && ENVIRON["ICON"] != "") print "Icon=" ENVIRON["ICON"]
+                                  if (ENVIRON["HAVECLASS"] == "0") print "StartupWMClass=" ENVIRON["CLASS"]
+                                  done = 1; next }
+    { print }
+  ' "$file" > "$tmp" && chmod --reference="$file" "$tmp" || { rm -f "$tmp"; echo "rewrite failed" >&2; return 1; }
+
+  mv -f -- "$tmp" "$target" || { rm -f "$tmp"; return 1; }
+  [[ $target != "$file" ]] && rm -f -- "$file"
+  pkill -SIGUSR1 walker 2>/dev/null || true
+
+  ok "$new_name  →  $new_url"
+  [[ $new_name != "$old_name" ]] && echo "   renamed from '$old_name'; window class is now '$class' (an open window keeps the old class until closed)"
+  [[ $new_url  != "$old_url"  ]] && echo "   URL was $old_url"
+  [[ -n $icon_msg ]] && echo "   $icon_msg"
+  LAST_TARGET=$target
+  return 0
+}
+
+# ------------------------------------------------------------------ prompts
+ask() {  # ask <prompt> <current>  → new value on stdout (empty on cancel)
+  if have_gum; then gum input --prompt "$1> " --value "$2" || true
+  else local v; read -r -e -p "$1> " -i "$2" v || true; printf '%s' "$v"; fi
+}
+
+pick() {  # pick <header> <items...>  → chosen item on stdout (non-zero on cancel)
+  local header=$1; shift
+  if have_gum; then gum choose --header "$header" "$@"
+  else
+    local i=1 n; echo "$header" >&2
+    for it in "$@"; do printf '  %d) %s\n' "$i" "$it" >&2; i=$((i + 1)); done
+    read -r -p "[1-$#, q = cancel] " n; [[ $n =~ ^[0-9]+$ ]] && (( n >= 1 && n <= $# )) || return 1
+    printf '%s' "${!n}"
+  fi
+}
+
+edit_interactive() {
+  local file=$1 name url icon_spec="" icon_label="keep" sel
+  name=$(app_name "$file"); url=$(app_url "$file")
+  while :; do
+    clear 2>/dev/null
+    sel=$(pick "Editing: $(app_name "$file")   (pick a field to change)" \
+      "Name   $name" "URL    $url" "Icon   $icon_label" "Edit the .desktop file by hand" "Save" "Cancel") || { echo "Cancelled."; return 1; }
+    case $sel in
+      Name*) v=$(ask "Name" "$name"); [[ -n $v ]] && name=$v ;;
+      URL*)  v=$(ask "URL" "$url");   [[ -n $v ]] && url=$v ;;
+      Icon*)
+        c=$(pick "Icon" "Keep the current icon" "Re-fetch the favicon from the URL" "Use an icon from a URL" "Use an icon from a file") || continue
+        case $c in
+          Keep*)    icon_spec=""; icon_label="keep" ;;
+          Re-fetch*) icon_spec="favicon"; icon_label="favicon of the URL" ;;
+          *URL)     v=$(ask "Icon URL" ""); [[ -n $v ]] && { icon_spec=$v; icon_label=$v; } ;;
+          *file)    v=$(ask "Icon file" "$HOME/"); v=${v/#\~/$HOME}; [[ -f $v ]] && { icon_spec=$v; icon_label=$v; } || echo "no such file: $v" ;;
+        esac ;;
+      Edit*) ${EDITOR:-nvim} "$file"; name=$(app_name "$file"); url=$(app_url "$file") ;;
+      Save)  apply "$file" "$name" "$url" "$icon_spec" && return 0; read -r -p "[Enter to continue]" _ ;;
+      Cancel) echo "Cancelled."; return 1 ;;
+    esac
+  done
+}
+
+# ------------------------------------------------------------------ main
+name_arg="" new_name="" new_url="" icon_spec="" headless=0
+while (( $# )); do
+  case $1 in
+    --list)     list_apps; exit 0 ;;
+    --name)     new_name=${2-}; headless=1; shift 2 ;;
+    --url)      new_url=${2-};  headless=1; shift 2 ;;
+    --icon)     icon_spec=${2-}; headless=1; shift 2 ;;
+    -h|--help)  sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*)         die "unknown option '$1' (see --help)" ;;
+    *)          [[ -z $name_arg ]] && name_arg=$1 || die "only one web app at a time" ; shift ;;
+  esac
+done
+
+if [[ -n $name_arg ]]; then
+  file=$(resolve "$name_arg") || die "no web app called '$name_arg' (try: arch-webapp-edit --list)"
+else
+  (( headless )) && die "say which web app to change"
+  mapfile -t rows < <(list_apps)
+  (( ${#rows[@]} )) || { echo "No web apps found."; sleep 1; exit 0; }
+  labels=()
+  for r in "${rows[@]}"; do IFS=$'\t' read -r b nm u <<<"$r"; labels+=("$nm  ·  $u"); done
+  sel=$(pick "Edit which web app?" "${labels[@]}") || { echo "Cancelled."; exit 0; }
+  idx=0; for i in "${!labels[@]}"; do [[ ${labels[$i]} == "$sel" ]] && idx=$i && break; done
+  IFS=$'\t' read -r b _ _ <<<"${rows[$idx]}"
+  file="$DESKTOP_DIR/$b.desktop"
+fi
+
+if (( headless )); then
+  apply "$file" "$new_name" "$new_url" "$icon_spec"; exit $?
+fi
+
+if edit_interactive "$file"; then
+  if have_gum && gum confirm "Launch it now?"; then
+    setsid -f arch-launch-webapp "$(app_class "$LAST_TARGET")" "$(app_url "$LAST_TARGET")" >/dev/null 2>&1
+  fi
+  sleep 1
+fi

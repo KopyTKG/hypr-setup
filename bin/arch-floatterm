@@ -19,4 +19,15 @@ fi
 
 class=$1
 shift
+
+# A helper that is not on PATH (a new bin/arch-* script before install.sh has
+# linked it) would make the window flash and close. Say what is wrong instead.
+if ! command -v "$1" >/dev/null 2>&1; then
+  exec uwsm-app -- alacritty --class "$class" -e bash -c '
+    printf "\033[31m%s: command not found\033[0m\n\n" "$1"
+    echo "It is probably a new script in the repo that is not linked yet. Run:"
+    echo "  ~/Projects/hypr-setup/install.sh"
+    echo; read -r -p "[Enter to close]"' _ "$1"
+fi
+
 exec uwsm-app -- alacritty --class "$class" -e "$@"
