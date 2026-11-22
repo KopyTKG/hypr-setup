@@ -1,0 +1,29 @@
+# Firewall — searchable UFW rules table plus actions (arch-firewall).
+#
+# Rows: "Add rule…", enable/disable, reload, reset, then one row per rule. Smart
+# matching: every word you type has to match ("allow 22", "docker", "deny in").
+# Picking a rule asks before deleting it; the other rows run their action.
+#
+# The list's label is the column header and must equal `arch-firewall header`
+# (same fixed column widths; spot.css sets the monospace family).
+# SPOT_TITLE (state, default policies, rule count) comes from the script.
+
+anchor   = "center"
+width    = 980
+style    = "spot.css"
+keyboard = "exclusive"
+
+[opacity]
+outside = 100
+
+[[items]]
+type        = "list"
+id          = "row"
+label       = " ACTION   DIR       PROTO PORT          FROM                   TO                 NOTE"
+placeholder = "Filter…  allow 22 · deny · docker"
+match       = "smart"
+stdin       = true
+height      = 520
+
+[submit]
+stdout = "{row}"

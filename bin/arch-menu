@@ -291,7 +291,7 @@ show_system() {
     *"Power menu"*) SPOT_BACK="arch-menu system" arch-power-menu ;;
     *Info*)         uwsm-app -- xdg-terminal-exec bash -c "fastfetch; read -p 'Press Enter to close.'" ;;
     *Files*)        arch-floatterm yazi yazi ;;
-    *Firewall*)     arch-floatterm arch-installer arch-firewall ;;
+    *Firewall*)     SPOT_BACK="arch-menu system" arch-firewall ;;
     *Disk*)         arch-floatterm arch-installer arch-disk ;;
     *Sockets*)      SPOT_BACK="arch-menu system" arch-sockets ;;
     *Back*)         show_main ;;

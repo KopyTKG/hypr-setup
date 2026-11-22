@@ -1,67 +1,167 @@
 #!/bin/bash
-# arch-firewall — fzf-based UFW TUI: live rule list, single-key actions.
-# Run inside a terminal: arch-floatterm arch-installer arch-firewall
+# arch-firewall — manage UFW from spot dialogs: a searchable rules table plus
+# add / delete / enable / reload / reset. (The old fzf TUI is arch-firewall-tui.)
 #
-#   a allow · d deny · l limit · x delete · e enable/disable · R reset · r refresh · ? details · q quit
+#   arch-firewall            open the rules table
+#   arch-firewall rules      print the table (header + rows) and exit
+#   arch-firewall header     print just the column header
 #
-# Internal subcommands (_list, _head, _add, _del, _toggle, _reset) are the fzf
-# bind targets; they re-invoke this script so the TUI refreshes after each action.
+# Listing needs no root: /etc/ufw/user.rules and user6.rules are world-readable.
+# Anything that changes the firewall goes through pkexec (a polkit prompt), and
+# the result is shown as a notification.
+#
+# In the table: pick "Add rule…", an enable/disable / reload / reset row, or a
+# rule (which asks before deleting it and shows the exact `ufw delete …` it will
+# run). Smart matching: every word you type has to match ("allow 22", "docker").
+# Rule order is meaningful to ufw (first match wins), so the table keeps file order.
+#
+# Back: `SPOT_BACK=<cmd> arch-firewall` gives the table a Back button (arch-menu does
+# this). It is applied to the table only; the add form's own Back returns to the table.
+#
+# The header is also the `label` of the list in firewall.toml; they must stay
+# equal (`arch-firewall header` prints the right one).
+#
+# Test hooks: UFW_DIR, UFW_DEFAULTS, ARCH_SPOT_DIR (where the spot configs are).
 
-self=$(readlink -f "$0")
+set -u
+UFW_DIR=${UFW_DIR:-/etc/ufw}
+UFW_DEFAULTS=${UFW_DEFAULTS:-/etc/default/ufw}
+CFG=${ARCH_SPOT_DIR:-$HOME/.config/spot}
 
-pause() { echo; read -rp 'Press Enter to continue.'; }
+# The table is only the firewall's; what to go back to is the caller's business.
+MENU_BACK=${SPOT_BACK:-}
+unset SPOT_BACK
 
-enabled() { grep -q '^ENABLED=yes' /etc/ufw/ufw.conf 2>/dev/null; }
+W_ACTION=8 W_DIR=9 W_PROTO=5 W_PORT=13 W_FROM=22 W_TO=18
+ADD='  Add rule…'
+RELOAD='  Reload rules'
+RESET='  Reset (delete ALL rules)'
+ON='  Enable firewall'
+OFF='  Disable firewall'
+NORULES='(no rules yet)'
+
+header() {
+  printf '%-*s %-*s %-*s %-*s %-*s %-*s %s' "$W_ACTION" ACTION "$W_DIR" DIR "$W_PROTO" PROTO "$W_PORT" PORT "$W_FROM" FROM "$W_TO" TO NOTE
+}
+
+enabled() { grep -q '^ENABLED=yes' "$UFW_DIR/ufw.conf" 2>/dev/null; }
+
+policy() {  # policy INPUT|OUTPUT → deny / allow / reject
+  case $(sed -n "s/^DEFAULT_${1}_POLICY=\"\\?\\([A-Z]*\\).*/\\1/p" "$UFW_DEFAULTS" 2>/dev/null | head -1) in
+    DROP) echo deny ;; ACCEPT) echo allow ;; REJECT) echo reject ;; *) echo '?' ;;
+  esac
+}
+
+# Tuple lines look like:
+#   ### tuple ### <action> <proto> <dport> <dst> <sport> <src> <dir> [comment=<hex>]
+# IPv4 and IPv6 twins (0.0.0.0/0 and ::/0) are one rule to the user; show it once.
+rules() {
+  cat "$UFW_DIR/user.rules" "$UFW_DIR/user6.rules" 2>/dev/null | awk \
+    -v wa="$W_ACTION" -v wd="$W_DIR" -v wp="$W_PROTO" -v wo="$W_PORT" -v wf="$W_FROM" -v wt="$W_TO" '
+    function any(a) { return (a == "0.0.0.0/0" || a == "::/0") ? "Anywhere" : a }
+    function cut(s, w) { return length(s) > w ? substr(s, 1, w - 1) "~" : s }
+    function unhex(h,   out, i) { out = ""; for (i = 1; i <= length(h); i += 2) out = out sprintf("%c", strtonum("0x" substr(h, i, 2))); return out }
+    /^### tuple ### / {
+      action = $4; if (action ~ /^route:/) action = "rt:" substr(action, 7)
+      proto = $5; dport = $6; dst = any($7); sport = $8; src = any($9); dir = $10
+      note = ""
+      if ($11 ~ /^comment=/) note = unhex(substr($11, 9))
+      port = dport; if (sport != "any") port = dport " (sport " sport ")"
+      key = action "|" proto "|" port "|" dst "|" src "|" dir
+      if (key in seen) next
+      seen[key] = 1
+      printf "%-*s %-*s %-*s %-*s %-*s %-*s %s\n", wa, action, wd, dir, wp, proto, wo, cut(port, wo), wf, cut(src, wf), wt, cut(dst, wt), note
+    }'
+}
+
+# What `ufw delete` needs to remove the rule on a table row (arguments, one per line).
+delete_args() {
+  local action dir proto port from to
+  read -r action dir proto port from to _ <<<"$1"
+  [[ $action == rt:* ]] && return 1                       # route rules: use the ufw CLI
+  printf '%s\n' delete "$action"
+  case $dir in in|out) printf '%s\n' "$dir" ;; in_*|out_*) printf '%s\n' "${dir%%_*}" on "${dir#*_}" ;; esac
+  [[ $proto != any ]] && printf '%s\n' proto "$proto"
+  [[ $from == Anywhere ]] && from=any; [[ $to == Anywhere ]] && to=any
+  printf '%s\n' from "$from" to "$to"
+  [[ $port != any ]] && printf '%s\n' port "${port%% *}"
+  return 0
+}
+
+notify() { notify-send -u "${3:-low}" -a arch-firewall "$1" "$2" 2>/dev/null; }
+
+run_ufw() {  # run_ufw <ufw args...> — via pkexec, result as a notification
+  local out rc
+  out=$(pkexec ufw "$@" 2>&1); rc=$?
+  if (( rc == 0 )); then notify "Firewall" "${out:-done}"
+  else notify "Firewall: failed (exit $rc)" "${out:-no output}" critical; fi
+  return $rc
+}
+
+confirm() {  # confirm <title> [footer]
+  local a
+  a=$(SPOT_TITLE="$1" SPOT_FOOTER="${2:-}" spot "$CFG/confirm.toml") || return 1
+  [[ $a == yes ]]
+}
+
+add_rule() {
+  local out action proto port from dir args
+  out=$(spot --back "$CFG/firewall-add.toml") || return 0        # Esc or Back: just return to the table
+  action=$(jq -r '.action // "allow"' <<<"$out"); proto=$(jq -r '.proto // "tcp"' <<<"$out")
+  port=$(jq -r '.port // ""' <<<"$out");          from=$(jq -r '.from // ""' <<<"$out")
+  dir=$(jq -r '.direction // "in"' <<<"$out")
+  [[ -n $port ]] || return 0
+  if [[ $proto == any && $port =~ [:,] ]]; then
+    notify "Firewall" "Port ranges and lists need a protocol (tcp or udp)." critical; return 0
+  fi
+  args=("$action" "$dir")
+  [[ $proto != any ]] && args+=(proto "$proto")
+  [[ -n $from ]] && args+=(from "$from")
+  args+=(to any port "$port")
+  run_ufw "${args[@]}"
+}
+
+delete_rule() {  # delete_rule <table row>
+  local out args
+  out=$(delete_args "$1") || { notify "Firewall" "Route rules can only be removed with the ufw command line." critical; return 0; }
+  mapfile -t args <<<"$out"
+  confirm "Delete this rule?" "ufw ${args[*]}" || return 0
+  run_ufw "${args[@]}"
+}
+
+table() {
+  local r
+  r=$(rules)
+  printf '%s\n' "$ADD"
+  if enabled; then printf '%s\n' "$OFF"; else printf '%s\n' "$ON"; fi
+  printf '%s\n' "$RELOAD" "$RESET"
+  if [[ -n $r ]]; then printf '%s\n' "$r"; else printf '%s\n' "$NORULES"; fi
+}
+
+title() {
+  local n state; n=$(rules | grep -c .)
+  if enabled; then state=ACTIVE; else state=INACTIVE; fi
+  printf 'Firewall · %s · in: %s · out: %s · %s rule(s)' "$state" "$(policy INPUT)" "$(policy OUTPUT)" "$n"
+}
 
 case ${1:-} in
-  _list)
-    sudo ufw status numbered | grep '^\[' ;;
-  _head)
-    if enabled; then s="ACTIVE"; else s="INACTIVE"; fi
-    echo "Firewall: $s   (default: $(sudo ufw status verbose | sed -n 's/^Default: //p'))"
-    echo "a allow · d deny · l limit · x delete · e enable/disable · R reset · r refresh · ? details · q quit" ;;
-  _add)
-    action=$2
-    clear
-    read -rp "$action — port or range (80, 8000:8100): " port
-    [[ $port =~ ^[0-9]+(:[0-9]+)?$ ]] || { echo "Invalid port: '$port'"; pause; exit 0; }
-    proto=$(gum choose --header "Protocol" tcp udp both) || exit 0
-    [[ $proto == both ]] && rule=$port || rule=$port/$proto
-    sudo ufw "$action" "$rule"
-    pause ;;
-  _del)
-    n=$(sed -n 's/^\[ *\([0-9]\+\)\].*/\1/p' <<<"$2")
-    [[ -n $n ]] || exit 0
-    clear
-    gum confirm "Delete rule: $2 ?" && sudo ufw --force delete "$n"
-    pause ;;
-  _toggle)
-    clear
-    if enabled; then
-      gum confirm "Disable firewall?" && sudo ufw disable
-    else
-      gum confirm "Enable firewall?" && sudo ufw enable
-    fi
-    pause ;;
-  _reset)
-    clear
-    gum confirm "Delete ALL rules and disable?" && sudo ufw --force reset
-    pause ;;
-  "")
-    sudo -v || exit 1
-    "$self" _list | fzf --disabled --no-sort --reverse --border \
-      --prompt='ufw> ' \
-      --header-first --header "$("$self" _head)" \
-      --preview='sudo ufw status verbose' --preview-window=right:45%:wrap:hidden \
-      --bind "start,load:transform-header($self _head)" \
-      --bind "a:execute($self _add allow)+reload($self _list)" \
-      --bind "d:execute($self _add deny)+reload($self _list)" \
-      --bind "l:execute($self _add limit)+reload($self _list)" \
-      --bind "x:execute($self _del {})+reload($self _list)" \
-      --bind "e:execute($self _toggle)+reload($self _list)" \
-      --bind "R:execute($self _reset)+reload($self _list)" \
-      --bind "r:reload($self _list)" \
-      --bind "?:toggle-preview" \
-      --bind "q:abort,enter:ignore"
-    ;;
+  header) header; echo; exit 0 ;;
+  rules)  header; echo; rules; exit 0 ;;
+  -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  "") ;;
+  *) echo "arch-firewall: unknown argument '$1' (see --help)" >&2; exit 2 ;;
 esac
+
+while :; do
+  choice=$(table | SPOT_BACK=$MENU_BACK SPOT_TITLE="$(title)" spot "$CFG/firewall.toml") || exit 0
+  [[ -n $choice ]] || exit 0
+  case $choice in
+    allow\ *|deny\ *|limit\ *|reject\ *|rt:*) delete_rule "$choice" ;;
+    "$ADD")     add_rule ;;
+    "$ON")      confirm "Enable the firewall?"  && run_ufw --force enable ;;
+    "$OFF")     confirm "Disable the firewall?" && run_ufw disable ;;
+    "$RELOAD")  run_ufw reload ;;
+    "$RESET")   confirm "Delete ALL rules and disable?" "ufw --force reset" && run_ufw --force reset ;;
+    "$NORULES") ;;
+  esac
+done

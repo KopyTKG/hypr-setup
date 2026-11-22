@@ -1,0 +1,68 @@
+#!/bin/bash
+# arch-firewall-tui — fzf-based UFW TUI: live rule list, single-key actions.
+# The spot GUI (arch-firewall) is what the menu and waybar open now; this stays for
+# keyboard-only terminal use:  arch-floatterm arch-installer arch-firewall-tui
+#
+#   a allow · d deny · l limit · x delete · e enable/disable · R reset · r refresh · ? details · q quit
+#
+# Internal subcommands (_list, _head, _add, _del, _toggle, _reset) are the fzf
+# bind targets; they re-invoke this script so the TUI refreshes after each action.
+
+self=$(readlink -f "$0")
+
+pause() { echo; read -rp 'Press Enter to continue.'; }
+
+enabled() { grep -q '^ENABLED=yes' /etc/ufw/ufw.conf 2>/dev/null; }
+
+case ${1:-} in
+  _list)
+    sudo ufw status numbered | grep '^\[' ;;
+  _head)
+    if enabled; then s="ACTIVE"; else s="INACTIVE"; fi
+    echo "Firewall: $s   (default: $(sudo ufw status verbose | sed -n 's/^Default: //p'))"
+    echo "a allow · d deny · l limit · x delete · e enable/disable · R reset · r refresh · ? details · q quit" ;;
+  _add)
+    action=$2
+    clear
+    read -rp "$action — port or range (80, 8000:8100): " port
+    [[ $port =~ ^[0-9]+(:[0-9]+)?$ ]] || { echo "Invalid port: '$port'"; pause; exit 0; }
+    proto=$(gum choose --header "Protocol" tcp udp both) || exit 0
+    [[ $proto == both ]] && rule=$port || rule=$port/$proto
+    sudo ufw "$action" "$rule"
+    pause ;;
+  _del)
+    n=$(sed -n 's/^\[ *\([0-9]\+\)\].*/\1/p' <<<"$2")
+    [[ -n $n ]] || exit 0
+    clear
+    gum confirm "Delete rule: $2 ?" && sudo ufw --force delete "$n"
+    pause ;;
+  _toggle)
+    clear
+    if enabled; then
+      gum confirm "Disable firewall?" && sudo ufw disable
+    else
+      gum confirm "Enable firewall?" && sudo ufw enable
+    fi
+    pause ;;
+  _reset)
+    clear
+    gum confirm "Delete ALL rules and disable?" && sudo ufw --force reset
+    pause ;;
+  "")
+    sudo -v || exit 1
+    "$self" _list | fzf --disabled --no-sort --reverse --border \
+      --prompt='ufw> ' \
+      --header-first --header "$("$self" _head)" \
+      --preview='sudo ufw status verbose' --preview-window=right:45%:wrap:hidden \
+      --bind "start,load:transform-header($self _head)" \
+      --bind "a:execute($self _add allow)+reload($self _list)" \
+      --bind "d:execute($self _add deny)+reload($self _list)" \
+      --bind "l:execute($self _add limit)+reload($self _list)" \
+      --bind "x:execute($self _del {})+reload($self _list)" \
+      --bind "e:execute($self _toggle)+reload($self _list)" \
+      --bind "R:execute($self _reset)+reload($self _list)" \
+      --bind "r:reload($self _list)" \
+      --bind "?:toggle-preview" \
+      --bind "q:abort,enter:ignore"
+    ;;
+esac

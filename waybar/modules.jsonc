@@ -100,7 +100,8 @@
   },
   "custom/firewall": {
     "exec": "arch-indicator-firewall",
-    "on-click": "arch-ufw",
+    "on-click": "arch-firewall",
+    "on-click-right": "arch-ufw",
     "return-type": "json",
     "interval": 5
   },
