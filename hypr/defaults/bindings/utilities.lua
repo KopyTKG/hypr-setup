@@ -11,7 +11,7 @@ bind("SUPER + SPACE", exec("walker"), "Launch apps")
 bind("SUPER + CTRL + E", exec("walker -m symbols"), "Emoji picker")
 bind("SUPER + ESCAPE", exec("arch-power-menu"), "Power menu")
 bind("XF86PowerOff", exec("arch-power-menu"), "Power menu", { locked = true })
-bind("XF86Calculator", exec("kcalc"), "Calculator")
+bind("XF86Calculator", exec("arch-floatterm arch-qalc qalc"), "Calculator")
 
 -- Aesthetics
 bind("SUPER + SHIFT + SPACE", exec("arch-toggle-waybar"), "Toggle top bar")

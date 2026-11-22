@@ -5,10 +5,6 @@ hl.env("HYPRCURSOR_SIZE", "24")
 -- Force all apps to use Wayland
 hl.env("GDK_BACKEND", "wayland,x11,*")
 hl.env("QT_QPA_PLATFORM", "wayland;xcb")
-hl.env("QT_STYLE_OVERRIDE", "Breeze")
--- Loads the KDE platform theme (from plasma-integration) so Qt/KDE apps read the
--- colour scheme in ~/.config/kdeglobals — without this they stay light regardless.
-hl.env("QT_QPA_PLATFORMTHEME", "kde")
 hl.env("MOZ_ENABLE_WAYLAND", "1")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "wayland")
 hl.env("OZONE_PLATFORM", "wayland")
@@ -17,12 +13,6 @@ hl.env("XDG_SESSION_TYPE", "wayland")
 -- Allow better support for screen sharing (Google Meet, Discord, etc)
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
-
--- KDE apps (dolphin, "Open With") build their application tree from
--- $XDG_MENU_PREFIX + "applications.menu". uwsm exports "hyprland-", which does
--- not exist, so the tree came out incomplete. plasma-applications.menu ships
--- with kservice/plasma-workspace and works outside a Plasma session.
-hl.env("XDG_MENU_PREFIX", "plasma-")
 
 -- Flatpak app launchers: the session env arrives without flatpak's export dirs,
 -- so walker/elephant can't see flatpak .desktop files. Prepend any that are missing.

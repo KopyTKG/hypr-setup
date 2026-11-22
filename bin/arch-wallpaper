@@ -1,0 +1,133 @@
+#!/bin/bash
+# arch-wallpaper — animated wallpaper with mpvpaper, laptop-friendly.
+#
+#   arch-wallpaper pick          choose a video (spot list) or go back to the static image
+#   arch-wallpaper set <file>    use this video (and turn animation on)
+#   arch-wallpaper on | off      animation on / off (off = static image only)
+#   arch-wallpaper status        what is configured and what is running
+#   arch-wallpaper watch         the daemon hypr autostart runs (see below)
+#   arch-wallpaper refresh       re-draw now (after swaybg was restarted)
+#   arch-wallpaper lock-sync     refresh the lock-screen picture (see below)
+#
+# swaybg (the static image) always stays running underneath; the video is drawn on
+# top by mpvpaper. Animation is only active while ALL of these hold:
+#   a video is set  ·  animation is on  ·  the laptop is on AC power
+# so unplugging drops back to the static image (no GPU/battery cost) and plugging
+# in brings the video back. `watch` polls the power state every 30 s.
+# mpvpaper -p also pauses the video while the wallpaper is fully covered
+# (fullscreen / maximised windows hide it, so nothing is decoded).
+#
+# Lock screen: hyprlock cannot play video, so it shows a still frame of the video
+# (blurred by hyprlock.conf), kept at ~/.cache/arch-wallpaper/lock.jpg. It is rebuilt
+# whenever the choice changes (needs ffmpeg); with animation off / no video it is the
+# static background.jpg.
+#
+# Videos are looked for in ~/Videos/Wallpapers (WALLPAPER_DIR overrides). State:
+# ~/.local/state/arch-wallpaper/{video,enabled}. Tuning: MPV_OPTS (default below).
+# Test hooks: WALLPAPER_DIR, XDG_STATE_HOME, XDG_RUNTIME_DIR, POWER_SUPPLY_DIR.
+
+set -u
+DIR=${WALLPAPER_DIR:-$HOME/Videos/Wallpapers}
+STATE=${XDG_STATE_HOME:-$HOME/.local/state}/arch-wallpaper
+PIDFILE=${XDG_RUNTIME_DIR:-/tmp}/arch-wallpaper.pid
+MPV_OPTS=${MPV_OPTS:-"no-audio loop-file=inf hwdec=auto-safe panscan=1.0 framedrop=vo"}
+LOCK=${XDG_CACHE_HOME:-$HOME/.cache}/arch-wallpaper/lock.jpg
+STATIC=${WALLPAPER_STATIC:-$HOME/.config/hypr/theme/background.jpg}
+mkdir -p "$STATE" "$(dirname "$LOCK")"
+
+notify() { notify-send -u low -a arch-wallpaper "Wallpaper" "$1" 2>/dev/null; }
+get()    { cat "$STATE/$1" 2>/dev/null; }
+on_ac()  {  # true when no battery is discharging (desktops have none: always AC)
+  local f any=0
+  for f in "${POWER_SUPPLY_DIR:-/sys/class/power_supply}"/*/online; do [[ -r $f ]] || continue; any=1; [[ $(<"$f") == 1 ]] && return 0; done
+  (( any )) && return 1 || return 0
+}
+
+want() {  # prints the video path when animation should be running now, else nothing
+  local v; v=$(get video)
+  [[ -n $v && -f $v && $(get enabled) != off ]] && on_ac && command -v mpvpaper >/dev/null 2>&1 && printf '%s' "$v"
+}
+
+stop_video() { pkill -x mpvpaper 2>/dev/null; while pgrep -x mpvpaper >/dev/null; do sleep 0.1; done; }
+
+apply() {  # apply [force]
+  local v; v=$(want)
+  if [[ -z $v ]]; then pgrep -x mpvpaper >/dev/null && stop_video; return 0; fi
+  if [[ ${1:-} != force ]] && pgrep -xf "mpvpaper .*$(printf '%s' "$v" | sed 's/[][\.*^$/]/\\&/g')\$" >/dev/null; then return 0; fi
+  stop_video
+  setsid -f uwsm-app -- mpvpaper -p -o "$MPV_OPTS" '*' "$v" >/dev/null 2>&1
+}
+
+poke() {  # wake the watcher so a change applies at once (else apply directly)
+  local pid; pid=$(cat "$PIDFILE" 2>/dev/null)
+  if [[ -n $pid ]] && kill -0 "$pid" 2>/dev/null; then kill -USR1 "$pid"; else apply "${1:-}"; fi
+}
+
+cmd_watch() {
+  if [[ -f $PIDFILE ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then exit 0; fi   # already running
+  echo $$ > "$PIDFILE"
+  trap 'rm -f "$PIDFILE"' EXIT
+  trap 'FORCE=force' USR1
+  FORCE=
+  while :; do
+    apply "$FORCE"; FORCE=
+    sleep 30 & wait $!
+    kill $! 2>/dev/null
+  done
+}
+
+cmd_lock_sync() {
+  local v; v=$(get video)
+  if [[ -n $v && -f $v && $(get enabled) != off ]] && command -v ffmpeg >/dev/null 2>&1 \
+     && ffmpeg -y -loglevel error -ss 1 -i "$v" -frames:v 1 -q:v 2 "$LOCK.tmp.jpg" 2>/dev/null \
+     && [[ -s $LOCK.tmp.jpg ]]; then
+    mv -f "$LOCK.tmp.jpg" "$LOCK"
+  else
+    rm -f "$LOCK.tmp.jpg"; cp -f "$STATIC" "$LOCK" 2>/dev/null
+  fi
+}
+
+cmd_set() {
+  local f; f=$(readlink -f -- "$1" 2>/dev/null)
+  [[ -f $f ]] || { echo "arch-wallpaper: no such file: $1" >&2; exit 1; }
+  printf '%s' "$f" > "$STATE/video"; echo on > "$STATE/enabled"
+  command -v mpvpaper >/dev/null 2>&1 || { notify "mpvpaper is not installed (run bootstrap.sh)"; exit 1; }
+  on_ac && notify "Animated: $(basename "$f")" || notify "Saved: $(basename "$f") — plays when plugged in"
+  cmd_lock_sync
+  poke force
+}
+
+cmd_pick() {
+  local rows choice
+  mkdir -p "$DIR"
+  rows=$( { printf '%s\n' '  Static image (animation off)'; find -L "$DIR" -maxdepth 2 -type f \( -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mkv' -o -iname '*.gif' -o -iname '*.mov' \) -printf '%P\n' 2>/dev/null | sort; } )
+  if [[ $(wc -l <<<"$rows") -le 1 ]]; then notify "No videos in $DIR — drop .mp4 / .webm / .gif files there"; fi
+  choice=$(printf '%s\n' "$rows" | SPOT_TITLE="Wallpaper · $(get enabled | grep -q off && echo static || echo animated)" spot ${SPOT_BACK:+--back} ~/.config/spot/menu.toml) || exit 0
+  [[ -n $choice ]] || exit 0
+  case $choice in
+    *Static*) cmd_off ;;
+    *)        cmd_set "$DIR/$choice" ;;
+  esac
+}
+
+cmd_off() { echo off > "$STATE/enabled"; cmd_lock_sync; poke; notify "Static wallpaper"; }
+cmd_on()  { echo on  > "$STATE/enabled"; cmd_lock_sync; poke force; notify "Animation on"; }
+
+cmd_status() {
+  printf 'video:    %s\nanimate:  %s\npower:    %s\nrunning:  %s\n' \
+    "$(get video || true)" "$(get enabled || echo on)" "$(on_ac && echo AC || echo battery)" \
+    "$(pgrep -x mpvpaper >/dev/null && echo yes || echo no)"
+}
+
+case ${1:-pick} in
+  pick)    cmd_pick ;;
+  set)     cmd_set "${2:?usage: arch-wallpaper set <file>}" ;;
+  on)      cmd_on ;;
+  off)     cmd_off ;;
+  status)  cmd_status ;;
+  watch)   cmd_watch ;;
+  refresh) poke force ;;
+  lock-sync) cmd_lock_sync ;;
+  -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) echo "arch-wallpaper: unknown command '$1' (see --help)" >&2; exit 2 ;;
+esac

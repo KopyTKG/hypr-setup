@@ -79,18 +79,17 @@ rule({ name = "moonlight", match = { class = "com.moonlight_stream.Moonlight" },
 -- Floating windows
 rule({ match = { tag = "floating-window" }, float = true, center = true, size = { 875, 600 } })
 
-rule({ match = { class = "(org.codeberg.dnkl.foot|org.kde.okular|com.gabm.satty|org.kde.gwenview|mpv)" }, tag = "+floating-window" })
+rule({ match = { class = "(org.codeberg.dnkl.foot|org.pwmt.zathura|com.gabm.satty|swayimg|mpv)" }, tag = "+floating-window" })
 rule({
     match = {
-        class = "(xdg-desktop-portal-gtk|org.freedesktop.impl.portal.desktop.kde|sublime_text|DesktopEditors|ONLYOFFICE)",
+        class = "(xdg-desktop-portal-gtk|sublime_text|DesktopEditors|ONLYOFFICE)",
         title = "^(Open.*Files?|Open [F|f]older.*|Save.*Files?|Save.*As|Save|All Files|.*wants to [open|save].*|[C|c]hoose.*)",
     },
     tag = "+floating-window",
 })
-rule({ match = { class = "org.kde.kcalc" }, float = true })
 
 -- No transparency on media windows
-opaque({ class = "^(zoom|vlc|mpv|org.kde.kdenlive|com.obsproject.Studio|com.github.PintaProject.Pinta|org.kde.gwenview)$" })
+opaque({ class = "^(zoom|vlc|mpv|org.kde.kdenlive|com.obsproject.Studio|com.github.PintaProject.Pinta|swayimg)$" })
 
 -- Popped window rounding
 rule({ match = { tag = "pop" }, rounding = 8 })

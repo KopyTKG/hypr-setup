@@ -2,6 +2,8 @@
 
 Personal Arch + Hyprland setup. Vanilla — no Omarchy/distro overlays. Tailwind **stone** monochrome palette across every UI surface; ANSI/syntax colors preserved.
 
+**Keybinds:** press **SUPER+F1** for every keybind (Hyprland, dialogs, shell, terminal, editor, waybar clicks, terminal UIs; type to filter), or read [`KEYBINDS.md`](KEYBINDS.md).
+
 ## Layout
 
 ```
@@ -13,7 +15,7 @@ elephant/                  walker data provider config
 environment.d/             systemd user env (FZF_DEFAULT_OPTS, ...)
 fastfetch/                 system info (no Omarchy branding)
 hypr/                      Hyprland Lua config (hyprland.lua → defaults/ + personal overrides) + hyprlock/hypridle
-arch-menu/                 user-editable arch-menu config (bookmarks.conf)
+arch-menu/                 user-editable arch-menu config (bookmarks.conf, keybinds.conf)
 mako/                      notification daemon (stone-styled)
 nvim/                      submodule → gitlab.com/kopytkg/nvim
 spot-config/               linked into ~/.config/spot/ (menu, power, password, keyboard, display, …)
@@ -34,7 +36,7 @@ arch-strip-omarchy-system.sh  one-shot system migrator (snapper snapshot, repo s
 
 Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-strip-omarchy-system.sh`) wires up `chaotic-aur` automatically; on a fresh box add it manually first.
 
-**Hyprland session** — `hyprland` `hypridle` `hyprlock` `hyprpicker` `hyprshot` `hyprsunset` `uwsm` `xdg-desktop-portal-hyprland` `sddm` `polkit-kde-agent` `plymouth`
+**Hyprland session** — `hyprland` `hypridle` `hyprlock` `hyprpicker` `hyprshot` `hyprsunset` `uwsm` `xdg-desktop-portal-hyprland` `sddm` `hyprpolkitagent` `plymouth`
 
 **Bar / launcher / notifications** — `waybar` `walker` `elephant` `mako` `swaybg` `swayosd`
 
@@ -54,7 +56,7 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Apps reached from default keybinds** — `chromium` (used by `arch-launch-webapp` + the Enterprise theme policy; `brave` works as a swap) · optional flatpaks: `com.discordapp.Discord` (SUPER+D) · `com.spotify.Client` (SUPER+M)
 
-**KDE utilities & Qt theme** — `dolphin` (file manager, SUPER+F) · `kcalc` (calculator key) · `okular` (PDF) · `ark` (archives) · `gwenview` (images) · `kdegraphics-thumbnailers` + `ffmpegthumbs` (dolphin thumbnails). Theming is Breeze Dark: `breeze` + `breeze-icons` supply the style/icons, `plasma-integration` supplies the Qt **platform theme** (`KDEPlasmaPlatformTheme6.so`) — without it Qt apps ignore the colour scheme and stay light. `hypr/defaults/envs.lua` sets `QT_STYLE_OVERRIDE=Breeze` + `QT_QPA_PLATFORMTHEME=kde`; `install.sh` writes the full palette to `~/.config/kdeglobals`, creates `~/.config/menus/applications.menu` (else Dolphin's "Open With" list is empty), rebuilds `kbuildsycoca6`, and points `xdg-mime` at these apps (folders/PDFs/images/archives, plus CSV + office docs → `onlyoffice`). **Dolphin outside Plasma:** `install.sh` sets `TerminalApplication=arch-kterm` in `kdeglobals` — KDE defaults to `konsole` (not installed) and calls terminals as `<terminal> -e <cmd>`, which `xdg-terminal-exec` does not take, so `bin/arch-kterm` translates and follows `~/.config/xdg-terminals.list` ("Open Terminal Here" and every `Terminal=true` app, e.g. nvim for text files). `hypr/defaults/envs.lua` sets `XDG_MENU_PREFIX=plasma-` (uwsm exports `hyprland-`, which has no menu file, leaving KDE's application tree incomplete) and `install.sh` rebuilds the service cache. `kimageformats` (webp/avif/psd thumbnails) and `kio-admin` ("Open as Administrator") are installed by `bootstrap.sh`. Dolphin's F4 embedded terminal panel needs `konsole`'s part and stays unavailable without it.
+**Viewers & dialogs (no KDE)** — `zathura` + `zathura-pdf-mupdf` (PDF/epub) · `swayimg` (images) · folders open in `yazi` (SUPER+F, and as the `inode/directory` handler) · archives via the `extract` fish function / yazi · the calculator key opens `qalc` in a floating terminal. File open/save dialogs of browsers and other apps are `xdg-desktop-portal-termfilechooser` (AUR) running yazi in a floating alacritty (`xdg-desktop-portal-termfilechooser/config`, selected in `xdg-desktop-portal/hyprland-portals.conf`; restart with `systemctl --user restart xdg-desktop-portal`). Polkit prompts from GUI apps are handled by `hyprpolkitagent`; our own privileged actions use `arch-root` (spot password dialog). `install.sh` points `xdg-mime` at these apps (plus CSV + office docs → `onlyoffice`). No Qt platform theme is set; the few Qt apps left (hyprpolkitagent) style themselves.
 
 **Installer / migrator only** — `yay` (AUR helper for `term_install`) · `mise` (Development install menu) · `snapper` (migrator pre-snapshot + the `update` command's pre/post bracket)
 
@@ -154,7 +156,7 @@ Notable submenus:
 - **Bookmarks** — reads `~/.config/arch-menu/bookmarks.conf` (one `Label | URL` per line, `#` comments OK). Selecting opens the URL in chromium.
 - **System** — TUI control panels via floating alacritty: bluetui, impala, wiremix, jolt, btop · **Disk** (`arch-disk`: filesystems + btrfs allocation + biggest folders in `~`, then `gdu` to explore) · **Sockets** (`arch-sockets`: a searchable table of every TCP/UDP socket in a spot dialog; also the waybar socket-count module) · **Firewall** (`arch-firewall`: a spot GUI over `ufw` — searchable rules table, add / delete / enable / reload / reset; the old fzf TUI is `arch-firewall-tui`)
 - **Remote** — reads `~/.ssh/config` and everything it `Include`s; a host's group is its nearest `# group: NAME` marker, else the folder its config lives in (`~/.ssh/infra/config` → *infra*); git forges (github/gitlab/bitbucket/aur) are skipped; picks a group, then a host, and spawns ssh in a tiled `ssh-session` terminal. **Custom…** gum-prompts for User/Host/Port.
-- **Keybinds** — also bound to SUPER+F1; fzf-list of every described Hyprland bind (live from `hyprctl binds`), colored per modifier
+- **Keybinds** — also bound to SUPER+F1; an fzf list of **every** keybind, not just Hyprland's: the live Hyprland binds (grouped, with key combinations that two binds share marked ⚠), dialogs and menus, fish, alacritty, nvim, the waybar clicks (generated from the waybar config) and the terminal UIs. Type to filter (`fish`, `waybar firewall`, `super 3`). The same data as a document: [`KEYBINDS.md`](KEYBINDS.md)
 - **Power** — sleep / lock / logout / restart / shutdown
 
 ## arch-* helpers
@@ -170,10 +172,13 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-aur-remove`               | fzf-pick AUR-installed (foreign) package(s); `sudo pacman -Rns`    |
 | `arch-cache-clean`              | Remove → Cache. Shows what `~/.cache/yay` and `/var/cache/pacman/pkg` cost, then cleans them: yay's per-package build dirs (keeps `completion.cache` and `vcs.json`), and `paccache` (keeps the newest 2 versions, drops uninstalled packages, removes leftover `download-*` dirs). `--dry-run` shows what would go; `yay`, `pacman` or `all` (with `-y`) for scripts |
 | `arch-disk`                     | System → Disk. Overview (filesystems via `duf`/`df`, the btrfs pool, biggest folders in `~` via `dust`), then pick a place to explore with `gdu` (falls back to `dust`). `arch-disk <path>` jumps straight in, `--overview` prints and exits. Note: on btrfs, snapper snapshots hold space `du` can't see |
-| `arch-sockets`                  | `ss` with a GUI. `arch-sockets` opens a spot table of every TCP/UDP socket (proto, state, local, peer, process) with smart matching (`tcp listen 22`, `ssh estab`); Enter copies the local `addr:port`. `--listening` filters to listeners; `--root` (or the first row of the dialog) names every socket's process through pkexec; `count` prints the waybar JSON (total + breakdown tooltip); `list` / `header` print the table. Without root, process names show only for your own sockets. Config: `spot-config/sockets.toml` |
-| `arch-firewall`                 | System → Firewall and the waybar firewall click. UFW in spot dialogs: a searchable table of the rules (parsed from the world-readable `/etc/ufw/user.rules`, so no password to look), plus *Add rule…* (form: action, direction, protocol, port / range / list, optional source), enable / disable, reload, reset. Picking a rule asks before deleting it and shows the exact `ufw delete …`. Changes go through pkexec; results as notifications. `rules` / `header` print the table |
+| `arch-sockets`                  | `ss` with a GUI. `arch-sockets` opens a spot table of every TCP/UDP socket (proto, state, local, peer, process) with smart matching (`tcp listen 22`, `ssh estab`); Enter copies the local `addr:port`. `--listening` filters to listeners; `--root` (or the first row of the dialog) names every socket's process (sudo, with the password asked in a spot dialog); `count` prints the waybar JSON (total + breakdown tooltip); `list` / `header` print the table. Without root, process names show only for your own sockets. Config: `spot-config/sockets.toml` |
+| `arch-firewall`                 | System → Firewall and the waybar firewall click. UFW in spot dialogs: a searchable table of the rules (parsed from the world-readable `/etc/ufw/user.rules`, so no password to look), plus *Add rule…* (form: action, direction, protocol, port / range / list, optional source), enable / disable, reload, reset. Picking a rule asks before deleting it and shows the exact `ufw delete …`. Changes go through `arch-root` (sudo, with the password asked in a spot dialog that shows the exact command); results as notifications. `rules` / `header` print the table |
 | `arch-firewall-tui`             | The previous fzf terminal UI for ufw (`a` allow · `d` deny · `l` limit · `x` delete · `e` enable/disable), kept for keyboard-only use |
 | `arch-ufw`                      | The waybar firewall right-click: three spot tiles (enable / disable / reload) for a quick toggle without opening the rules table |
+| `arch-wallpaper`                | Animated wallpaper: `mpvpaper` plays a video/GIF from `~/Videos/Wallpapers` over `swaybg`'s static image. Only while on AC power (drops to the static image on battery; `watch` daemon from autostart polls every 30 s) and paused while the wallpaper is covered. `pick` (Menu → Setup → Wallpaper), `set <file>`, `on` / `off`, `status` |
+| `arch-root`                     | `arch-root <reason> <command…>`: run a command as root through `sudo -A`, asking for the password in a **spot** dialog instead of the polkit agent (the dialog's footer shows `<reason>`). No dialog when sudo already has credentials. Used by `arch-sockets --root`, `arch-firewall` and `arch-ufw` |
+| `arch-sudo-askpass`             | The `SUDO_ASKPASS` helper behind `arch-root`: the spot password dialog, "Wrong password — try again" on a retry, never stores the password (unlike `arch-askpass`, which caches SSH key passphrases) |
 | `arch-webapp-migrate`           | Rewrites Omarchy-style web app launchers (`Exec=omarchy-launch-webapp <url>`) in `~/.local/share/applications` to `arch-launch-webapp <class> <url>` (+ `StartupWMClass`), keeping `.bak.<timestamp>` copies; run by `install.sh`, safe to repeat, `--dry-run` previews. The URLs stay in your files, not the repo |
 | `arch-mise-remove`              | fzf-pick installed mise tool@version; `mise uninstall`             |
 | `arch-protonge-install`         | fzf-pick a GE-Proton release; downloads + sha512-verifies + extracts |
@@ -181,13 +186,12 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-webapp-install`           | gum prompt → desktop launcher for any URL via chromium `--app`     |
 | `arch-webapp-edit`              | Menu → Webapps → Edit. Pick a web app and change its name, URL or icon (favicon / icon URL / file); renaming also renames the file, icon and window class. Rewrites only Name/Comment/Exec/Icon/StartupWMClass, keeps the rest. Flags for scripts: `arch-webapp-edit <name> [--name N] [--url U] [--icon favicon\|URL\|FILE]`, `--list` |
 | `arch-webapp "<Name>"`          | launch a webapp by Name (matches `Name=` in any `~/.local/share/applications/*.desktop` whose Exec calls `arch-launch-webapp`); no args → walker picker over all discovered webapps |
-| `arch-keybinds`                 | SUPER+F1; fzf-list of every Hyprland bind (colored per modifier)   |
+| `arch-keybinds`                 | SUPER+F1; fzf list of every keybind (Hyprland live + dialogs, fish, alacritty, nvim, waybar clicks, TUIs; colored per modifier). `--md` prints it as Markdown (`KEYBINDS.md` is that output), `--list` as plain TSV. Non-Hyprland keys live in `arch-menu/keybinds.conf` |
 | `arch-remote-custom`            | gum prompt → User/Host/Port → spawns ssh in a tiled `ssh-session` window |
 | `arch-power-menu`               | bound to SUPER+ESC                                                 |
 | `arch-killactive`               | SUPER+W; dismisses a spot dialog (`spot --dismiss`), else the walker layer, else closes the window |
 | `arch-launch-webapp <class> <url>` | focus existing chromium-app window by class, else launch it    |
 | `arch-apply-browser-theme`      | copy `chromium/policies/managed/color.json` to system policy dir   |
-| `arch-kterm`                    | `TerminalApplication` for KDE apps (Dolphin): accepts `-e <cmd>`, opens the `xdg-terminal-exec` terminal in the current directory |
 | `arch-askpass`                  | Password prompt (`SSH_ASKPASS`); libsecret-cached. Inline `gum` from a TTY, `spot` password dialog headless |
 
 ## Themes

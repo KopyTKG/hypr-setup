@@ -17,7 +17,7 @@ do_one() {
     mako)      makoctl reload ;;
     hypridle)  restart hypridle hypridle ;;
     walker)    systemctl --user restart elephant.service ;;
-    wallpaper) restart swaybg swaybg -i ~/.config/hypr/theme/background.jpg -m fill ;;
+    wallpaper) restart swaybg swaybg -i ~/.config/hypr/theme/background.jpg -m fill; arch-wallpaper refresh ;;
     *) notify-send -u critical "Reload" "unknown target: $1"; return 1 ;;
   esac
 }

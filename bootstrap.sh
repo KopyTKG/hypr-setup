@@ -59,7 +59,7 @@ cyan "[2/6] pacman -S --needed (extra/multilib)"
 PACMAN_PKGS=(
   # Hyprland session
   hyprland hypridle hyprlock hyprpicker hyprshot hyprsunset uwsm
-  xdg-desktop-portal-hyprland sddm polkit-kde-agent plymouth
+  xdg-desktop-portal-hyprland sddm hyprpolkitagent plymouth
   # bar / launcher / notifications
   waybar mako swaybg swayosd
   # terminal & CLI (xdg-terminal-exec is AUR-only as -git, installed below)
@@ -90,15 +90,8 @@ PACMAN_PKGS=(
   jdk-openjdk kotlin maven gradle texlive-meta bun go
   # default-keybind apps
   chromium
-  # KDE utilities: dolphin (files, SUPER+F) · kcalc (calc key) · okular (PDF) · ark (archives) · gwenview (images)
-  dolphin kcalc okular ark gwenview xdg-desktop-portal-kde
-  # dolphin thumbnails (images + video) + Breeze Dark Qt theme/icons to match the dark GTK look
-  kdegraphics-thumbnailers ffmpegthumbs breeze breeze-icons
-  # plasma-integration = the KDE Qt platform theme; without it kdeglobals colours are ignored
-  plasma-integration
-  # dolphin extras: kimageformats = thumbnails/previews for webp, avif, psd, ... ;
-  # kio-admin = "Open as Administrator" in the context menu
-  kimageformats kio-admin
+  # viewers: PDF (zathura) · images (swayimg); archives via the `extract` fish function / yazi
+  zathura zathura-pdf-mupdf swayimg
   # installer/migrator helpers
   mise snapper
   # LTS kernel (in addition to whatever the user pacstrapped with)
@@ -122,6 +115,10 @@ AUR_PKGS=(
   elephant-providerlist elephant-runner elephant-symbols
   elephant-todo elephant-unicode elephant-websearch
   xdg-terminal-exec-git
+  # animated wallpaper (video loop under the windows; see bin/arch-wallpaper)
+  mpvpaper
+  # file open/save dialogs in yazi (portal backend)
+  xdg-desktop-portal-termfilechooser
   # spot: TOML+CSS layer-shell dialog runtime (prebuilt release; spot-git builds from head)
   spot-bin
 )

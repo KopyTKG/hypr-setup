@@ -151,6 +151,7 @@ show_setup() {
     "  Bindings" \
     "󰍹  Display" \
     "  Reload" \
+    "󰍹  Wallpaper" \
     "  Waybar" \
     "  Walker" \
     "  Hypridle" \
@@ -159,6 +160,7 @@ show_setup() {
     *Bindings*) editor ~/.config/hypr/bindings.lua ;;
     *Display*)  SPOT_BACK="arch-menu setup" arch-display ;;
     *Reload*)   show_reload ;;
+    *Wallpaper*) SPOT_BACK="arch-menu setup" arch-wallpaper pick ;;
     *Waybar*)   editor ~/.config/waybar/config.jsonc ;;
     *Walker*)   editor ~/.config/walker/config.toml ;;
     *Hypridle*) editor ~/.config/hypr/hypridle.conf ;;

@@ -24,7 +24,7 @@ link_to() {
 }
 
 cyan "[1/7] Link config dirs into ~/.config/"
-for name in alacritty arch-menu btop elephant environment.d fastfetch fish hypr mako nvim swayosd walker waybar xdg-desktop-portal; do
+for name in alacritty arch-menu btop elephant environment.d fastfetch fish hypr mako nvim swayosd walker waybar xdg-desktop-portal xdg-desktop-portal-termfilechooser; do
   link_to "$REPO/$name" "$HOME/.config/$name"
 done
 
@@ -122,61 +122,17 @@ EOF
 done
 gray "  gtk-3.0 + gtk-4.0 settings.ini written"
 
-# Qt / KDE theme — Breeze Dark, to match the dark GTK look for dolphin/okular/kcalc/ark/gwenview.
-# QT_STYLE_OVERRIDE=Breeze (envs.conf) picks the widget style; kdeglobals drives colours + icons.
-# NOTE: outside a Plasma session there's no plasma-apply-colorscheme to resolve a scheme *name*,
-# so we inline the actual palette from BreezeDark.colors (already kdeglobals format) or KDE apps
-# fall back to the light default.
-KDE_SCHEME=/usr/share/color-schemes/BreezeDark.colors
-if [[ -f $KDE_SCHEME ]]; then
-  { cat "$KDE_SCHEME"; printf '\n[Icons]\nTheme=breeze-dark\n\n[KDE]\nwidgetStyle=Breeze\n'; } \
-    > "$HOME/.config/kdeglobals"
-  gray "  kdeglobals written (Breeze Dark palette + breeze-dark icons)"
-else
-  cat > "$HOME/.config/kdeglobals" <<'EOF'
-[General]
-ColorScheme=BreezeDark
-
-[Icons]
-Theme=breeze-dark
-
-[KDE]
-widgetStyle=Breeze
-EOF
-  red "  BreezeDark.colors not found (install 'breeze') — wrote name-only kdeglobals; apps may stay light"
-fi
-
-# Terminal for KDE apps: dolphin's "Open Terminal Here" and every Terminal=true
-# app it opens (nvim.desktop for text files, ...). KDE defaults to konsole, which
-# is not installed; it also calls "<terminal> -e <cmd>", which xdg-terminal-exec
-# does not take, so arch-kterm translates and follows xdg-terminals.list.
-# (Written here, after kdeglobals is regenerated above, or the next run would drop it.)
-if command -v kwriteconfig6 >/dev/null 2>&1; then
-  kwriteconfig6 --file kdeglobals --group General --key TerminalApplication arch-kterm
-else
-  printf '\n[General]\nTerminalApplication=arch-kterm\n' >> "$HOME/.config/kdeglobals"
-fi
-gray "  kdeglobals: TerminalApplication=arch-kterm"
-
-# KDE's application menu: uwsm exports XDG_MENU_PREFIX=hyprland-, which has no
-# menu file; hypr/defaults/envs.lua sets plasma- for new sessions, this fixes the
-# running user manager and rebuilds the cache so dolphin picks it up without a relogin.
-systemctl --user set-environment XDG_MENU_PREFIX=plasma- 2>/dev/null || true
-if command -v kbuildsycoca6 >/dev/null 2>&1; then
-  XDG_MENU_PREFIX=plasma- kbuildsycoca6 --noincremental >/dev/null 2>&1 \
-    && gray "  KDE service cache rebuilt (menu prefix plasma-)" \
-    || gray "  kbuildsycoca6 failed (harmless; it rebuilds on next dolphin start)"
-fi
-
-# Route folders / PDFs / images / archives at the KDE utilities
+# Route folders / PDFs / images at yazi, zathura and swayimg
 if command -v xdg-mime >/dev/null 2>&1; then
-  xdg-mime default org.kde.dolphin.desktop inode/directory || true
-  xdg-mime default org.kde.okular.desktop application/pdf application/epub+zip || true
-  xdg-mime default org.kde.gwenview.desktop \
+  xdg-mime default yazi.desktop inode/directory || true
+  xdg-mime default org.pwmt.zathura.desktop application/pdf application/epub+zip || true
+  xdg-mime default swayimg.desktop \
     image/png image/jpeg image/gif image/webp image/bmp image/tiff image/x-xpixmap || true
-  xdg-mime default org.kde.ark.desktop \
-    application/zip application/x-tar application/gzip application/x-7z-compressed application/vnd.rar application/x-bzip2 || true
-  gray "  default apps → dolphin / okular / gwenview / ark"
+  # drop leftovers that point at removed KDE apps
+  if [[ -f $HOME/.config/mimeapps.list ]]; then
+    sed -i -E '/org\.kde\.(dolphin|okular|gwenview|ark|kcalc)/d' "$HOME/.config/mimeapps.list"
+  fi
+  gray "  default apps → yazi / zathura / swayimg"
 
   # Spreadsheets / office docs → OnlyOffice (else Krita hijacks text/csv, etc.)
   # Flatpak build preferred; the native onlyoffice-bin entry is the fallback.
@@ -202,52 +158,8 @@ if command -v xdg-mime >/dev/null 2>&1; then
   fi
 fi
 
-# KDE's "Open With" chooser builds its application tree from an XDG applications.menu.
-# Minimal Hyprland installs have no /etc/xdg/menus, so the chooser shows an EMPTY list.
-# Provide a user-level menu (no root needed) with a catch-all so every app appears.
-if [[ ! -f /etc/xdg/menus/applications.menu ]]; then
-  mkdir -p "$HOME/.config/menus"
-  cat > "$HOME/.config/menus/applications.menu" <<'EOF'
-<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
- "http://www.freedesktop.org/standards/menu-spec/1.0/menu.dtd">
-<Menu>
-    <Name>Applications</Name>
-    <Directory>Applications.directory</Directory>
-    <DefaultAppDirs/>
-    <DefaultDirectoryDirs/>
-    <DefaultMergeDirs/>
-
-    <Menu><Name>Accessories</Name><Directory>Utility.directory</Directory>
-        <Include><And><Category>Utility</Category></And></Include></Menu>
-    <Menu><Name>Development</Name><Directory>Development.directory</Directory>
-        <Include><And><Category>Development</Category></And></Include></Menu>
-    <Menu><Name>Graphics</Name><Directory>Graphics.directory</Directory>
-        <Include><And><Category>Graphics</Category></And></Include></Menu>
-    <Menu><Name>Internet</Name><Directory>Network.directory</Directory>
-        <Include><And><Category>Network</Category></And></Include></Menu>
-    <Menu><Name>Multimedia</Name><Directory>AudioVideo.directory</Directory>
-        <Include><And><Category>AudioVideo</Category></And></Include></Menu>
-    <Menu><Name>Office</Name><Directory>Office.directory</Directory>
-        <Include><And><Category>Office</Category></And></Include></Menu>
-    <Menu><Name>System</Name><Directory>System.directory</Directory>
-        <Include><And><Category>System</Category></And></Include></Menu>
-    <Menu><Name>Settings</Name><Directory>Settings.directory</Directory>
-        <Include><And><Category>Settings</Category></And></Include></Menu>
-    <Menu><Name>Other</Name><Directory>Other.directory</Directory>
-        <OnlyUnallocated/>
-        <Include><And><Not><Category>Core</Category></Not>
-            <Not><Category>Screensaver</Category></Not></And></Include></Menu>
-</Menu>
-EOF
-  gray "  ~/.config/menus/applications.menu written (KDE open-with tree)"
-fi
-
-# KDE reads its own service cache (ksycoca), not mimeapps.list, for the "Open With" list
-# and default-handler resolution. A stale cache shows an EMPTY app chooser — rebuild it.
-if command -v kbuildsycoca6 >/dev/null 2>&1; then
-  kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
-  gray "  ksycoca rebuilt (KDE open-with / default handlers)"
-fi
+# Lock-screen picture (hyprlock reads ~/.cache/arch-wallpaper/lock.jpg)
+"$REPO/bin/arch-wallpaper" lock-sync && gray "  lock screen picture ready"
 
 cyan "[6/7] Install SDDM stone theme (login screen)"
 SDDM_INSTALLER=$REPO/sddm-theme-stone/install.sh
