@@ -18,12 +18,14 @@ total=${c[0]:-0}
 pac=${c[1]:-0}
 aur=${c[2]:-0}
 flat=${c[3]:-0}
+appi=${c[4]:-0}
 
 if (( total > 0 )); then
   tip="$total update(s) available"
   (( pac  > 0 )) && tip+="\n  $pac pacman"
   (( aur  > 0 )) && tip+="\n  $aur AUR"
   (( flat > 0 )) && tip+="\n  $flat flatpak"
+  (( appi > 0 )) && tip+="\n  $appi AppImage"
   printf '{"text": "󰚰 %s", "tooltip": "%s", "class": "updates"}\n' "$total" "$tip"
 else
   echo '{"text": ""}'

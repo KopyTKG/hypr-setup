@@ -1,4 +1,4 @@
-function update --description 'Update system (pacman/AUR) + flatpak + mise, snapshot-bracketed'
+function update --description 'Update system (pacman/AUR) + flatpak + AppImages, all through shelly, + mise, snapshot-bracketed'
     # --- snapper pre snapshot (only if snapper + a `root` config exist) -----
     set -l pre
     if type -q snapper; and sudo snapper -c root list &>/dev/null
@@ -6,16 +6,21 @@ function update --description 'Update system (pacman/AUR) + flatpak + mise, snap
             --print-number --description "system update"); or return 1
     end
 
-    # --- System + AUR: yay covers the pacman repos too ----------------------
-    if type -q yay
-        yay -Syyu --noconfirm --useask --cleanafter
-    else if type -q pacman
-        sudo pacman -Syyu --noconfirm
+    # --- Everything in one go: shelly upgrades pacman repos, AUR, flatpak and
+    #     AppImages (it keeps going if one backend fails). yay/flatpak = fallback.
+    if type -q shelly
+        shelly upgrade all --no-confirm
+    else
+        if type -q yay
+            yay -Syyu --noconfirm --useask --cleanafter
+        else if type -q pacman
+            sudo pacman -Syyu --noconfirm
+        end
+        if type -q flatpak
+            flatpak update -y
+        end
     end
-
-    # --- Flatpak (no-op if not installed) -----------------------------------
     if type -q flatpak
-        flatpak update -y
         flatpak uninstall --unused -y
     end
 

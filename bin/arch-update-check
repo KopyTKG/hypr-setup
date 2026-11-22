@@ -1,5 +1,5 @@
 #!/bin/bash
-# arch-update-check — count available updates (pacman + AUR + flatpak), cache the
+# arch-update-check — count available updates (pacman + AUR + flatpak + AppImage), cache the
 # result, and nudge waybar to redraw. Cheap enough to run on a timer; the network
 # work lives here so the waybar reader (arch-indicator-updates) stays instant.
 #
@@ -14,6 +14,7 @@ WAYBAR_SIGNAL=11   # must match custom/updates "signal" in waybar/config.jsonc
 pac=0
 aur=0
 flat=0
+appi=0
 
 # Official repos — checkupdates (pacman-contrib) syncs a *temporary* DB, so it
 # needs no sudo and never touches the real pacman database.
@@ -31,10 +32,16 @@ if command -v flatpak >/dev/null 2>&1; then
   flat=$(flatpak remote-ls --updates --columns=application 2>/dev/null | grep -c .)
 fi
 
-total=$((pac + aur + flat))
+# AppImages — only the ones shelly tracks (shelly list-updates appimage).
+if command -v shelly >/dev/null 2>&1; then
+  appi=$(timeout 60 shelly list-updates appimage 2>/dev/null | grep -vi 'no appimage updates' | grep -c '[│|]')
+  (( appi > 0 )) && appi=$((appi - 1))   # table header row
+fi
 
-# Cache as four lines: total, pacman, aur, flatpak.
-printf '%s\n%s\n%s\n%s\n' "$total" "$pac" "$aur" "$flat" >"$CACHE"
+total=$((pac + aur + flat + appi))
+
+# Cache as five lines: total, pacman, aur, flatpak, appimage.
+printf '%s\n%s\n%s\n%s\n%s\n' "$total" "$pac" "$aur" "$flat" "$appi" >"$CACHE"
 
 # Ask waybar to re-run the reader immediately (ignored if waybar isn't running).
 pkill -RTMIN+$WAYBAR_SIGNAL waybar 2>/dev/null
