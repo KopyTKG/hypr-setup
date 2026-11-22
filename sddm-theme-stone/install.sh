@@ -27,6 +27,18 @@ Current=stone
 EOF
 echo "  wrote: $CONF"
 
+# 3. Greeter compositor config: Hyprland now reads Lua, so the old hyprlang
+#    /usr/share/sddm/hyprland.conf fails ("unexpected symbol near '#'").
+install -Dm644 "$REPO_THEME/hyprland-greeter.lua" /usr/share/sddm/hyprland.lua
+cat > /etc/sddm.conf.d/10-wayland.conf <<'EOF2'
+[General]
+DisplayServer=wayland
+
+[Wayland]
+CompositorCommand=start-hyprland -- --config /usr/share/sddm/hyprland.lua
+EOF2
+echo "  wrote: /usr/share/sddm/hyprland.lua + /etc/sddm.conf.d/10-wayland.conf"
+
 echo
 echo "Done. Reboot or restart sddm to see the new login screen:"
 echo "  sudo systemctl restart sddm"
