@@ -1,99 +1,267 @@
 #!/bin/bash
-# arch-keybinds — fzf-list every described Hyprland keybind (live from hyprctl).
-# Bound to SUPER+F1 and reachable from arch-menu → Keybinds.
+# arch-keybinds — every keybind in one place: Hyprland, dialogs, shell, terminal,
+# editor, waybar clicks, terminal UIs. Bound to SUPER+F1 and reachable from
+# arch-menu → Keybinds.
+#
+#   arch-keybinds           fzf viewer; type to filter ("fish", "waybar", "super 3")
+#   arch-keybinds --md      the same data as Markdown (KEYBINDS.md is this output)
+#   arch-keybinds --list    scope<TAB>keys<TAB>description, no colours (scripts, tests)
+#
+# Sources:
+#   - Hyprland binds        live from `hyprctl binds -j`, each put in a category
+#   - Waybar clicks         generated from waybar/modules.jsonc (never goes stale)
+#   - everything else       arch-menu/keybinds.conf  (Scope | Keys | Description)
+#
+# Where two Hyprland binds share a key combination both are listed and marked ⚠:
+# both are registered, so expect one key press to be able to trigger both.
+#
+# Refresh the document:  arch-keybinds --md > ~/Projects/hypr-setup/KEYBINDS.md
+#
+# Test hooks: ARCH_KEYBINDS_HYPR_JSON (a file instead of hyprctl),
+# ARCH_KEYBINDS_CONF, ARCH_KEYBINDS_WAYBAR, ARCH_KEYBINDS_NO_FZF=1 (print the viewer's
+# coloured lines instead of opening fzf).
 
 set -e
-clear
 
-hyprctl binds -j | python3 -c '
-import json, sys
+mode=view
+case ${1:-} in
+  "")       ;;
+  --md)     mode=md ;;
+  --list)   mode=list ;;
+  -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  *)        echo "arch-keybinds: unknown argument '$1' (see --help)" >&2; exit 2 ;;
+esac
 
-# Tokyo Night accents for mods + stone neutrals (truecolor)
-RESET = "\033[0m"
-BOLD  = "\033[1m"
-def fg(r,g,b): return f"\033[38;2;{r};{g};{b}m"
+if [[ -n ${ARCH_KEYBINDS_HYPR_JSON:-} ]]; then
+  HYPR_JSON=$(cat "$ARCH_KEYBINDS_HYPR_JSON")
+else
+  HYPR_JSON=$(hyprctl binds -j 2>/dev/null) || { echo "arch-keybinds: hyprctl failed; Hyprland binds are missing" >&2; HYPR_JSON='[]'; }
+fi
+export HYPR_JSON
+export CONF=${ARCH_KEYBINDS_CONF:-$HOME/.config/arch-menu/keybinds.conf}
+export WAYBAR=${ARCH_KEYBINDS_WAYBAR:-$HOME/.config/waybar/modules.jsonc}
 
-C_SUPER = fg(122, 162, 247)   # tn blue
-C_SHIFT = fg(158, 206, 106)   # tn green
-C_CTRL  = fg(224, 175, 104)   # tn yellow
-C_ALT   = fg(187, 154, 247)   # tn magenta
-C_KEY   = BOLD + fg(250, 250, 249)  # stone-50 bold
-C_SEP   = fg(120, 113, 108)   # stone-500 dim "+"
-C_DESC  = fg(214, 211, 209)   # stone-300
-C_MUTED = fg(168, 162, 158)   # stone-400
+generate() {
+python3 -I - "$mode" << 'PY'
+import json, os, re, sys
 
-MOD_BITS = [
-    (1,  ("SHIFT", C_SHIFT)),
-    (4,  ("CTRL",  C_CTRL)),
-    (8,  ("ALT",   C_ALT)),
-    (64, ("SUPER", C_SUPER)),
-]
+mode = sys.argv[1]
 
-# X11 keycodes → labels for binds written as "code:N"
-KEYCODE = {
-    10: "1", 11: "2", 12: "3", 13: "4", 14: "5",
-    15: "6", 16: "7", 17: "8", 18: "9", 19: "0",
+# ---------------------------------------------------------------- colours
+RESET, BOLD = "\033[0m", "\033[1m"
+def fg(r, g, b): return f"\033[38;2;{r};{g};{b}m"
+MODS = {                              # Tokyo Night accents for mods + stone neutrals
+    "SUPER": fg(122, 162, 247), "SHIFT": fg(158, 206, 106),
+    "CTRL":  fg(224, 175, 104), "ALT":   fg(187, 154, 247),
 }
+C_KEY, C_SEP = BOLD + fg(250, 250, 249), fg(120, 113, 108)
+C_DESC, C_MUTED, C_WARN = fg(214, 211, 209), fg(168, 162, 158), fg(247, 118, 142)
 
-# fzf right-pads using the colored string length, so plain-text width has to
-# be computed separately for alignment.
-def visible_len(s):
-    out, in_esc = 0, False
-    for ch in s:
-        if in_esc:
-            if ch == "m":
-                in_esc = False
-            continue
-        if ch == "\033":
-            in_esc = True
-            continue
-        out += 1
-    return out
+def colorize(plain):
+    parts = []
+    for tok in plain.split(" + "):
+        parts.append((MODS.get(tok, C_KEY)) + tok + RESET)
+    return (C_SEP + " + " + RESET).join(parts)
 
-binds = json.load(sys.stdin)
-rows = []
+def visible_len(s):                   # fzf pads by the coloured length, so measure plain
+    return len(re.sub(r"\033\[[0-9;]*m", "", s))
+
+# ---------------------------------------------------------------- Hyprland
+MOD_ORDER = [(64, "SUPER"), (4, "CTRL"), (8, "ALT"), (1, "SHIFT")]
+KEYCODE = {10: "1", 11: "2", 12: "3", 13: "4", 14: "5", 15: "6", 16: "7", 17: "8", 18: "9", 19: "0"}
+KEYNAME = {"minus": "-", "equal": "=", "slash": "/", "COMMA": ",", "ESCAPE": "ESC", "Delete": "DELETE",
+           "mouse_down": "SCROLL DOWN", "mouse_up": "SCROLL UP", "mouse:272": "LEFT DRAG", "mouse:273": "RIGHT DRAG"}
+
+HYPR_CATEGORIES = [   # first match wins; (name, test on (key, description, mouse))
+    ("Media & hardware", lambda k, d, m: k.startswith("XF86")),
+    ("Mouse & scroll",   lambda k, d, m: m or k.startswith("mouse")),
+    ("Workspaces",       lambda k, d, m: re.search(r"workspace|scratchpad", d, re.I)),
+    ("Clipboard",        lambda k, d, m: re.search(r"\bcopy\b|\bpaste\b|\bcut\b|clipboard", d, re.I)),
+    ("Notifications",    lambda k, d, m: re.search(r"notification", d, re.I)),
+    ("Screenshots",      lambda k, d, m: re.search(r"screenshot|color picker", d, re.I)),
+    ("Windows",          lambda k, d, m: re.search(r"window|focus|split|pseudo|full ?screen|group|scaling|"
+                                                   r"expand|shrink|swap|close|monitor|full width", d, re.I)),
+    ("Menus & system",   lambda k, d, m: re.search(r"menu|keybinds|lock|nightlight|idle|top bar|display|"
+                                                   r"laptop|power|battery|bluetooth|wifi|activity|time|"
+                                                   r"emoji|calculator|launch|settings|zoom", d, re.I)),
+]
+def hypr_category(key, desc, mouse):
+    for name, test in HYPR_CATEGORIES:
+        if test(key, desc, mouse):
+            return name
+    return "Apps"
+# display order (classification above is first-match-wins; this is only how groups are listed)
+HYPR_ORDER = ["Apps", "Menus & system", "Windows", "Workspaces", "Mouse & scroll",
+              "Clipboard", "Screenshots", "Notifications", "Media & hardware"]
+assert set(HYPR_ORDER) == {n for n, _ in HYPR_CATEGORIES} | {"Apps"}
+
+rows = []                              # dicts: scope, group, plain, desc, sortkey
+def add(scope, plain, desc, group=None, sortkey=None, extra=""):
+    rows.append({"scope": scope, "group": group, "plain": plain, "desc": desc,
+                 "sortkey": sortkey if sortkey is not None else len(rows), "extra": extra})
+
+try:
+    binds = json.loads(os.environ.get("HYPR_JSON") or "[]")
+except json.JSONDecodeError:
+    binds = []
+seen = set()
 for b in binds:
-    if not b.get("has_description"):
-        continue
     desc = (b.get("description") or "").strip()
     if not desc:
         continue
-    mods = []
-    for bit, (name, color) in MOD_BITS:
-        if b.get("modmask", 0) & bit:
-            mods.append((name, color))
-    key = b.get("key") or ""
-    if not key:
-        kc = b.get("keycode", 0)
-        key = KEYCODE.get(kc, "code:" + str(kc))
+    raw = b.get("key") or KEYCODE.get(b.get("keycode", 0), "code:" + str(b.get("keycode", 0)))
+    mouse = bool(b.get("mouse"))
+    mods = [name for bit, name in MOD_ORDER if b.get("modmask", 0) & bit]
+    plain = " + ".join(mods + [KEYNAME.get(raw, raw)])
+    if (plain, desc) in seen:
+        continue
+    seen.add((plain, desc))
+    cat = hypr_category(raw, desc, mouse)
+    add("Hyprland", plain, desc, group=cat, sortkey=(plain.count("+"), plain.lower()))
 
-    parts = [color + name + RESET for name, color in mods]
-    parts.append(C_KEY + key + RESET)
-    combo = (C_SEP + "+" + RESET).join(parts)
-    plain = "+".join([n for n, _ in mods] + [key])
-    if b.get("mouse"):
-        combo += C_MUTED + " (mouse)" + RESET
-        plain += " (mouse)"
-    rows.append((combo, plain, desc))
+# ---------------------------------------------------------------- conflicts
+by_combo = {}
+for r in rows:
+    if r["scope"] == "Hyprland" and "DRAG" not in r["plain"] and "SCROLL" not in r["plain"]:
+        by_combo.setdefault(r["plain"], []).append(r)
+conflicts = {k: v for k, v in by_combo.items() if len(v) > 1}
+for combo, rs in conflicts.items():
+    for r in rs:
+        others = [o["desc"] for o in rs if o is not r]
+        r["extra"] = "⚠ also: " + ", ".join(others)
 
-# de-dupe (same plain combo + same description)
-seen, deduped = set(), []
-for c, p, d in rows:
-    k = (p, d)
-    if k in seen: continue
-    seen.add(k); deduped.append((c, p, d))
-rows = deduped
-# sort: fewer mods first (count plain "+"), then alphabetical
-rows.sort(key=lambda r: (r[1].count("+"), r[1].lower()))
+# ---------------------------------------------------------------- waybar clicks
+PRETTY = {"cpu": "CPU", "network": "Network", "bluetooth": "Bluetooth", "battery": "Battery",
+          "pulseaudio": "Volume", "custom/launcher": "Logo", "custom/sockets": "Sockets",
+          "custom/firewall": "Firewall", "custom/idle-indicator": "Idle lock",
+          "custom/notification-silencing-indicator": "Notifications", "custom/updates": "Updates",
+          "hyprland/language": "Keyboard layout"}
+KNOWN = {"arch-power-menu": "Power menu", "arch-sockets": "Sockets table (every socket)",
+         "arch-sockets --listening": "Sockets table (listening only)",
+         "arch-firewall": "Firewall rules (add / delete / enable)",
+         "arch-ufw": "Quick firewall toggle (enable / disable / reload)",
+         "arch-toggle-idle": "Toggle locking on idle",
+         "arch-toggle-notification-silencing": "Toggle silencing notifications",
+         "arch-update-check": "Check for updates now", "arch-keyboard": "Pick the keyboard layout",
+         "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle": "Mute / unmute"}
+CLICKS = {"on-click": "CLICK", "on-click-right": "RIGHT CLICK", "on-click-middle": "MIDDLE CLICK",
+          "on-scroll-up": "SCROLL UP", "on-scroll-down": "SCROLL DOWN"}
 
-w = max((len(p) for _, p, _ in rows), default=0)
-for combo, plain, desc in rows:
-    pad = " " * (w - len(plain))
-    print(f"{combo}{pad}   {C_DESC}{desc}{RESET}")
-' | fzf \
-    --ansi \
-    --height=100% \
-    --prompt="Keybind> " \
-    --header="Hyprland keybinds  (esc / ctrl-c to close)" \
-    --no-mouse \
-    >/dev/null || true
+def describe(cmd):
+    c = cmd.strip()
+    if c in KNOWN:
+        return KNOWN[c]
+    m = re.match(r"arch-floatterm\s+\S+\s+(.*)$", c)
+    if m:
+        rest = m.group(1)
+        e = re.search(r"exec\s+(\S+)", rest)
+        prog = (e.group(1) if e else rest.split()[0]).strip("'\"")
+        return f"Open {prog} in a floating terminal"
+    if "xdg-terminal-exec" in c and "update" in c:
+        return "Run the system update in a terminal"
+    return c if len(c) <= 60 else c[:57] + "…"
+
+try:
+    text = re.sub(r"^\s*//.*$", "", open(os.environ["WAYBAR"]).read(), flags=re.M)
+    modules = json.loads(text)
+except (OSError, json.JSONDecodeError):
+    modules = {}
+for name, cfg in modules.items():
+    if not isinstance(cfg, dict):
+        continue
+    pretty = PRETTY.get(name, name.split("/")[-1].replace("-", " ").title())
+    for opt, label in CLICKS.items():
+        if opt in cfg:
+            add("Waybar", label, f"{pretty}: {describe(cfg[opt])}")
+
+# ---------------------------------------------------------------- keybinds.conf
+conf_scopes = []
+try:
+    for line in open(os.environ["CONF"]):
+        line = line.rstrip("\n")
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        parts = [p.strip() for p in line.split("|", 2)]
+        if len(parts) != 3 or not all(parts):
+            continue
+        scope, keys, desc = parts
+        if scope not in conf_scopes:
+            conf_scopes.append(scope)
+        add(scope, keys, desc)
+except OSError:
+    print("arch-keybinds: no keybinds.conf; only Hyprland and waybar are listed", file=sys.stderr)
+
+# ---------------------------------------------------------------- order
+scope_order = ["Hyprland"] + conf_scopes
+if "Waybar" not in scope_order:
+    scope_order.append("Waybar")
+def order(r):
+    gi = HYPR_ORDER.index(r["group"]) if r["scope"] == "Hyprland" else 0
+    return (scope_order.index(r["scope"]), gi, r["sortkey"] if isinstance(r["sortkey"], tuple) else (0, r["sortkey"]))
+rows.sort(key=order)
+
+def label(r):
+    return f"Hyprland · {r['group']}" if r["scope"] == "Hyprland" else r["scope"]
+
+# ---------------------------------------------------------------- output
+if mode == "list":
+    for r in rows:
+        print(f"{label(r)}\t{r['plain']}\t{r['desc']}" + (f"  {r['extra']}" if r["extra"] else ""))
+
+elif mode == "md":
+    esc = lambda s: s.replace("|", "\\|")
+    out = ["# Keybinds", "",
+           "Every keybind in this setup, generated by `arch-keybinds --md` (the same data "
+           "SUPER+F1 shows, where you can type to filter). Hyprland binds come from the live "
+           "session, the waybar clicks from `waybar/modules.jsonc`, and everything else from "
+           "[`arch-menu/keybinds.conf`](arch-menu/keybinds.conf) — edit that file for the "
+           "non-Hyprland keys, then regenerate:", "",
+           "```sh", "arch-keybinds --md > ~/Projects/hypr-setup/KEYBINDS.md", "```", ""]
+    if conflicts:
+        out += ["> **⚠ Shared key combinations.** Two binds are registered for each of these, so one "
+                "key press can trigger both: " + "; ".join(f"`{k}` ({' / '.join(r['desc'] for r in v)})" for k, v in conflicts.items()) + ".", ""]
+    def table(rs):
+        t = ["| Keys | What it does |", "|------|--------------|"]
+        for r in rs:
+            d = esc(r["desc"]) + (f" **{esc(r['extra'])}**" if r["extra"] else "")
+            t.append(f"| `{esc(r['plain'])}` | {d} |")
+        return t + [""]
+    for scope in scope_order:
+        srows = [r for r in rows if r["scope"] == scope]
+        if not srows:
+            continue
+        out += [f"## {scope}", ""]
+        if scope == "Hyprland":
+            for cat in HYPR_ORDER:
+                crs = [r for r in srows if r["group"] == cat]
+                if crs:
+                    out += [f"### {cat}", ""] + table(crs)
+        else:
+            out += table(srows)
+    print("\n".join(out).rstrip() + "\n")
+
+else:  # view
+    sw = max((len(label(r)) for r in rows), default=0)
+    kw = max((len(r["plain"]) for r in rows), default=0)
+    for r in rows:
+        scope = C_MUTED + label(r).ljust(sw) + RESET
+        keys = colorize(r["plain"])
+        pad = " " * (kw - visible_len(keys))
+        extra = f"  {C_WARN}{r['extra']}{RESET}" if r["extra"] else ""
+        print(f"{scope}   {keys}{pad}   {C_DESC}{r['desc']}{RESET}{extra}")
+PY
+}
+
+if [[ $mode == view && -z ${ARCH_KEYBINDS_NO_FZF:-} ]]; then
+  clear
+  generate | fzf \
+      --ansi \
+      --height=100% \
+      --prompt="Keybind> " \
+      --header="All keybinds — type to filter (\"fish\", \"waybar\", \"super 3\")   esc to close" \
+      --tiebreak=index \
+      --no-mouse \
+      >/dev/null || true
+else
+  generate
+fi
