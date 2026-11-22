@@ -283,7 +283,8 @@ show_system() {
     "  Info" \
     "  Files" \
     "  Firewall" \
-    "  Disk") in
+    "  Disk" \
+    "  Sockets") in
     *Lock*)         hyprlock ;;
     *Battery*)      arch-floatterm arch-jolt jolt ;;
     *Time*)         notify-send -u low "$(date +"%A %H:%M  ·  %d %B %Y  ·  Week %V")" ;;
@@ -292,6 +293,7 @@ show_system() {
     *Files*)        arch-floatterm yazi yazi ;;
     *Firewall*)     arch-floatterm arch-installer arch-firewall ;;
     *Disk*)         arch-floatterm arch-installer arch-disk ;;
+    *Sockets*)      SPOT_BACK="arch-menu system" arch-sockets ;;
     *Back*)         show_main ;;
   esac
 }

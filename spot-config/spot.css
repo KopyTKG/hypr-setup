@@ -61,7 +61,8 @@
 }
 
 .spot-label {
-  font-size: 10pt;
+  /* No explicit size: labels inherit the same size as list rows, so a monospace
+     table header (sockets.toml) lines up with the rows under it. */
   color: #a8a29e;
   margin-left: 2px;
 }

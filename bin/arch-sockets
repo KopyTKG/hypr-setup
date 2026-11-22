@@ -1,0 +1,130 @@
+#!/bin/bash
+# arch-sockets — see the machine's TCP/UDP sockets: a count for waybar and a
+# searchable table in a spot dialog (it is `ss`, with a GUI).
+#
+#   arch-sockets                  open the table (every socket)
+#   arch-sockets --listening      only what is listening / bound
+#   arch-sockets --root           root mode: name the process of EVERY socket (asks
+#                                 for your password once through pkexec). The dialog
+#                                 also has a first row that switches into it.
+#   arch-sockets count            waybar JSON: the total, with a breakdown tooltip
+#   arch-sockets list [--listening]   print the table (with its header) and exit
+#   arch-sockets header           print just the column header
+#
+# The dialog is spot-config/sockets.toml: a list with smart matching, so every
+# word you type has to match the row ("tcp listen 22", "ssh estab", "docker").
+# Enter copies the row's local address (addr:port) to the clipboard.
+#
+# Process names come from `ss -p`, which only shows your own sockets without
+# root; the rest show "-" until you use root mode.
+#
+# The columns are fixed width and the header is also the `label` of the list in
+# sockets.toml. They must stay equal: `arch-sockets header` prints the right
+# one (tests/CI can diff it against the TOML).
+
+set -u
+
+# Back (SPOT_BACK from arch-menu) is for the table only, never for anything else we open.
+MENU_BACK=${SPOT_BACK:-}
+unset SPOT_BACK
+
+W_PROTO=5 W_STATE=11 W_LOCAL=28 W_PEER=28 W_PROC=24
+LISTEN_ONLY=0
+ROOT=0
+ROOT_ON='  Root mode: show every process…'
+ROOT_OFF='  Back to normal mode'
+GLYPH=''
+
+header() {
+  printf '%-*s %-*s %-*s %-*s %s' "$W_PROTO" PROTO "$W_STATE" STATE "$W_LOCAL" LOCAL "$W_PEER" PEER PROCESS
+}
+
+# ss rows -> aligned table rows, listeners first, then by local port.
+# ss -H -tunap:  netid state recv-q send-q local peer [users:(("name",pid=N,fd=M),...)]
+raw() {  # the ss output; as root (one pkexec prompt) when ROOT=1
+  if (( ROOT )); then pkexec ss -H -tunap 2>/dev/null; else ss -H -tunap 2>/dev/null; fi
+}
+
+rows() {  # rows < raw ss lines
+  awk -v wp="$W_PROTO" -v ws="$W_STATE" -v wl="$W_LOCAL" -v we="$W_PEER" -v wx="$W_PROC" -v only="$LISTEN_ONLY" '
+    function cut(s, w) { return length(s) > w ? substr(s, 1, w - 1) "~" : s }
+    {
+      state = $2
+      listening = (state == "LISTEN" || state == "UNCONN")
+      if (only && !listening) next
+      proc = "-"
+      if (match($0, /users:\(\("([^"]*)",pid=([0-9]+)/, m)) proc = m[1] "(" m[2] ")"
+      local = $5; peer = $6
+      port = local; sub(/.*:/, "", port); if (port !~ /^[0-9]+$/) port = 0
+      rank = listening ? 0 : (state == "ESTAB" ? 1 : 2)
+      printf "%d\t%05d\t%-*s %-*s %-*s %-*s %s\n", rank, port, wp, $1, ws, state, wl, cut(local, wl), we, cut(peer, we), cut(proc, wx)
+    }' | sort -t$'\t' -k1,1n -k2,2n -s | cut -f3-
+}
+
+# "total listening established tcp-other udp" from one cheap ss call
+counts() {
+  ss -H -tuan 2>/dev/null | awk '
+    { t++; if ($1 == "udp") u++
+      if ($2 == "LISTEN" || $2 == "UNCONN") l++
+      else if ($2 == "ESTAB") e++
+      else if ($1 == "tcp") o++ }
+    END { printf "%d %d %d %d %d\n", t, l, e, o, u }'
+}
+
+cmd_count() {
+  local total listening estab other udp
+  read -r total listening estab other udp <<<"$(counts)"
+  printf '{"text": "%s %s", "tooltip": "%s sockets\\n  %s listening\\n  %s established\\n  %s other TCP\\n  %s UDP\\n\\nclick: all  ·  right-click: listening", "class": "sockets"}\n' \
+    "$GLYPH" "$total" "$total" "$listening" "$estab" "$other" "$udp"
+}
+
+cmd_dialog() {
+  local total listening estab other udp title choice proto state local peer proc data toggle
+  read -r total listening estab other udp <<<"$(counts)"
+
+  while :; do
+    data=$(raw)
+    if (( ROOT )) && [[ -z $data ]]; then            # pkexec cancelled or failed
+      notify-send -u low -a arch-sockets "Root mode unavailable" "Authentication was cancelled or failed." 2>/dev/null
+      ROOT=0; data=$(raw)
+    fi
+
+    title="Sockets · $total total · $listening listening · $estab established"
+    (( LISTEN_ONLY )) && title="Sockets · $listening listening"
+    (( ROOT )) && title+=" · root"
+    if (( ROOT )); then toggle=$ROOT_OFF; else toggle=$ROOT_ON; fi
+
+    choice=$({ printf '%s\n' "$toggle"; rows <<<"$data"; } | SPOT_BACK=$MENU_BACK SPOT_TITLE="$title" spot ~/.config/spot/sockets.toml) || exit 0
+    [[ -n $choice ]] || exit 0
+
+    case $choice in
+      "$ROOT_ON")  ROOT=1; continue ;;
+      "$ROOT_OFF") ROOT=0; continue ;;
+    esac
+
+    read -r proto state local peer proc <<<"$choice"
+    [[ -n $local ]] || exit 0
+    printf '%s' "$local" | wl-copy 2>/dev/null
+    notify-send -u low -a arch-sockets "Copied $local" "${proc:+$proc · }$proto $state" 2>/dev/null
+    exit 0
+  done
+}
+
+cmd=dialog
+while (( $# )); do
+  case $1 in
+    count|list|header) cmd=$1 ;;
+    -l|--listening)    LISTEN_ONLY=1 ;;
+    -r|--root)         ROOT=1 ;;
+    -h|--help)         sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *)                 echo "arch-sockets: unknown argument '$1' (see --help)" >&2; exit 2 ;;
+  esac
+  shift
+done
+
+case $cmd in
+  count)  cmd_count ;;
+  header) header; echo ;;
+  list)   header; echo; raw | rows ;;
+  dialog) cmd_dialog ;;
+esac

@@ -1,0 +1,31 @@
+# Sockets — searchable table of every TCP/UDP socket (arch-sockets).
+#
+#   arch-sockets              all sockets
+#   arch-sockets --listening  only what is listening / bound
+#
+# Smart matching: every word you type has to match the row, so "tcp listen 22",
+# "ssh estab" or "docker" all work. Enter copies the row's local address.
+#
+# The list's label is the column header. It must equal `arch-sockets header`
+# (same fixed column widths); the table is monospace (spot.css sets the family).
+# SPOT_TITLE (counts) is supplied by the script.
+
+anchor   = "center"
+width    = 960
+style    = "spot.css"
+keyboard = "exclusive"
+
+[opacity]
+outside = 100
+
+[[items]]
+type        = "list"
+id          = "row"
+label       = " PROTO STATE       LOCAL                        PEER                         PROCESS"
+placeholder = "Filter…  tcp listen 22 · ssh estab · docker"
+match       = "smart"
+stdin       = true
+height      = 520
+
+[submit]
+stdout = "{row}"

@@ -3,7 +3,7 @@
 {
   "group/connectivity": {
     "orientation": "horizontal",
-    "modules": ["custom/firewall", "bluetooth", "network"]
+    "modules": ["custom/sockets", "custom/firewall", "bluetooth", "network"]
   },
   "group/system": {
     "orientation": "horizontal",
@@ -90,6 +90,13 @@
   "custom/expand-icon": {
     "format": " ",
     "tooltip": false
+  },
+  "custom/sockets": {
+    "exec": "arch-sockets count",
+    "on-click": "arch-sockets",
+    "on-click-right": "arch-sockets --listening",
+    "return-type": "json",
+    "interval": 5
   },
   "custom/firewall": {
     "exec": "arch-indicator-firewall",
