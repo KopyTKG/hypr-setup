@@ -1,0 +1,16 @@
+#!/bin/bash
+# arch-root <reason> <command...> — run a command as root, asking for the password
+# in a spot dialog (not the polkit agent that pkexec uses).
+#
+#   arch-root "show every socket's process" ss -H -tunap
+#
+# <reason> is what the dialog shows after "To:". If sudo already has valid
+# credentials there is no dialog at all. Cancelling the dialog makes sudo (and so
+# this) exit non-zero with "no password was provided".
+
+reason=${1:?usage: arch-root <reason> <command...>}; shift
+(( $# )) || { echo "usage: arch-root <reason> <command...>" >&2; exit 2; }
+
+askpass=$(command -v arch-sudo-askpass) || { echo "arch-root: arch-sudo-askpass not found (run install.sh)" >&2; exit 127; }
+export SUDO_ASKPASS=$askpass ARCH_SUDO_REASON=$reason
+exec sudo -A -- "$@"

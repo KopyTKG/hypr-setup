@@ -1,0 +1,33 @@
+#!/bin/bash
+# arch-sudo-askpass — sudo's password prompt as a spot dialog (SUDO_ASKPASS).
+#
+# sudo runs this with its prompt text as $1 and reads the password from stdout; a
+# non-zero exit cancels. arch-root sets SUDO_ASKPASS to this and ARCH_SUDO_REASON
+# to what is being authorised, which the dialog shows in its footer.
+#
+# The password is never stored. (arch-askpass caches SSH key passphrases in the
+# keyring; an administrator password must not end up there.)
+#
+# A wrong password makes sudo call this again. The retry is recognised through a
+# marker keyed by sudo's pid, so the dialog can say so.
+
+dir=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+export XDG_RUNTIME_DIR=$dir
+if [[ -z ${WAYLAND_DISPLAY:-} ]]; then          # sudo may hand us a trimmed environment
+  for s in "$dir"/wayland-[0-9]*; do
+    [[ -S $s ]] && { WAYLAND_DISPLAY=${s##*/}; export WAYLAND_DISPLAY; break; }
+  done
+fi
+
+marker="$dir/arch-sudo-askpass.$PPID"
+find "$dir" -maxdepth 1 -name 'arch-sudo-askpass.*' -mmin +2 -delete 2>/dev/null   # stale pids
+title="Administrator password"
+[[ -e $marker ]] && title="Wrong password — try again"
+: > "$marker"
+
+footer="Enter to submit · Esc to cancel"
+[[ -n ${ARCH_SUDO_REASON:-} ]] && footer="To: $ARCH_SUDO_REASON"
+
+pw=$(SPOT_TITLE="$title" SPOT_FOOTER="$footer" spot ~/.config/spot/password.toml 2>/dev/null) || { rm -f "$marker"; exit 1; }
+[[ -n $pw ]] || { rm -f "$marker"; exit 1; }
+printf '%s\n' "$pw"

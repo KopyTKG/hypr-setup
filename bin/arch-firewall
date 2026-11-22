@@ -7,8 +7,9 @@
 #   arch-firewall header     print just the column header
 #
 # Listing needs no root: /etc/ufw/user.rules and user6.rules are world-readable.
-# Anything that changes the firewall goes through pkexec (a polkit prompt), and
-# the result is shown as a notification.
+# Anything that changes the firewall goes through arch-root (sudo, with the password
+# asked in a spot dialog that shows the exact ufw command), and the result is shown
+# as a notification.
 #
 # In the table: pick "Add rule…", an enable/disable / reload / reset row, or a
 # rule (which asks before deleting it and shows the exact `ufw delete …` it will
@@ -90,9 +91,9 @@ delete_args() {
 
 notify() { notify-send -u "${3:-low}" -a arch-firewall "$1" "$2" 2>/dev/null; }
 
-run_ufw() {  # run_ufw <ufw args...> — via pkexec, result as a notification
+run_ufw() {  # run_ufw <ufw args...> — as root, result as a notification
   local out rc
-  out=$(pkexec ufw "$@" 2>&1); rc=$?
+  out=$(arch-root "ufw $*" ufw "$@" 2>&1); rc=$?
   if (( rc == 0 )); then notify "Firewall" "${out:-done}"
   else notify "Firewall: failed (exit $rc)" "${out:-no output}" critical; fi
   return $rc

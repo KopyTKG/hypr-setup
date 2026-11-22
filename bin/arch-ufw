@@ -1,5 +1,5 @@
 #!/bin/bash
-# arch-ufw — UFW state picker via spot, applied through pkexec.
+# arch-ufw — UFW state picker via spot, applied through arch-root (sudo, password in a spot dialog).
 #
 # UFW's systemd unit is Type=oneshot + RemainAfterExit=yes, so
 # `systemctl is-active ufw` stays "active" forever after first start —
@@ -25,9 +25,9 @@ choice=$(SPOT_TITLE="UFW: $status" SPOT_DEFAULT="$live" SPOT_CURRENT_ACTION="$li
 [[ -z $choice ]] && exit 0
 
 case "$choice" in
-  enable)  cmd=(pkexec ufw --force enable) ;;
-  disable) cmd=(pkexec ufw disable) ;;
-  reload)  cmd=(pkexec ufw reload) ;;
+  enable)  cmd=(arch-root "ufw --force enable" ufw --force enable) ;;
+  disable) cmd=(arch-root "ufw disable" ufw disable) ;;
+  reload)  cmd=(arch-root "ufw reload" ufw reload) ;;
   *)       notify-send -u critical "UFW" "unknown action: $choice"; exit 1 ;;
 esac
 

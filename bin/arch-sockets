@@ -5,8 +5,8 @@
 #   arch-sockets                  open the table (every socket)
 #   arch-sockets --listening      only what is listening / bound
 #   arch-sockets --root           root mode: name the process of EVERY socket (asks
-#                                 for your password once through pkexec). The dialog
-#                                 also has a first row that switches into it.
+#                                 for your password once, in a spot dialog, through
+#                                 sudo). The dialog also has a first row for it.
 #   arch-sockets count            waybar JSON: the total, with a breakdown tooltip
 #   arch-sockets list [--listening]   print the table (with its header) and exit
 #   arch-sockets header           print just the column header
@@ -41,8 +41,8 @@ header() {
 
 # ss rows -> aligned table rows, listeners first, then by local port.
 # ss -H -tunap:  netid state recv-q send-q local peer [users:(("name",pid=N,fd=M),...)]
-raw() {  # the ss output; as root (one pkexec prompt) when ROOT=1
-  if (( ROOT )); then pkexec ss -H -tunap 2>/dev/null; else ss -H -tunap 2>/dev/null; fi
+raw() {  # the ss output; as root (one password dialog) when ROOT=1
+  if (( ROOT )); then arch-root "show every socket's process (ss -p)" ss -H -tunap 2>/dev/null; else ss -H -tunap 2>/dev/null; fi
 }
 
 rows() {  # rows < raw ss lines
@@ -84,7 +84,7 @@ cmd_dialog() {
 
   while :; do
     data=$(raw)
-    if (( ROOT )) && [[ -z $data ]]; then            # pkexec cancelled or failed
+    if (( ROOT )) && [[ -z $data ]]; then            # password cancelled or failed
       notify-send -u low -a arch-sockets "Root mode unavailable" "Authentication was cancelled or failed." 2>/dev/null
       ROOT=0; data=$(raw)
     fi
