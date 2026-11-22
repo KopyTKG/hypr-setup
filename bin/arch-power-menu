@@ -18,7 +18,6 @@ fi
 case "$action" in
   lock)      hyprlock ;;
   suspend)   systemctl suspend ;;
-  hibernate) systemctl hibernate ;;
   logout)    nohup bash -c "sleep 1 && uwsm stop" >/dev/null 2>&1 & ;;
   restart)   nohup bash -c "sleep 1 && systemctl reboot --no-wall" >/dev/null 2>&1 & ;;
   shutdown)  nohup bash -c "sleep 1 && systemctl poweroff --no-wall" >/dev/null 2>&1 & ;;

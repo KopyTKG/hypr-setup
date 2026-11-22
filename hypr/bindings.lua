@@ -36,7 +36,7 @@ bind("SUPER + W", exec("arch-killactive"), "Close (or dismiss walker)")
 bind("SUPER + T", exec(terminal .. ' --dir="$(arch-cmd-terminal-cwd)"'), "Terminal")
 bind("SUPER + B", exec(browser), "Browser")
 bind("SUPER + SHIFT + B", exec(browser .. " --incognito"), "Browser (private)")
-bind("SUPER + F", exec("uwsm app -- dolphin"), "File manager")
+bind("SUPER + F", exec('arch-floatterm yazi yazi "$(arch-cmd-terminal-cwd)"'), "File manager (yazi)")
 
 -- Apps
 bind("SUPER + M", exec('arch-launch-app spotify "uwsm-app -- flatpak run com.spotify.Client"'), "Music")
