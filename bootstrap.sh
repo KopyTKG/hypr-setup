@@ -5,7 +5,7 @@
 #   [0/6] sudo check + keepalive
 #   [1/6] yay (AUR helper)
 #   [2/6] pacman -S the extra/multilib stack (Hyprland, audio, Wayland, dev tools)
-#   [3/6] yay -S the AUR / chaotic-aur bits (walker, elephant-*, AUR-only TUIs)
+#   [3/6] yay -S the AUR / chaotic-aur bits (spot, mpvpaper, AUR-only TUIs)
 #   [4/6] GPU drivers (interactive — gum choose AMD/Intel/Nvidia/skip)
 #   [5/6] Enable + configure system services (sddm, bluetooth, iwd, resolved)
 #   [6/6] Hand off to ./install.sh (symlink configs, enable gcr-ssh-agent, …)
@@ -63,7 +63,7 @@ PACMAN_PKGS=(
   # bar / launcher / notifications
   waybar mako swaybg swayosd
   # terminal & CLI (xdg-terminal-exec is AUR-only as -git, installed below)
-  kitty alacritty fzf gum jq python neovim fastfetch starship trash-cli
+  kitty cliphist unicode-emoji python-emoji fzf gum jq python neovim fastfetch starship trash-cli
   # fish helpers: frecency cd, per-project env, searchable history
   zoxide direnv atuin
   # disk usage: gdu = interactive explorer, duf = overview table (System -> Disk, arch-disk)
@@ -108,15 +108,8 @@ sudo pacman -S --needed --noconfirm "${PACMAN_PKGS[@]}"
 # [3/6] AUR packages
 # ============================================================================
 cyan "[3/6] yay -S --needed (AUR / chaotic-aur)"
-# walker + elephant are built from source (not the -bin variants).
 # xdg-terminal-exec is AUR-only-as-git (no stable release exists).
 AUR_PKGS=(
-  walker
-  elephant
-  elephant-bluetooth elephant-calc elephant-clipboard
-  elephant-desktopapplications elephant-files elephant-menus
-  elephant-providerlist elephant-runner elephant-symbols
-  elephant-todo elephant-unicode elephant-websearch
   xdg-terminal-exec-git
   # animated wallpaper (video loop under the windows; see bin/arch-wallpaper)
   mpvpaper

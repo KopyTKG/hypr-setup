@@ -37,7 +37,7 @@ rule({ match = { title = ".*is sharing.*" }, workspace = "special silent" })
 ---- Screenshots / launchers ----
 -- Remove 1px border around hyprshot screenshots
 hl.layer_rule({ match = { namespace = "selection" }, no_anim = true })
-hl.layer_rule({ match = { namespace = "walker" }, no_anim = true })
+hl.layer_rule({ match = { namespace = "spot" }, no_anim = true })
 
 ---- Dev ----
 rule({ name = "jetbrains-focus", match = { class = "^(jetbrains-.*)$" }, no_follow_mouse = true })

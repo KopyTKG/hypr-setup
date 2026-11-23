@@ -7,12 +7,10 @@ Personal Arch + Hyprland setup. Vanilla — no Omarchy/distro overlays. Tailwind
 ## Layout
 
 ```
-alacritty/                 terminal config (fallback terminal; stone chrome, full ANSI palette)
-kitty/                     the terminal (same look, kitty graphics protocol for yazi)
+kitty/                     the terminal config (stone chrome, full ANSI palette; its graphics protocol drives yazi previews)
 btop/                      stone theme
 bin/                       arch-* helper scripts (linked into ~/.local/bin)
 chromium/                  flags + system policy for browser theme color
-elephant/                  walker data provider config
 environment.d/             systemd user env (FZF_DEFAULT_OPTS, ...)
 fastfetch/                 system info (no Omarchy branding)
 hypr/                      Hyprland Lua config (hyprland.lua → defaults/ + personal overrides) + hyprlock/hypridle
@@ -24,7 +22,6 @@ applications/              .desktop launchers linked into ~/.local/share/applica
 plymouth-theme-arch-stone/ boot/shutdown splash (Arch logo on stone-950)
 sddm-theme-stone/          Qt6 login-screen theme
 swayosd/                   audio/brightness OSD
-walker/                    launcher (dmenu mode for arch-menu)
 waybar/                    status bar + tray-menu CSS
 bash/                      interactive bash config — boot .bashrc + 8 topic files (env, shell opts, aliases, dev stack, utils, tools, prompt)
 starship.toml              starship prompt (Tokyo Night, current dev stack)
@@ -39,15 +36,15 @@ Everything lives in `extra`, `multilib`, or `chaotic-aur`. The migrator (`arch-s
 
 **Hyprland session** — `hyprland` `hypridle` `hyprlock` `hyprpicker` `hyprshot` `hyprsunset` `uwsm` `xdg-desktop-portal-hyprland` `sddm` `hyprpolkitagent` `plymouth`
 
-**Bar / launcher / notifications** — `waybar` `walker` `elephant` `mako` `swaybg` `swayosd`
+**Bar / launcher / notifications** — `waybar` `mako` `swaybg` `swayosd`
 
-**Terminal & CLI** — `kitty` (the terminal: every `arch-*` installer + TUI runs here under `--class arch-*`; `alacritty` stays installed as the `xdg-terminals.list` fallback, `arch-floatterm` uses it when kitty is missing; `xdg-terminals.list` is linked from the repo) · `xdg-terminal-exec` · `fzf` `gum` `jq` `python` (all four required by the helper scripts) · `neovim` · `fastfetch` · `starship` (prompt) · `bash-completion` · `git` `openssh` `curl` `tar` `wl-clipboard`
+**Terminal & CLI** — `kitty` (the terminal: every `arch-*` installer + TUI runs here under `--class arch-*`; `xdg-terminals.list`, linked from the repo, makes it the terminal `xdg-terminal-exec` uses) · `xdg-terminal-exec` · `fzf` `gum` `jq` `python` (all four required by the helper scripts) · `neovim` · `fastfetch` · `starship` (prompt) · `bash-completion` · `git` `openssh` `curl` `tar` `wl-clipboard`
 
 **Waybar tray TUIs** — `btop` (CPU/mem) · `bluetui` + `bluez bluez-utils` (bluetooth) · `impala` + `iwd` (wifi) · `wiremix` (audio) · `jolt` (battery, SUPER+CTRL+P / click battery) · `yazi` (file manager, arch-menu → System → Files)
 
 **Audio / input / misc** — `pipewire-pulse` (provides `pactl`) · `brightnessctl` · `libnotify` (`notify-send`) · `fcitx5`
 
-**Fonts** — `ttf-cascadia-mono-nerd` (hard-coded in waybar + kitty + alacritty)
+**Fonts** — `ttf-cascadia-mono-nerd` (hard-coded in waybar + kitty)
 
 **Shell QoL (referenced by `.bashrc`)** — `lazygit` (alias `lz`) · `eza` · `bat` · `fd` (powers `FZF_DEFAULT_COMMAND`) · `ripgrep` · `git-delta` · `tree` · `net-tools` (`netstat`) · `lsof`
 
@@ -73,7 +70,7 @@ One-shot bootstrap — `./bootstrap.sh` takes a vanilla Arch box (post-`pacstrap
 
 1. **yay** — `base-devel` + `git`, build `yay-bin` from AUR if missing
 2. **pacman** — `--needed` install of the extra/multilib stack (Hyprland session, pipewire+wireplumber, qt6-wayland, xorg-xwayland, terminals, fonts, dev toolchains, keyring, tray TUIs `bluetui`/`impala`/`wiremix`, `linux-lts` + headers, …)
-3. **AUR** — `walker-bin`, full `elephant-*-bin` stack, `xdg-terminal-exec-git` (prefers `-bin`/stable variants when upstream offers them; only `xdg-terminal-exec` is `-git` because no stable release exists)
+3. **AUR** — `spot-bin`, `mpvpaper`, `xdg-desktop-portal-termfilechooser`, `xdg-terminal-exec-git` (prefers `-bin`/stable variants when upstream offers them; only `xdg-terminal-exec` is `-git` because no stable release exists)
 4. **GPU** — `lspci` detect, then `gum choose` between **AMD** / **Intel** / **Nvidia open** / **Nvidia closed** / **Skip**
 5. **Services + network** — enables `sddm`, `bluetooth`, `iwd`, `systemd-resolved`; writes `/etc/iwd/main.conf` (DHCP+DNS via systemd) and points `/etc/resolv.conf` at the systemd stub; on a btrfs root creates the snapper `root` config, enables `snapper-cleanup.timer` (prunes the `update` snapshots), and (on limine) installs + enables `limine-snapper-sync`; runs `xdg-user-dirs-update`
 6. **install.sh** — symlink configs, browser policy, systemd user env, gcr-ssh-agent, SDDM + Plymouth themes
@@ -159,7 +156,7 @@ Notable submenus:
 - **Bookmarks** — reads `~/.config/arch-menu/bookmarks.conf` (one `Label | URL` per line, `#` comments OK). Selecting opens the URL in chromium.
 - **System** — TUI control panels via a floating kitty: bluetui, impala, wiremix, jolt, btop · **Disk** (`arch-disk`: filesystems + btrfs allocation + biggest folders in `~`, then `gdu` to explore) · **Sockets** (`arch-sockets`: a searchable table of every TCP/UDP socket in a spot dialog; also the waybar socket-count module) · **Firewall** (`arch-firewall`: a spot GUI over `ufw` — searchable rules table, add / delete / enable / reload / reset; the old fzf TUI is `arch-firewall-tui`)
 - **Remote** — reads `~/.ssh/config` and everything it `Include`s; a host's group is its nearest `# group: NAME` marker, else the folder its config lives in (`~/.ssh/infra/config` → *infra*); git forges (github/gitlab/bitbucket/aur) are skipped; picks a group, then a host, and spawns ssh in a tiled `ssh-session` terminal. **Custom…** gum-prompts for User/Host/Port.
-- **Keybinds** — also bound to SUPER+F1; a searchable spot table (`spot-config/keybinds.toml`) of **every** keybind, not just Hyprland's: the live Hyprland binds (grouped, with key combinations that two binds share marked ⚠), dialogs and menus, waybar clicks (generated from the waybar config), and the keys of installed apps read from the apps themselves — fish, kitty, yazi, mpv and nvim — plus a curated list for lazygit, lazydocker, btop, zathura and gdu (`arch-menu/keybinds.conf`; only shown when the app is installed). Smart matching: every word has to match (`yazi seek`, `fish ctrl r`, `nvim lsp`). The same data as a document: [`KEYBINDS.md`](KEYBINDS.md)
+- **Keybinds** — also bound to SUPER+F1; a searchable, **collapsible** spot list (`spot-config/keybinds.toml`: one folded group per scope, Enter or Left/Right folds it, typing searches inside folded groups) of **every** keybind, not just Hyprland's: the live Hyprland binds (grouped, with key combinations that two binds share marked ⚠), dialogs and menus, waybar clicks (generated from the waybar config), and the keys of installed apps read from the apps themselves — fish, kitty, yazi, mpv and nvim — plus a curated list for lazygit, lazydocker, btop, zathura and gdu (`arch-menu/keybinds.conf`; only shown when the app is installed). Smart matching: every word has to match (`yazi seek`, `fish ctrl r`, `nvim lsp`). The same data as a document: [`KEYBINDS.md`](KEYBINDS.md)
 - **Power** — sleep / lock / logout / restart / shutdown
 
 ## arch-* helpers
@@ -179,7 +176,9 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-firewall`                 | System → Firewall and the waybar firewall click. UFW in spot dialogs: a searchable table of the rules (parsed from the world-readable `/etc/ufw/user.rules`, so no password to look), plus *Add rule…* (service templates — SSH, HTTP(S), DNS, DHCP, LocalSend, KDE Connect, mDNS, Samba, Syncthing, WireGuard, dev servers… — each from anywhere or from the local network only, defined in `arch-menu/firewall-services.conf`; or a custom form: action, direction, protocol, port / range / list, optional source), enable / disable, reload, reset. Picking a rule opens *Edit* / *Delete*: Edit shows the form filled in and saves by adding the new rule, then deleting the old one (ufw cannot change a rule in place, so the new rule ends up last; interface, source-port and route rules are left to the ufw CLI, and the notification says which one it is; the form has optional From and To addresses); Delete asks first and shows the exact `ufw delete …`. Changes go through `arch-root` (sudo, with the password asked in a spot dialog that shows the exact command); results as notifications. `rules` / `header` print the table |
 | `arch-firewall-tui`             | The previous fzf terminal UI for ufw (`a` allow · `d` deny · `l` limit · `x` delete · `e` enable/disable), kept for keyboard-only use |
 | `arch-ufw`                      | The waybar firewall right-click: three spot tiles (enable / disable / reload) for a quick toggle without opening the rules table |
-| `arch-launch-apps`              | SUPER+SPACE, Menu → Apps: spot's own app launcher (`spot-config/launcher.toml`, `type = "apps"`; needs spot ≥ 0.5.0, falls back to walker on an older spot). Webapps appear on their own: spot rescans the applications folder. Emoji and clipboard (SUPER+CTRL+E / V) still use walker + elephant until spot has those sources |
+| `arch-launch-apps`              | SUPER+SPACE, Menu → Apps: spot's own app launcher (`spot-config/launcher.toml`, `type = "apps"`; needs spot ≥ 0.5.0). Webapps appear on their own: spot rescans the applications folder |
+| `arch-emoji`                    | SUPER+CTRL+E; emoji picker: Unicode's list (`unicode-emoji`) in a collapsible spot list, one folded group per category, search across all; with `python-emoji` every row also carries its Discord / Slack shortcodes (`rofl`, `:joy:`, `:+1:`, `:sob:`); Enter copies and pastes (Shift+Insert) |
+| `arch-clipboard`                | SUPER+CTRL+V; clipboard history: `cliphist` entries (stored by `wl-paste --watch` from autostart) in a spot list; Enter copies back and pastes; `arch-clipboard clear` wipes it |
 | `arch-wallpaper`                | Animated wallpaper: `mpvpaper` plays a video/GIF from `~/Videos/Wallpapers` over `swaybg`'s static image. Only while on AC power (drops to the static image on battery; `watch` daemon from autostart polls every 30 s) and paused while the wallpaper is covered. While the video runs, `swaybg` shows its first frame (so the loop point doesn't flash the static image); the lock screen shows a still frame. `pick` (Menu → Setup → Wallpaper), `set <file>`, `on` / `off`, `status` |
 | `arch-root`                     | `arch-root <reason> <command…>`: run a command as root through `sudo -A`, asking for the password in a **spot** dialog instead of the polkit agent (the dialog's footer shows `<reason>`). No dialog when sudo already has credentials. Used by `arch-sockets --root`, `arch-firewall` and `arch-ufw` |
 | `arch-sudo-askpass`             | The `SUDO_ASKPASS` helper behind `arch-root`: the spot password dialog, "Wrong password — try again" on a retry, never stores the password (unlike `arch-askpass`, which caches SSH key passphrases) |
@@ -189,11 +188,11 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-protonge-remove`          | fzf-pick a GE-Proton release in `compatibilitytools.d/`; `rm -rf`  |
 | `arch-webapp-install`           | gum prompt → desktop launcher for any URL via chromium `--app`     |
 | `arch-webapp-edit`              | Menu → Webapps → Edit. Pick a web app and change its name, URL or icon (favicon / icon URL / file); renaming also renames the file, icon and window class. Rewrites only Name/Comment/Exec/Icon/StartupWMClass, keeps the rest. Flags for scripts: `arch-webapp-edit <name> [--name N] [--url U] [--icon favicon\|URL\|FILE]`, `--list` |
-| `arch-webapp "<Name>"`          | launch a webapp by Name (matches `Name=` in any `~/.local/share/applications/*.desktop` whose Exec calls `arch-launch-webapp`); no args → walker picker over all discovered webapps |
+| `arch-webapp "<Name>"`          | launch a webapp by Name (matches `Name=` in any `~/.local/share/applications/*.desktop` whose Exec calls `arch-launch-webapp`); no args → spot picker over all discovered webapps |
 | `arch-keybinds`                 | SUPER+F1; spot table of every keybind (Hyprland live, waybar clicks, installed apps read from fish `bind`, kitty's defaults, yazi's compiled-in keymap, mpv's `input.conf`, nvim's mappings; curated extras in `arch-menu/keybinds.conf`). App keys are cached 12 h in `~/.cache/arch-keybinds` (`--refresh` rebuilds). `--md` prints Markdown (`KEYBINDS.md` is that output), `--list` TSV, `--table` / `header` the dialog's rows and column header |
 | `arch-remote-custom`            | gum prompt → User/Host/Port → spawns ssh in a tiled `ssh-session` window |
 | `arch-power-menu`               | bound to SUPER+ESC                                                 |
-| `arch-killactive`               | SUPER+W; dismisses a spot dialog (`spot --dismiss`), else the walker layer, else closes the window |
+| `arch-killactive`               | SUPER+W; dismisses a spot dialog (`spot --dismiss`), else closes the window |
 | `arch-launch-webapp <class> <url>` | focus existing chromium-app window by class, else launch it    |
 | `arch-apply-browser-theme`      | copy `chromium/policies/managed/color.json` to system policy dir   |
 | `arch-askpass`                  | Password prompt (`SSH_ASKPASS`); libsecret-cached. Inline `gum` from a TTY, `spot` password dialog headless |
@@ -204,8 +203,7 @@ Stone palette (`#0c0a09` bg, `#f5f5f4` border, `#fafaf9` fg, `#a8a29e` muted) is
 
 - **Hyprland** — `looknfeel.lua` overrides for border / opacity / dim
 - **Waybar** — pill bg `rgba(28,25,23,0.7)` with `stone-100 @ 50%` border, matching tooltip + tray menu styles
-- **Walker** — solid stone-900 box-wrapper
-- **Terminal (kitty, mirrored in alacritty)** — stone chrome (`primary/cursor/selection/...`); ANSI 16 colors preserved (Tokyo Night)
+- **Terminal (kitty)** — stone chrome (`primary/cursor/selection/...`); ANSI 16 colors preserved (Tokyo Night)
 - **Btop / Mako / SwayOSD** — same chrome
 - **Fastfetch** — Arch logo, no Omarchy branding
 - **Chromium / Brave** — `BrowserThemeColor = #0a0a0a` via Enterprise Policy

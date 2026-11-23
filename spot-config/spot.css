@@ -1,4 +1,4 @@
-/* Shared spot theme — Stone palette tuned to match walker's spotlight pill. */
+/* Shared spot theme — Stone palette, a rounded spotlight pill. */
 
 * {
   font-family: "CaskaydiaMono Nerd Font", monospace;
@@ -8,7 +8,7 @@
   background: transparent;
 }
 
-/* Outer pill — single rounded card, soft translucent border like walker. */
+/* Outer pill — single rounded card, soft translucent border. */
 .spot-root {
   background: #1c1917;
   color: #fafaf9;
@@ -99,7 +99,7 @@
 }
 
 /* List — no inner pill, just a transparent scroll region. Rows carry their
-   own padding + selection highlight (walker pattern). */
+   own padding + selection highlight. */
 .spot-list-scroll {
   background: transparent;
   border: none;

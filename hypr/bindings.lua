@@ -29,8 +29,8 @@ hl.unbind("SUPER + W")
 -- Rebind fullscreen toggle
 bind("SUPER + F11", hl.dsp.window.fullscreen({ mode = "fullscreen" }), "Fullscreen")
 
--- Smart close: dismiss walker if visible, otherwise kill the focused window
-bind("SUPER + W", exec("arch-killactive"), "Close (or dismiss walker)")
+-- Smart close: dismiss a spot dialog if one is showing, otherwise kill the focused window
+bind("SUPER + W", exec("arch-killactive"), "Close (or dismiss a spot dialog)")
 
 -- Default
 bind("SUPER + T", exec(terminal .. ' --dir="$(arch-cmd-terminal-cwd)"'), "Terminal")

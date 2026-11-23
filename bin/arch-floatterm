@@ -1,5 +1,5 @@
 #!/bin/bash
-# arch-floatterm — spawn a floating terminal window (kitty; alacritty if kitty is missing) with the given window class.
+# arch-floatterm — spawn a floating kitty window with the given window class.
 # The class is what Hyprland windowrules match on to float/style the spawn.
 #
 # Usage:
@@ -20,12 +20,12 @@ fi
 class=$1
 shift
 
-# kitty takes the program after its options; alacritty needs -e
-if command -v kitty >/dev/null 2>&1; then
-  TERM_CMD=(kitty --class "$class")
-else
-  TERM_CMD=(alacritty --class "$class" -e)
+# kitty takes the program after its options (no -e)
+if ! command -v kitty >/dev/null 2>&1; then
+  echo "arch-floatterm: kitty is not installed (sudo pacman -S kitty)" >&2
+  exit 127
 fi
+TERM_CMD=(kitty --class "$class")
 
 # A helper that is not on PATH (a new bin/arch-* script before install.sh has
 # linked it) would make the window flash and close. Say what is wrong instead.

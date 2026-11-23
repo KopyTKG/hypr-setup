@@ -1,0 +1,75 @@
+#!/bin/bash
+# arch-emoji — emoji picker (SUPER+CTRL+E), replacing walker's symbols provider.
+#
+# Unicode's emoji list in a collapsible spot list: one folded group per category
+# (Smileys & Emotion, Animals & Nature, ...). Typing searches inside every group
+# ("grin", "heart eyes", "flag cz"); Enter copies the emoji and pastes it into the
+# focused window (Shift+Insert, the same as walker did).
+#
+#   arch-emoji           the picker
+#   arch-emoji list      print the rows (GROUP<TAB>EMOJI  name) and exit
+#
+# Data: /usr/share/unicode/emoji/emoji-test.txt (package unicode-emoji); only the
+# fully-qualified forms are listed. With python-emoji installed every row also
+# carries its chat shortcodes, so the Discord / Slack names find it too:
+# "rofl" or ":rofl:" finds 🤣, ":joy:" 😂, ":+1:" 👍, ":sob:" 😭.
+#
+# Test hooks: EMOJI_DATA (the data file), ARCH_EMOJI_LIBS (extra python path).
+
+DATA=${EMOJI_DATA:-/usr/share/unicode/emoji/emoji-test.txt}
+CFG=${ARCH_SPOT_DIR:-$HOME/.config/spot}
+
+rows() {
+  awk '
+    /^# group: / { g = substr($0, 10); next }
+    /; fully-qualified/ && g != "Component" {
+      sub(/^[^#]*# /, "")                      # "😀 E1.0 grinning face"
+      emoji = $1; $1 = ""; $2 = ""             # drop the emoji and the E-version
+      sub(/^ +/, "")
+      printf "%s\t%s  %s\n", g, emoji, $0
+    }' "$DATA"
+}
+
+# Append the chat shortcodes (python-emoji's aliases and its short name) to each
+# row. Without the package the rows pass through unchanged.
+with_shortcodes() {
+  python3 -I -c '
+import os, sys
+if os.environ.get("ARCH_EMOJI_LIBS"):
+    sys.path.insert(0, os.environ["ARCH_EMOJI_LIBS"])
+try:
+    from emoji import EMOJI_DATA
+except Exception:
+    sys.stdout.write(sys.stdin.read()); raise SystemExit
+for line in sys.stdin:
+    line = line.rstrip("\n")
+    group, sep, rest = line.partition("\t")
+    ch, _, name = rest.partition("  ")
+    info = EMOJI_DATA.get(ch) or EMOJI_DATA.get(ch.replace("\ufe0f", "")) or {}
+    codes = []
+    for c in [info.get("en", "")] + list(info.get("alias", [])):
+        c = c.strip(":").lower()
+        if c and c not in codes and c.replace("_", " ") != name.lower():
+            codes.append(c)
+    print(line + ("  " + " ".join(":%s:" % c for c in codes[:6]) if codes else ""))
+'
+}
+
+case ${1:-} in
+  list) rows | with_shortcodes; exit 0 ;;
+  "") ;;
+  *) echo "usage: arch-emoji [list]" >&2; exit 2 ;;
+esac
+
+if [[ ! -r $DATA ]]; then
+  notify-send -u critical -a arch-emoji "Emoji picker" "No emoji data. Install it:  sudo pacman -S unicode-emoji" 2>/dev/null
+  exit 1
+fi
+
+row=$(rows | with_shortcodes | spot "$CFG/emoji.toml") || exit 0
+[[ -n $row ]] || exit 0
+emoji=${row%% *}
+printf '%s' "$emoji" | wl-copy
+# The dialog has closed and focus is back in the window you came from: paste there.
+sleep 0.15
+hyprctl dispatch 'hl.dsp.send_shortcut({ mods = "SHIFT", key = "Insert" })' >/dev/null 2>&1

@@ -1,8 +1,7 @@
 # App launcher (arch-launch-apps, SUPER+SPACE, Menu → Apps): spot's `apps` item
-# instead of walker. Type to search the installed applications (name first, then
+# Type to search the installed applications (name first, then
 # comment / keywords / id; abbreviations work: "ff" finds Firefox), Enter launches.
-# The most-launched apps come first. Needs spot >= 0.5.0 (arch-launch-apps falls
-# back to walker on an older spot).
+# The most-launched apps come first. Needs spot >= 0.5.0.
 #
 # How apps start is [apps.launch]: through uwsm-app like every other launcher in
 # this setup, terminal apps wrapped in xdg-terminal-exec. Webapps from the arch

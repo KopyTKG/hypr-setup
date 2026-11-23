@@ -1,6 +1,6 @@
 #!/bin/bash
 # arch-reload TARGET — reload/restart one piece of the desktop.
-#   hyprland | waybar | mako | hypridle | walker | wallpaper | all
+#   hyprland | waybar | mako | hypridle | wallpaper | all
 # Mirrors what hypr/defaults/autostart.lua starts at login.
 
 restart() {  # restart PROC CMD...  (kill, then relaunch under uwsm like autostart does)
@@ -16,15 +16,14 @@ do_one() {
     waybar)    restart waybar waybar ;;
     mako)      makoctl reload ;;
     hypridle)  restart hypridle hypridle ;;
-    walker)    systemctl --user restart elephant.service ;;
     wallpaper) restart swaybg swaybg -i ~/.config/hypr/theme/background.jpg -m fill; arch-wallpaper refresh ;;
     *) notify-send -u critical "Reload" "unknown target: $1"; return 1 ;;
   esac
 }
 
-target=${1:?usage: arch-reload hyprland|waybar|mako|hypridle|walker|wallpaper|all}
+target=${1:?usage: arch-reload hyprland|waybar|mako|hypridle|wallpaper|all}
 if [[ $target == all ]]; then
-  for t in hyprland waybar mako hypridle walker wallpaper; do do_one "$t"; done
+  for t in hyprland waybar mako hypridle wallpaper; do do_one "$t"; done
 else
   do_one "$target" || exit 1
 fi

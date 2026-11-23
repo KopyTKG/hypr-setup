@@ -90,15 +90,11 @@ show_learn() {
     "  Arch Wiki" \
     "  Hyprland Wiki" \
     "  Waybar Wiki" \
-    "  Walker" \
-    "  Elephant" \
     "  Spot" \
     "  Bash cheatsheet") in
     *"Arch Wiki"*) open_url "https://wiki.archlinux.org/title/Main_page" ;;
     *Hyprland*)    open_url "https://wiki.hypr.land/" ;;
     *Waybar*)      open_url "https://github.com/Alexays/Waybar/wiki" ;;
-    *Walker*)      open_url "https://github.com/abenz1267/walker" ;;
-    *Elephant*)    open_url "https://github.com/abenz1267/elephant" ;;
     *Spot*)        open_url "https://github.com/KopyTKG/spot/tree/main/docs" ;;   # TOML + CSS reference
     *Bash*)        open_url "https://devhints.io/bash" ;;
     *Back*)        show_main ;;
@@ -153,7 +149,6 @@ show_setup() {
     "  Reload" \
     "󰍹  Wallpaper" \
     "  Waybar" \
-    "  Walker" \
     "  Hypridle" \
     "  Hyprlock") in
     *Hyprland*) editor ~/.config/hypr/hyprland.lua ;;
@@ -162,7 +157,6 @@ show_setup() {
     *Reload*)   show_reload ;;
     *Wallpaper*) SPOT_BACK="arch-menu setup" arch-wallpaper pick ;;
     *Waybar*)   editor ~/.config/waybar/config.jsonc ;;
-    *Walker*)   editor ~/.config/walker/config.toml ;;
     *Hypridle*) editor ~/.config/hypr/hypridle.conf ;;
     *Hyprlock*) editor ~/.config/hypr/hyprlock.conf ;;
     *Back*)     show_main ;;
@@ -177,14 +171,12 @@ show_reload() {
     "  Waybar" \
     "  Mako" \
     "  Hypridle" \
-    "  Walker" \
     "  Wallpaper" \
     "  All") in
     *Hyprland*)  arch-reload hyprland ;;
     *Waybar*)    arch-reload waybar ;;
     *Mako*)      arch-reload mako ;;
     *Hypridle*)  arch-reload hypridle ;;
-    *Walker*)    arch-reload walker ;;
     *Wallpaper*) arch-reload wallpaper ;;
     *All*)       arch-reload all ;;
     *Back*)      show_setup ;;

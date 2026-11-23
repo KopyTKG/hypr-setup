@@ -8,7 +8,7 @@ end
 
 -- Menus
 bind("SUPER + SPACE", exec("arch-launch-apps"), "Launch apps")
-bind("SUPER + CTRL + E", exec("walker -m symbols"), "Emoji picker")
+bind("SUPER + CTRL + E", exec("arch-emoji"), "Emoji picker")
 bind("SUPER + ESCAPE", exec("arch-power-menu"), "Power menu")
 bind("XF86PowerOff", exec("arch-power-menu"), "Power menu", { locked = true })
 bind("XF86Calculator", exec("arch-floatterm arch-qalc qalc"), "Calculator")

@@ -40,6 +40,5 @@ for APP_NAME in "${APP_NAMES[@]}"; do
   printf '\033[32m✓ Removed:\033[0m %s\n' "$APP_NAME"
 done
 
-# refresh walker index if it's running
-pkill -SIGUSR1 walker 2>/dev/null || true
+# (spot's launcher rescans the applications folder by itself; nothing to refresh)
 sleep 1

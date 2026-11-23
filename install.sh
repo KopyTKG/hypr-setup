@@ -24,7 +24,7 @@ link_to() {
 }
 
 cyan "[1/7] Link config dirs into ~/.config/"
-for name in alacritty kitty arch-menu btop elephant environment.d fastfetch fish hypr mako nvim swayosd walker waybar xdg-desktop-portal xdg-desktop-portal-termfilechooser yazi; do
+for name in kitty arch-menu btop environment.d fastfetch fish hypr mako nvim swayosd waybar xdg-desktop-portal xdg-desktop-portal-termfilechooser yazi; do
   link_to "$REPO/$name" "$HOME/.config/$name"
 done
 
@@ -34,6 +34,14 @@ if command -v ya >/dev/null 2>&1; then
     && gray "  yazi plugins installed (ya pkg install)" \
     || gray "  ya pkg install failed (offline? run it in ~/.config/yazi)"
 fi
+
+# Alacritty, walker and elephant are gone (kitty and spot replaced them): drop their
+# config links if they still point into this repo.
+for old in alacritty walker elephant; do
+  if [[ -L $HOME/.config/$old && $(readlink "$HOME/.config/$old") == "$REPO/$old" ]]; then
+    rm "$HOME/.config/$old" && gray "  removed the old ~/.config/$old link"
+  fi
+done
 
 cyan "[2/7] Link standalone config files"
 link_to "$REPO/spot-config"                  "$HOME/.config/spot"
@@ -47,7 +55,7 @@ for f in "$REPO/bin"/*; do
   link_to "$f" "$HOME/.local/bin/$(basename "$f")"
 done
 
-# Launchers (.desktop) shipped by the repo: walker / the spot launcher list them.
+# Launchers (.desktop) shipped by the repo: the spot launcher lists them.
 mkdir -p "$HOME/.local/share/applications"
 for f in "$REPO/applications"/*.desktop; do
   [[ -e $f ]] || continue
@@ -191,5 +199,5 @@ if [[ -x $PLYMOUTH_INSTALLER ]]; then
   fi
 fi
 
-green "done. Restart waybar / walker / chromium / running terminals to pick up everything."
+green "done. Restart waybar / chromium / running terminals to pick up everything."
 green "      Reboot to see new SDDM login + Plymouth boot splash."

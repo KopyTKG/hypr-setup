@@ -139,7 +139,6 @@ apply() {
 
   mv -f -- "$tmp" "$target" || { rm -f "$tmp"; return 1; }
   [[ $target != "$file" ]] && rm -f -- "$file"
-  pkill -SIGUSR1 walker 2>/dev/null || true
 
   ok "$new_name  →  $new_url"
   [[ $new_name != "$old_name" ]] && echo "   renamed from '$old_name'; window class is now '$class' (an open window keeps the old class until closed)"

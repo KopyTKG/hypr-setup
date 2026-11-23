@@ -1,0 +1,31 @@
+# Emoji picker (arch-emoji, SUPER+CTRL+E): a collapsible list, one group per Unicode
+# category. Type to search every group at once ("grin", "heart eyes", "flag cz") or by
+# the chat shortcode Discord / Slack use (":rofl:", ":joy:", ":+1:", ":sob:");
+# Enter on an emoji copies and pastes it; Enter or Left/Right on a group header
+# folds it. Needs spot >= 0.5.0 (collapsible lists).
+
+title    = ""
+anchor   = "center"
+width    = 640
+style    = "spot.css"
+keyboard = "exclusive"
+toggle   = true
+
+[opacity]
+outside = 100
+
+[back]
+show = "never"
+
+[[items]]
+type        = "list"
+id          = "emoji"
+collapsible = true
+collapsed   = true
+match       = "smart"
+stdin       = true
+height      = 440
+placeholder = "Search emoji…  grin · :rofl: · :joy: · :+1: · flag cz"
+
+[submit]
+stdout = "{emoji}"

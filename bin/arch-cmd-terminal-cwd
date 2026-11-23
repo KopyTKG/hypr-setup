@@ -1,7 +1,7 @@
 #!/bin/bash
 # Return cwd of the active terminal's shell, falling back to $HOME.
-# The shell is a child of the terminal window's process (alacritty), or one level
-# further down when the terminal wraps it (kitty): look at both.
+# The shell is a child of the terminal window's process (kitty runs it directly or through
+# its launcher): look at both levels.
 tpid=$(hyprctl activewindow | awk '/pid:/ {print $2}')
 
 shell_cwd() {  # shell_cwd <pid>: its cwd when it is a login-shell binary

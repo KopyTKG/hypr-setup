@@ -1,13 +1,11 @@
 #!/bin/bash
-# SUPER+W: dismiss the topmost layer surface we own (spot or walker),
-# otherwise close the active toplevel window.
+# SUPER+W: dismiss the spot dialog if one is showing, otherwise close the active
+# toplevel window.
 layers=$(hyprctl layers 2>/dev/null)
 if grep -q 'namespace: spot' <<<"$layers"; then
-  # spot >= the daemon build: ask the daemon (pkill would kill the daemon too).
-  # Older spot rejects --dismiss, and each dialog is its own process: kill those.
+  # Ask the daemon (pkill would kill the daemon too); an older spot without
+  # --dismiss runs every dialog as its own process: kill those.
   spot --dismiss 2>/dev/null || pkill -TERM -x spot
-elif grep -q 'namespace: walker' <<<"$layers"; then
-  walker --close
 else
   hyprctl dispatch 'hl.dsp.window.close()'
 fi

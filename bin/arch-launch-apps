@@ -1,15 +1,11 @@
 #!/bin/bash
-# arch-launch-apps — the app launcher (SUPER+SPACE, Menu → Apps).
-#
-# Uses spot's own launcher (spot-config/launcher.toml, `type = "apps"`) when the
-# installed spot is 0.5.0 or newer; on an older spot it falls back to walker so
-# the key never goes dead. Emoji and clipboard (SUPER+CTRL+E / V) still use
-# walker until spot has those sources.
+# arch-launch-apps — the app launcher (SUPER+SPACE, Menu → Apps): spot's own,
+# spot-config/launcher.toml (`type = "apps"`, needs spot >= 0.5.0).
 
 ver=$(spot --version 2>/dev/null | awk '{print $2}')
 ver=${ver%%-*}                                   # 0.5.0-3-gabc123 -> 0.5.0
-
-if [[ $ver == dev || ( -n $ver && $(printf '%s\n0.5.0\n' "$ver" | sort -V | head -n1) == 0.5.0 ) ]]; then
-  exec spot launcher
+if [[ $ver != dev && ( -z $ver || $(printf '%s\n0.5.0\n' "$ver" | sort -V | head -n1) != 0.5.0 ) ]]; then
+  notify-send -u critical -a arch-launch-apps "Launcher" "spot ${ver:-?} is too old: the launcher needs spot 0.5.0 or newer" 2>/dev/null
+  exit 1
 fi
-exec walker
+exec spot launcher

@@ -11,9 +11,11 @@ hl.on("hyprland.start", function()
     -- older builds would read "daemon" as a config name).
     hl.exec_cmd("sh -c 'spot --help 2>&1 | grep -q -- --dismiss && exec uwsm-app -- spot daemon'")
 
-    -- Slow app launch fix -- set systemd vars. elephant starts before this runs,
-    -- so restart it to pick up the session env (XDG_DATA_DIRS → flatpak apps in walker).
+    -- Clipboard history for arch-clipboard (SUPER+CTRL+V): cliphist stores everything copied.
+    hl.exec_cmd("uwsm-app -- wl-paste --type text --watch cliphist store")
+    hl.exec_cmd("uwsm-app -- wl-paste --type image --watch cliphist store")
+
+    -- Slow app launch fix -- set systemd vars so services started later see the session env.
     hl.exec_cmd("systemctl --user import-environment $(env | cut -d'=' -f 1)"
-        .. " && dbus-update-activation-environment --systemd --all"
-        .. " && systemctl --user try-restart elephant.service")
+        .. " && dbus-update-activation-environment --systemd --all")
 end)

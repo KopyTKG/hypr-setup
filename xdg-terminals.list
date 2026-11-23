@@ -1,4 +1,3 @@
 # Terminal emulator preference order for xdg-terminal-exec (linked to
 # ~/.config/xdg-terminals.list by install.sh). The first one that is installed wins.
 kitty.desktop
-Alacritty.desktop

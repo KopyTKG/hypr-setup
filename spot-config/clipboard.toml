@@ -1,0 +1,27 @@
+# Clipboard history (arch-clipboard, SUPER+CTRL+V): the cliphist entries, newest
+# first, one preview per line. Type to filter (every word has to match); Enter
+# copies the entry back and pastes it.
+
+title    = ""
+anchor   = "center"
+width    = 720
+style    = "spot.css"
+keyboard = "exclusive"
+toggle   = true
+
+[opacity]
+outside = 100
+
+[back]
+show = "never"
+
+[[items]]
+type        = "list"
+id          = "entry"
+match       = "smart"
+stdin       = true
+height      = 420
+placeholder = "Search clipboard history…"
+
+[submit]
+stdout = "{entry}"
