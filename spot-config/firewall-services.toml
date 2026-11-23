@@ -1,0 +1,21 @@
+# Service template picker (arch-firewall → "Add rule…"): "Custom rule…" then one
+# row per template ("Name   note"). Wider than menu.toml so the notes fit.
+
+anchor   = "center"
+width    = 800
+style    = "spot.css"
+keyboard = "exclusive"
+
+[opacity]
+outside = 100
+
+[[items]]
+type        = "list"
+id          = "choice"
+placeholder = "Search…"
+match       = "smart"
+stdin       = true
+height      = 520
+
+[submit]
+stdout = "{choice}"

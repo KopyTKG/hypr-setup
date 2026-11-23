@@ -12,9 +12,18 @@
 # as a notification.
 #
 # In the table: pick "Add rule…", an enable/disable / reload / reset row, or a
-# rule (which asks before deleting it and shows the exact `ufw delete …` it will
-# run). Smart matching: every word you type has to match ("allow 22", "docker").
+# rule: that opens Edit / Delete. Edit shows the add form filled with the rule's
+# values; ufw cannot change a rule in place, so saving adds the new rule and then
+# deletes the old one (the new rule ends up last: ufw is first-match-wins, so
+# check the order if rules overlap). Delete asks first and shows the exact
+# `ufw delete …` it will run. Edit is for plain rules (any source, any port/proto);
+# rules bound to an interface, route rules and source ports are left to the ufw
+# command line (the notification says which of these it is). Smart matching: every word you type has to match ("allow 22", "docker").
 # Rule order is meaningful to ufw (first match wins), so the table keeps file order.
+#
+# "Add rule…" first offers service templates (SSH, DNS, DHCP, LocalSend, ...) from
+# arch-menu/firewall-services.conf, each from anywhere or from the local network
+# only, or a custom rule (the form).
 #
 # Back: `SPOT_BACK=<cmd> arch-firewall` gives the table a Back button (arch-menu does
 # this). It is applied to the table only; the add form's own Back returns to the table.
@@ -22,7 +31,7 @@
 # The header is also the `label` of the list in firewall.toml; they must stay
 # equal (`arch-firewall header` prints the right one).
 #
-# Test hooks: UFW_DIR, UFW_DEFAULTS, ARCH_SPOT_DIR (where the spot configs are).
+# Test hooks: UFW_DIR, UFW_DEFAULTS, ARCH_SPOT_DIR (where the spot configs are), FW_SERVICES.
 
 set -u
 UFW_DIR=${UFW_DIR:-/etc/ufw}
@@ -40,6 +49,11 @@ RESET='  Reset (delete ALL rules)'
 ON='  Enable firewall'
 OFF='  Disable firewall'
 NORULES='(no rules yet)'
+SERVICES=${FW_SERVICES:-$HOME/.config/arch-menu/firewall-services.conf}
+LAN=(192.168.0.0/16 10.0.0.0/8 172.16.0.0/12)   # private ranges
+CUSTOM='  Custom rule…'
+ANY_SRC='  From anywhere'
+LAN_SRC='  From the local network only'
 
 header() {
   printf '%-*s %-*s %-*s %-*s %-*s %-*s %s' "$W_ACTION" ACTION "$W_DIR" DIR "$W_PROTO" PROTO "$W_PORT" PORT "$W_FROM" FROM "$W_TO" TO NOTE
@@ -105,21 +119,83 @@ confirm() {  # confirm <title> [footer]
   [[ $a == yes ]]
 }
 
-add_rule() {
-  local out action proto port from dir args
-  out=$(spot --back "$CFG/firewall-add.toml") || return 0        # Esc or Back: just return to the table
+rule_form() {  # rule_form <title> [action dir proto port from to] — fills RULE_ARGS; 1 = cancelled / invalid
+  local out action proto port from to dir
+  out=$(SPOT_TITLE="$1" SPOT_DEFAULT_ACTION="${2:-allow}" SPOT_DEFAULT_DIRECTION="${3:-in}" SPOT_DEFAULT_PROTO="${4:-tcp}" \
+        SPOT_DEFAULT_PORT="${5:-}" SPOT_DEFAULT_FROM="${6:-}" SPOT_DEFAULT_TO="${7:-}" spot --back "$CFG/firewall-add.toml") || return 1   # Esc or Back
   action=$(jq -r '.action // "allow"' <<<"$out"); proto=$(jq -r '.proto // "tcp"' <<<"$out")
   port=$(jq -r '.port // ""' <<<"$out");          from=$(jq -r '.from // ""' <<<"$out")
+  to=$(jq -r '.to // ""' <<<"$out")
   dir=$(jq -r '.direction // "in"' <<<"$out")
-  [[ -n $port ]] || return 0
+  [[ -n $port ]] || return 1
+  F_ACTION=$action F_DIR=$dir F_PROTO=$proto F_PORT=$port F_FROM=$from F_TO=$to
   if [[ $proto == any && $port =~ [:,] ]]; then
-    notify "Firewall" "Port ranges and lists need a protocol (tcp or udp)." critical; return 0
+    notify "Firewall" "Port ranges and lists need a protocol (tcp or udp)." critical; return 1
   fi
-  args=("$action" "$dir")
-  [[ $proto != any ]] && args+=(proto "$proto")
-  [[ -n $from ]] && args+=(from "$from")
-  args+=(to any port "$port")
-  run_ufw "${args[@]}"
+  RULE_ARGS=("$action" "$dir")
+  [[ $proto != any ]] && RULE_ARGS+=(proto "$proto")
+  [[ -n $from ]] && RULE_ARGS+=(from "$from")
+  RULE_ARGS+=(to "${to:-any}" port "$port")
+  return 0
+}
+
+add_rule() {
+  rule_form "Add rule" || return 0
+  run_ufw "${RULE_ARGS[@]}"
+}
+
+# --- service templates ------------------------------------------------------
+W_SVC=17
+service_rows() {  # "Name        note" rows for the picker
+  awk -F'|' -v w="$W_SVC" '
+    function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+    /^[ \t]*#/ || NF < 3 { next }
+    { printf "%-*s %s\n", w, trim($1), trim($3) }' "$SERVICES" 2>/dev/null
+}
+
+service_rules() {  # service_rules <name> → its rules, one per line
+  awk -F'|' -v n="$1" '
+    function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+    /^[ \t]*#/ || NF < 3 { next }
+    trim($1) == n { c = split($2, a, ";"); for (i = 1; i <= c; i++) print trim(a[i]); exit }' "$SERVICES"
+}
+
+add_service() {  # add_service <picker row>
+  local name rules scope sources src action dir proto port rule c cmd cmds=() out rc
+  name=${1:0:W_SVC}; name=${name%"${name##*[! ]}"}
+  mapfile -t rules < <(service_rules "$name")
+  (( ${#rules[@]} )) || { notify "Firewall" "Template '$name' has no rules." critical; return 0; }
+
+  scope=$(printf '%s\n' "$ANY_SRC" "$LAN_SRC" | SPOT_TITLE="$name · allow…" spot --back "$CFG/menu.toml") || return 0
+  case $scope in "$LAN_SRC") sources=("${LAN[@]}") ;; "$ANY_SRC") sources=("") ;; *) return 0 ;; esac
+
+  for rule in "${rules[@]}"; do
+    read -r action dir proto port <<<"$rule"
+    [[ -n $port ]] || continue
+    for src in "${sources[@]}"; do
+      local a=("$action" "$dir")
+      [[ $proto != any ]] && a+=(proto "$proto")
+      [[ -n $src ]] && a+=(from "$src")
+      a+=(to any port "$port")
+      cmds+=("ufw $(printf '%q ' "${a[@]}")")
+    done
+  done
+  (( ${#cmds[@]} )) || return 0
+  confirm "Add $name?" "${#cmds[@]} rule(s): ${cmds[0]}$( ((${#cmds[@]} > 1)) && echo " …")" || return 0
+  cmd=; for c in "${cmds[@]}"; do cmd+="${cmd:+ && }$c"; done
+  out=$(arch-root "ufw: add $name (${#cmds[@]} rule(s))" bash -c "$cmd" 2>&1); rc=$?
+  if (( rc == 0 )); then notify "Firewall" "$name: ${#cmds[@]} rule(s) added"
+  else notify "Firewall: failed (exit $rc)" "${out:-no output}" critical; fi
+}
+
+add_menu() {
+  local choice
+  choice=$({ printf '%s\n' "$CUSTOM"; service_rows; } | SPOT_TITLE="Add rule" spot --back "$CFG/firewall-services.toml") || return 0
+  case $choice in
+    "$CUSTOM") add_rule ;;
+    "")        ;;
+    *)         add_service "$choice" ;;
+  esac
 }
 
 delete_rule() {  # delete_rule <table row>
@@ -128,6 +204,37 @@ delete_rule() {  # delete_rule <table row>
   mapfile -t args <<<"$out"
   confirm "Delete this rule?" "ufw ${args[*]}" || return 0
   run_ufw "${args[@]}"
+}
+
+edit_rule() {  # edit_rule <table row>: add the changed rule, then delete the old one
+  local action dir proto port from to old why=
+  read -r action dir proto port from to _ <<<"$1"
+  if   [[ $action == rt:* ]];        then why="it is a route rule"
+  elif [[ $dir != in && $dir != out ]]; then why="it is bound to a network interface (${dir#*_})"
+  elif [[ $1 == *"(sport"* ]];       then why="it has a source port"
+  elif [[ $port == *"~" ]];          then why="its port list is too long to show in full"
+  fi
+  if [[ -n $why ]]; then
+    notify "Firewall" "Can't edit this rule here: $why. Use the ufw command line for it." critical
+    return 0
+  fi
+  [[ $from == Anywhere ]] && from=; [[ $to == Anywhere ]] && to=
+  rule_form "Edit rule" "$action" "$dir" "$proto" "$port" "$from" "$to" || return 0
+  mapfile -t old < <(delete_args "$1")
+  if [[ $F_ACTION == "$action" && $F_DIR == "$dir" && $F_PROTO == "$proto" && $F_PORT == "$port" && $F_FROM == "$from" && $F_TO == "$to" ]]; then
+    notify "Firewall" "No changes."; return 0
+  fi
+  run_ufw "${RULE_ARGS[@]}" || return 0                # add first: a failure leaves the old rule alone
+  run_ufw "${old[@]}"
+}
+
+rule_menu() {  # rule_menu <table row>: Edit / Delete tiles (Esc or Back = table)
+  local choice
+  choice=$(SPOT_FOOTER="$(sed 's/  */ /g' <<<"$1" | cut -c1-80)" spot --back "$CFG/firewall-rule.toml") || return 0
+  case $choice in
+    edit)   edit_rule "$1" ;;
+    delete) delete_rule "$1" ;;
+  esac
 }
 
 table() {
@@ -157,8 +264,8 @@ while :; do
   choice=$(table | SPOT_BACK=$MENU_BACK SPOT_TITLE="$(title)" spot "$CFG/firewall.toml") || exit 0
   [[ -n $choice ]] || exit 0
   case $choice in
-    allow\ *|deny\ *|limit\ *|reject\ *|rt:*) delete_rule "$choice" ;;
-    "$ADD")     add_rule ;;
+    allow\ *|deny\ *|limit\ *|reject\ *|rt:*) rule_menu "$choice" ;;
+    "$ADD")     add_menu ;;
     "$ON")      confirm "Enable the firewall?"  && run_ufw --force enable ;;
     "$OFF")     confirm "Disable the firewall?" && run_ufw disable ;;
     "$RELOAD")  run_ufw reload ;;

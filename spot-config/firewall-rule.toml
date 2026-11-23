@@ -1,0 +1,32 @@
+# What to do with a rule picked in the firewall table (arch-firewall): two tiles.
+# The caller sets the footer to the rule's summary line.
+#
+#   act=$(SPOT_FOOTER="allow in tcp 22 Anywhere" spot --back ~/.config/spot/firewall-rule.toml)   # edit | delete
+
+title    = "Rule"
+anchor   = "center"
+width    = 560
+style    = "spot.css"
+keyboard = "exclusive"
+
+[opacity]
+outside = 100
+
+[[items]]
+type    = "tiles"
+id      = "action"
+columns = 2
+default = "edit"
+
+[[items.tiles]]
+icon  = "✎"
+label = "Edit"
+value = "edit"
+
+[[items.tiles]]
+icon  = "✗"
+label = "Delete"
+value = "delete"
+
+[submit]
+stdout = "{action}"
