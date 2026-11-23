@@ -1,0 +1,41 @@
+# App launcher (arch-launch-apps, SUPER+SPACE, Menu → Apps): spot's `apps` item
+# instead of walker. Type to search the installed applications (name first, then
+# comment / keywords / id; abbreviations work: "ff" finds Firefox), Enter launches.
+# The most-launched apps come first. Needs spot >= 0.5.0 (arch-launch-apps falls
+# back to walker on an older spot).
+#
+# How apps start is [apps.launch]: through uwsm-app like every other launcher in
+# this setup, terminal apps wrapped in xdg-terminal-exec. Webapps from the arch
+# menu (~/.local/share/applications/*.desktop) show up on their own; spot rescans
+# when that folder changes, no signal needed.
+
+title    = ""
+anchor   = "center"
+width    = 720
+style    = "spot.css"
+keyboard = "exclusive"
+toggle   = true        # a keybind dialog: pressing the key again closes it, repeats never queue up (spot >= 0.5.0)
+
+[opacity]
+outside = 100
+
+[back]
+show = "never"           # the launcher is a top-level thing: never offer Back
+
+[[items]]
+type        = "apps"
+id          = "app"
+placeholder = "Search apps…"
+height      = 420
+
+[apps]
+icon_size          = 32      # icons of the other rows
+icon_size_selected = 48      # the selected row's icon (its text size is in spot.css)
+show_comment = true
+max_results  = 0
+frecency     = true
+# exclude    = ["*Setup*", "avahi-*"]    # hide by desktop id or name
+
+[apps.launch]
+command  = "uwsm-app -- {exec}"
+terminal = "xdg-terminal-exec {exec}"

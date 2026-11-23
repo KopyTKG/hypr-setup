@@ -7,7 +7,7 @@ local function bind(keys, action, desc, opts)
 end
 
 -- Menus
-bind("SUPER + SPACE", exec("walker"), "Launch apps")
+bind("SUPER + SPACE", exec("arch-launch-apps"), "Launch apps")
 bind("SUPER + CTRL + E", exec("walker -m symbols"), "Emoji picker")
 bind("SUPER + ESCAPE", exec("arch-power-menu"), "Power menu")
 bind("XF86PowerOff", exec("arch-power-menu"), "Power menu", { locked = true })

@@ -133,6 +133,44 @@
   color: #fafaf9;
 }
 
+/* App launcher rows (type = "apps"): icon, name, comment under it.
+   Every row has the SAME height (min-height fits the selected row's 48px icon),
+   so moving the selection never reflows the list. A selected row that grew would
+   shift everything below it and make the list scroll after the highlight. */
+.spot-app {
+  padding: 6px 12px;
+  min-height: 48px;
+}
+
+.spot-app-name {
+  color: #e7e5e4;
+  font-size: 11pt;
+}
+
+.spot-app-comment {
+  color: #a8a29e;
+  font-size: 9pt;
+}
+
+/* The selected app is bigger than the rest: larger text here, a larger icon through
+   icon_size_selected in launcher.toml. Same padding and min-height as other rows. */
+.spot-list row:selected .spot-app-name {
+  color: #fafaf9;
+  font-size: 13.5pt;
+  font-weight: bold;
+}
+
+.spot-list row:selected .spot-app-comment {
+  color: #d6d3d1;
+  font-size: 10pt;
+}
+
+/* Collapsible lists: group headers. */
+.spot-group-header {
+  font-weight: bold;
+  color: #e7e5e4;
+}
+
 /* Tiles — square-ish icon-over-label cards, equal-width via FlowBox. */
 .spot-tiles {
   background: transparent;

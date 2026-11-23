@@ -9,6 +9,7 @@ anchor   = "center"
 width    = 320
 style    = "spot.css"
 keyboard = "exclusive"
+toggle   = true        # a keybind dialog: pressing the key again closes it, repeats never queue up (spot >= 0.5.0)
 
 # No fade: arch-menu opens a fresh spot per category, and the fade restarting on
 # each one shows up as a transparency blink.

@@ -7,6 +7,7 @@ anchor   = "center"
 width    = 480
 style    = "spot.css"
 keyboard = "exclusive"
+toggle   = true        # a keybind dialog: pressing the key again closes it, repeats never queue up (spot >= 0.5.0)
 
 [[items]]
 label   = "Power"

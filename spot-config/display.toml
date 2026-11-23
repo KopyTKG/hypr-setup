@@ -9,6 +9,7 @@ anchor   = "center"
 width    = 640
 style    = "spot.css"
 keyboard = "exclusive"
+toggle   = true        # a keybind dialog: pressing the key again closes it, repeats never queue up (spot >= 0.5.0)
 
 [[items]]
 type    = "tiles"
