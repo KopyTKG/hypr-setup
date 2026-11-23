@@ -1,6 +1,6 @@
 #!/bin/bash
 # arch-remote-custom — prompt for User/Host/Port, then spawn ssh in a tiled terminal.
-# The form runs in a floating arch-installer alacritty; the ssh session runs as
+# The form runs in a floating arch-installer terminal; the ssh session runs as
 # `--class ssh-session` so it tiles normally. Password (if any) is typed straight
 # into ssh — never collected here.
 

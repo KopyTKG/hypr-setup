@@ -24,15 +24,23 @@ link_to() {
 }
 
 cyan "[1/7] Link config dirs into ~/.config/"
-for name in alacritty arch-menu btop elephant environment.d fastfetch fish hypr mako nvim swayosd walker waybar xdg-desktop-portal xdg-desktop-portal-termfilechooser; do
+for name in alacritty kitty arch-menu btop elephant environment.d fastfetch fish hypr mako nvim swayosd walker waybar xdg-desktop-portal xdg-desktop-portal-termfilechooser yazi; do
   link_to "$REPO/$name" "$HOME/.config/$name"
 done
+
+# yazi plugins (pinned in yazi/package.toml; fetched into yazi/plugins, which git ignores)
+if command -v ya >/dev/null 2>&1; then
+  ( cd "$HOME/.config/yazi" && ya pkg install >/dev/null 2>&1 ) \
+    && gray "  yazi plugins installed (ya pkg install)" \
+    || gray "  ya pkg install failed (offline? run it in ~/.config/yazi)"
+fi
 
 cyan "[2/7] Link standalone config files"
 link_to "$REPO/spot-config"                  "$HOME/.config/spot"
 link_to "$REPO/chromium/chromium-flags.conf" "$HOME/.config/chromium-flags.conf"
 link_to "$REPO/bash/.bashrc"   "$HOME/.bashrc"
 link_to "$REPO/starship.toml"  "$HOME/.config/starship.toml"
+link_to "$REPO/xdg-terminals.list" "$HOME/.config/xdg-terminals.list"   # which terminal xdg-terminal-exec uses
 
 cyan "[3/7] Link bin/arch-* into ~/.local/bin/"
 for f in "$REPO/bin"/*; do

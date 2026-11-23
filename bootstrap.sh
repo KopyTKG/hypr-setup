@@ -63,7 +63,7 @@ PACMAN_PKGS=(
   # bar / launcher / notifications
   waybar mako swaybg swayosd
   # terminal & CLI (xdg-terminal-exec is AUR-only as -git, installed below)
-  alacritty fzf gum jq python neovim fastfetch starship trash-cli
+  kitty alacritty fzf gum jq python neovim fastfetch starship trash-cli
   # fish helpers: frecency cd, per-project env, searchable history
   zoxide direnv atuin
   # disk usage: gdu = interactive explorer, duf = overview table (System -> Disk, arch-disk)
@@ -92,6 +92,9 @@ PACMAN_PKGS=(
   chromium
   # viewers: PDF (zathura) · images (swayimg); archives via the `extract` fish function / yazi
   zathura zathura-pdf-mupdf swayimg
+  # yazi power-ups: image/PDF/video previews (kitty graphics protocol + chafa fallback + ffmpegthumbnailer + poppler),
+  # archives (ouch, 7zip), Markdown/media info previews, drag & drop out of yazi (ripdrag)
+  chafa ffmpegthumbnailer ouch 7zip glow mediainfo perl-image-exiftool ripdrag
   # installer/migrator helpers
   mise snapper
   # LTS kernel (in addition to whatever the user pacstrapped with)

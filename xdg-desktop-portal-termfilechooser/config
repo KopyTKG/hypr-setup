@@ -1,9 +1,10 @@
 # File open/save dialogs of browsers and other apps, picked in yazi inside a
-# floating alacritty (class arch-filechooser floats via the arch-* window rule).
+# floating kitty (class arch-filechooser floats via the arch-* window rule); kitty so
+# the dialog previews images like yazi itself.
 # Package: xdg-desktop-portal-termfilechooser (AUR). wrapper ships with it.
 [filechooser]
 cmd=yazi-wrapper.sh
 default_dir=$HOME
-env=TERMCMD=alacritty --class arch-filechooser -e
+env=TERMCMD=kitty --class arch-filechooser
 open_mode=suggested
 save_mode=last

@@ -1,12 +1,23 @@
 #!/bin/bash
 # Return cwd of the active terminal's shell, falling back to $HOME.
+# The shell is a child of the terminal window's process (alacritty), or one level
+# further down when the terminal wraps it (kitty): look at both.
 tpid=$(hyprctl activewindow | awk '/pid:/ {print $2}')
-spid=$(pgrep -P "$tpid" 2>/dev/null | tail -n1)
-if [[ -n $spid ]]; then
-  cwd=$(readlink -f "/proc/$spid/cwd" 2>/dev/null)
-  shell=$(readlink -f "/proc/$spid/exe" 2>/dev/null)
-  if grep -qs "$shell" /etc/shells && [[ -d $cwd ]]; then
-    echo "$cwd"; exit
+
+shell_cwd() {  # shell_cwd <pid>: its cwd when it is a login-shell binary
+  local cwd shell
+  cwd=$(readlink -f "/proc/$1/cwd" 2>/dev/null)
+  shell=$(readlink -f "/proc/$1/exe" 2>/dev/null)
+  if [[ -n $shell ]] && grep -qs "$shell" /etc/shells && [[ -d $cwd ]]; then
+    echo "$cwd"; return 0
   fi
-fi
+  return 1
+}
+
+for child in $(pgrep -P "$tpid" 2>/dev/null | sort -rn); do
+  shell_cwd "$child" && exit
+  for grand in $(pgrep -P "$child" 2>/dev/null | sort -rn); do
+    shell_cwd "$grand" && exit
+  done
+done
 echo "$HOME"

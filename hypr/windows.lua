@@ -1,6 +1,6 @@
 -- Custom window rules
 
--- All arch-* alacritty windows (installers + TUI control panels) float centered
+-- All arch-* terminal windows (installers + TUI control panels) float centered
 hl.window_rule({ match = { class = "arch-.*" }, float = true, center = true, size = { 1400, 900 } })
 
 -- Steam games auto-fullscreen so they draw above the floating Steam client window
