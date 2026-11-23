@@ -1,17 +1,19 @@
-# Keybinds — every keybind in the setup in one searchable table (arch-keybinds,
-# SUPER+F1, Menu → Keybinds). Hyprland, dialogs, shell, kitty, yazi, nvim, mpv, waybar
-# clicks, terminal UIs. Smart matching: every word you type has to match the row, so
-# "yazi seek", "fish ctrl r", "super 3" or "nvim lsp" all work. Enter / Esc close.
+# Keybinds — every keybind in the setup (arch-keybinds, SUPER+F1, Menu → Keybinds),
+# as a COLLAPSIBLE list: one folded group per scope (Hyprland · Apps, Yazi, fish,
+# kitty, nvim, mpv, waybar clicks, ...). Enter, click or Left/Right on a group header
+# folds / unfolds it; typing searches every group at once, folded or not, and the group
+# name counts as part of the row: "yazi seek", "fish ctrl r", "super 3", "nvim lsp".
+# Needs spot >= 0.5.0 (collapsible lists). Enter on a row just closes the dialog.
 #
-# The list's label is the column header. It must equal `arch-keybinds header`
-# (same fixed column widths); the table is monospace (spot.css sets the family).
+# The list's label is the column header. It must equal `arch-keybinds header` (it is
+# indented like the rows of a group); the table is monospace (spot.css sets the family).
 # SPOT_TITLE (the count) is supplied by the script.
 
 anchor   = "center"
-width    = 1280
+width    = 1180
 style    = "spot.css"
 keyboard = "exclusive"
-toggle   = true        # a keybind dialog: pressing the key again closes it, repeats never queue up (spot >= 0.5.0)
+toggle   = true        # a keybind dialog: pressing the key again closes it, repeats never queue up
 
 [opacity]
 outside = 100
@@ -19,7 +21,9 @@ outside = 100
 [[items]]
 type        = "list"
 id          = "row"
-label       = " SCOPE                        KEYS                             WHAT IT DOES"
+collapsible = true
+collapsed   = true     # start with every group folded: a short index, open what you need
+label       = "     KEYS                             WHAT IT DOES"
 placeholder = "Filter…  yazi seek · fish ctrl r · super 3 · nvim lsp"
 match       = "smart"
 stdin       = true

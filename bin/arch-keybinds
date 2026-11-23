@@ -7,7 +7,8 @@
 #   arch-keybinds --md      the same data as Markdown (KEYBINDS.md is this output)
 #   arch-keybinds --list    scope<TAB>keys<TAB>description, no colours (scripts, tests)
 #   arch-keybinds --refresh rebuild the app caches (fish / kitty / yazi / mpv / nvim keys)
-#   arch-keybinds header    the table's column header (also the label in spot-config/keybinds.toml)
+#   arch-keybinds header    the dialog's column header (also the label in spot-config/keybinds.toml)
+#   arch-keybinds --table   the same rows as one aligned table (SCOPE KEYS WHAT), for the terminal
 #
 # Sources:
 #   - Hyprland binds        live from `hyprctl binds -j`, each put in a category
@@ -30,12 +31,13 @@
 
 set -e
 
-SW=28 KW=32                           # column widths of the table; the spot config's label must match
+SW=28 KW=32                           # column widths (scope / keys); the spot config's label must match
+INDENT=4                              # spot indents the rows of a folded group by this much (groups.go)
 export SW KW
 mode=view
 case ${1:-} in
   "")       ;;
-  header)   printf '%-*s %-*s %s\n' "$SW" SCOPE "$KW" KEYS "WHAT IT DOES"; exit 0 ;;
+  header)   printf '%*s%-*s %s\n' "$INDENT" "" "$KW" KEYS "WHAT IT DOES"; exit 0 ;;
   --refresh) export ARCH_KEYBINDS_REFRESH=1; mode=none ;;
   --md)     mode=md ;;
   --list)   mode=list ;;
@@ -455,12 +457,15 @@ elif mode == "md":
             out += table(srows)
     print("\n".join(out).rstrip() + "\n")
 
-else:  # table: aligned plain rows for the spot dialog (widths shared with `header`)
+else:  # grouped / table: aligned plain rows (widths shared with `header`)
     SW, KW = int(os.environ["SW"]), int(os.environ["KW"])
     cut = lambda t, w: t if len(t) <= w else t[:w - 1] + "~"
     for r in rows:
         desc = r["desc"] + (f"  {r['extra']}" if r["extra"] else "")
-        print(f"{cut(label(r), SW):<{SW}} {cut(r['plain'], KW):<{KW}} {desc}")
+        if mode == "grouped":      # GROUP<TAB>KEYS DESCRIPTION, for a collapsible spot list
+            print(f"{label(r)}\t{cut(r['plain'], KW):<{KW}} {desc}")
+        else:
+            print(f"{cut(label(r), SW):<{SW}} {cut(r['plain'], KW):<{KW}} {desc}")
 PY
 }
 
@@ -470,8 +475,8 @@ case $mode in
       echo "arch-keybinds: spot is not installed; printing the table instead" >&2
       generate table; exit 0
     fi
-    table=$(generate table)
-    printf '%s\n' "$table" | SPOT_TITLE="Keybinds · $(grep -c . <<<"$table") of them" spot "${ARCH_SPOT_DIR:-$HOME/.config/spot}/keybinds.toml" >/dev/null || true ;;
+    table=$(generate grouped)
+    printf '%s\n' "$table" | SPOT_TITLE="Keybinds · $(grep -c . <<<"$table") of them, in $(cut -f1 <<<"$table" | sort -u | grep -c .) groups" spot "${ARCH_SPOT_DIR:-$HOME/.config/spot}/keybinds.toml" >/dev/null || true ;;
   none)  generate list >/dev/null; echo "keybind caches refreshed" ;;
   table) generate table ;;
   *)     generate ;;
