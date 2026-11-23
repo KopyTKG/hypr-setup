@@ -14,6 +14,11 @@
 #   a video is set  ·  animation is on  ·  the laptop is on AC power
 # so unplugging drops back to the static image (no GPU/battery cost) and plugging
 # in brings the video back. `watch` polls the power state every 30 s.
+# While the video runs, swaybg shows its FIRST FRAME (base.jpg) instead of the static
+# image, so whatever shows through at the loop point is nearly identical to the video
+# (a gap there used to flash the static image). On battery / animation off, swaybg
+# goes back to the static image. The video loops as a one-item playlist with the next
+# round prefetched (no reload gap).
 # mpvpaper -p also pauses the video while the wallpaper is fully covered
 # (fullscreen / maximised windows hide it, so nothing is decoded).
 #
@@ -30,8 +35,9 @@ set -u
 DIR=${WALLPAPER_DIR:-$HOME/Videos/Wallpapers}
 STATE=${XDG_STATE_HOME:-$HOME/.local/state}/arch-wallpaper
 PIDFILE=${XDG_RUNTIME_DIR:-/tmp}/arch-wallpaper.pid
-MPV_OPTS=${MPV_OPTS:-"no-audio loop-file=inf hwdec=auto-safe panscan=1.0 framedrop=vo"}
+MPV_OPTS=${MPV_OPTS:-"no-audio loop-playlist=inf prefetch-playlist=yes hwdec=auto-safe panscan=1.0 framedrop=vo"}
 LOCK=${XDG_CACHE_HOME:-$HOME/.cache}/arch-wallpaper/lock.jpg
+BASE=${XDG_CACHE_HOME:-$HOME/.cache}/arch-wallpaper/base.jpg
 STATIC=${WALLPAPER_STATIC:-$HOME/.config/hypr/theme/background.jpg}
 mkdir -p "$STATE" "$(dirname "$LOCK")"
 
@@ -50,11 +56,27 @@ want() {  # prints the video path when animation should be running now, else not
 
 stop_video() { pkill -x mpvpaper 2>/dev/null; while pgrep -x mpvpaper >/dev/null; do sleep 0.1; done; }
 
+set_base() {  # set_base <image> — make swaybg show it; new one first, then retire the old (no bare moment)
+  local img=$1 old
+  pgrep -xf "swaybg -i $img -m fill" >/dev/null && return 0
+  old=$(pgrep -x swaybg)
+  setsid -f uwsm-app -- swaybg -i "$img" -m fill >/dev/null 2>&1
+  sleep 0.4
+  [[ -n $old ]] && kill $old 2>/dev/null
+  return 0
+}
+
 apply() {  # apply [force]
   local v; v=$(want)
-  if [[ -z $v ]]; then pgrep -x mpvpaper >/dev/null && stop_video; return 0; fi
-  if [[ ${1:-} != force ]] && pgrep -xf "mpvpaper .*$(printf '%s' "$v" | sed 's/[][\.*^$/]/\\&/g')\$" >/dev/null; then return 0; fi
+  if [[ -z $v ]]; then
+    pgrep -x mpvpaper >/dev/null && stop_video
+    set_base "$STATIC"
+    return 0
+  fi
+  if [[ ${1:-} != force ]] && pgrep -xf "mpvpaper .*$(printf '%s' "$v" | sed 's/[][\.*^$/]/\\&/g')\$" >/dev/null && pgrep -xf "swaybg -i $BASE -m fill" >/dev/null; then return 0; fi
+  [[ -s $BASE ]] || cmd_lock_sync
   stop_video
+  [[ -s $BASE ]] && set_base "$BASE"      # underlay first: mpvpaper must be started after swaybg to sit above it
   setsid -f uwsm-app -- mpvpaper -p -o "$MPV_OPTS" '*' "$v" >/dev/null 2>&1
 }
 
@@ -76,14 +98,18 @@ cmd_watch() {
   done
 }
 
-cmd_lock_sync() {
+frame() {  # frame <seconds> <out.jpg> — one still from the current video
+  ffmpeg -y -loglevel error -ss "$1" -i "$(get video)" -frames:v 1 -q:v 2 "$2.tmp.jpg" 2>/dev/null && [[ -s $2.tmp.jpg ]] \
+    && mv -f "$2.tmp.jpg" "$2" || { rm -f "$2.tmp.jpg"; return 1; }
+}
+
+cmd_lock_sync() {  # lock-screen picture + the swaybg underlay frame
   local v; v=$(get video)
-  if [[ -n $v && -f $v && $(get enabled) != off ]] && command -v ffmpeg >/dev/null 2>&1 \
-     && ffmpeg -y -loglevel error -ss 1 -i "$v" -frames:v 1 -q:v 2 "$LOCK.tmp.jpg" 2>/dev/null \
-     && [[ -s $LOCK.tmp.jpg ]]; then
-    mv -f "$LOCK.tmp.jpg" "$LOCK"
+  if [[ -n $v && -f $v && $(get enabled) != off ]] && command -v ffmpeg >/dev/null 2>&1; then
+    frame 1 "$LOCK" || cp -f "$STATIC" "$LOCK" 2>/dev/null
+    frame 0 "$BASE" || rm -f "$BASE"
   else
-    rm -f "$LOCK.tmp.jpg"; cp -f "$STATIC" "$LOCK" 2>/dev/null
+    cp -f "$STATIC" "$LOCK" 2>/dev/null; rm -f "$BASE"
   fi
 }
 
