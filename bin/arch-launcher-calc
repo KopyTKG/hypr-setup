@@ -1,0 +1,8 @@
+#!/bin/bash
+# arch-launcher-calc <expression> — the launcher's "=" source: one row with the result
+# (label = value = the answer, comment = what was asked). Enter copies it. Needs qalc.
+q=$*
+[[ -n $q ]] || exit 0
+command -v qalc >/dev/null 2>&1 || { printf 'qalc is not installed\n'; exit 0; }
+ans=$(qalc -t -- "$q" 2>&1 | head -n 1)
+[[ -n $ans ]] && printf '%s\t%s\t%s\n' "$ans" "$ans" "$q"

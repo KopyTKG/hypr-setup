@@ -1,0 +1,13 @@
+#!/bin/bash
+# arch-launcher-run <command line> — the launcher's ">" (and ">>" in a terminal) source:
+# the first row runs exactly what you typed; below it, programs on your PATH that
+# start with the first word, to complete it. Enter runs the row (see launcher.toml).
+q=$*
+[[ -n $q ]] || exit 0
+first=${q%% *}
+rest=""; [[ $q == *" "* ]] && rest=" ${q#* }"
+printf 'run: %s\t%s\t%s\n' "$q" "$q" "as typed"
+bash -c 'compgen -c | sort -u | grep -i -m 25 -- "^$0"' "$first" | while read -r cmd; do
+  [[ $cmd == "$first" && -z $rest ]] && continue
+  printf '%s\t%s\t\n' "$cmd$rest" "$cmd$rest"
+done

@@ -1,6 +1,11 @@
 # App launcher (arch-launch-apps, SUPER+SPACE, Menu → Apps): spot's `apps` item
 # Type to search the installed applications (name first, then
 # comment / keywords / id; abbreviations work: "ff" finds Firefox), Enter launches.
+# A prefix hands the search to a command instead (the [[sources]] at the bottom):
+#   = 2+2        calculator (qalc); Enter copies the result      ("5 ft to cm")
+#   . report     files and folders under ~ (fd); Enter opens them
+#   @ gtk4       web search, one row per engine (arch-menu/websearch.conf)
+#   > htop       run a command ("> fire" completes from PATH); ">> htop" in a terminal
 # The most-launched apps come first. Needs spot >= 0.5.0.
 #
 # How apps start is [apps.launch]: through uwsm-app like every other launcher in
@@ -24,7 +29,7 @@ show = "never"           # the launcher is a top-level thing: never offer Back
 [[items]]
 type        = "apps"
 id          = "app"
-placeholder = "Search apps…"
+placeholder = "Search apps…   = calc · . files · @ web · > run"
 height      = 420
 
 [apps]
@@ -38,3 +43,38 @@ frecency     = true
 [apps.launch]
 command  = "uwsm-app -- {exec}"
 terminal = "xdg-terminal-exec {exec}"
+
+[[sources]]
+name     = "calc"
+prefix   = "="
+icon     = "accessories-calculator"
+exec     = "arch-launcher-calc {query}"
+activate = "wl-copy {value}"
+
+[[sources]]
+name     = "files"
+prefix   = "."
+icon     = "system-file-manager"
+exec     = "arch-launcher-files {query}"
+activate = "xdg-open {value}"
+
+[[sources]]
+name     = "web"
+prefix   = "@"
+icon     = "web-browser"
+exec     = "arch-launcher-web {query}"
+activate = "xdg-open {value}"
+
+[[sources]]
+name     = "run"
+prefix   = ">"
+icon     = "utilities-terminal"
+exec     = "arch-launcher-run {query}"
+activate = "uwsm-app -- sh -c {value}"
+
+[[sources]]
+name     = "run in terminal"
+prefix   = ">>"
+icon     = "utilities-terminal"
+exec     = "arch-launcher-run {query}"
+activate = "uwsm-app -- xdg-terminal-exec sh -c {value}"

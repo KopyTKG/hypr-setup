@@ -1,0 +1,14 @@
+#!/bin/bash
+# arch-launcher-web <query> — the launcher's "@" source: one row per search engine
+# (arch-menu/websearch.conf: "Name | URL with %s"), label = the engine, comment =
+# what is searched. Enter opens the search in the default browser.
+q=$*
+[[ -n $q ]] || exit 0
+conf=${ARCH_WEBSEARCH_CONF:-$HOME/.config/arch-menu/websearch.conf}
+enc=$(jq -rn --arg q "$q" '$q|@uri')
+while IFS='|' read -r name url; do
+  name=${name#"${name%%[![:space:]]*}"}; name=${name%"${name##*[![:space:]]}"}
+  url=${url#"${url%%[![:space:]]*}"}; url=${url%"${url##*[![:space:]]}"}
+  [[ -z $name || $name == \#* || -z $url ]] && continue
+  printf '%s\t%s\t%s\n' "$name" "${url//%s/$enc}" "search for: $q"
+done < "$conf"

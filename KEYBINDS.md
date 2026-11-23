@@ -73,7 +73,7 @@ arch-keybinds --md > ~/Projects/hypr-setup/KEYBINDS.md
 | `SUPER + P` | Pseudo window |
 | `SUPER + RIGHT` | Focus on right window |
 | `SUPER + UP` | Focus on above window |
-| `SUPER + W` | Close (or dismiss walker) |
+| `SUPER + W` | Close (or dismiss a spot dialog) |
 | `ALT + SHIFT + TAB` | Focus on previous window |
 | `CTRL + ALT + DELETE` | Close all windows |
 | `CTRL + ALT + TAB` | Focus on next monitor |
@@ -464,6 +464,16 @@ arch-keybinds --md > ~/Projects/hypr-setup/KEYBINDS.md
 | Keys | What it does |
 |------|--------------|
 | `CAPS LOCK` | Compose key (type accented and special characters); layouts us / cz are switched from the waybar indicator |
+
+## Launcher
+
+| Keys | What it does |
+|------|--------------|
+| `= 2+2` | Calculator: Enter copies the result ("5 ft to cm" converts units) |
+| `. report` | Find files and folders under ~ : Enter opens them |
+| `@ gtk4` | Web search: one row per engine (arch-menu/websearch.conf) |
+| `> htop` | Run a command (it completes from your PATH) |
+| `>> htop` | Run a command in a terminal |
 
 ## Waybar
 
