@@ -1,0 +1,59 @@
+# yazi — linked to ~/.config/yazi by install.sh. Plugins are pinned in package.toml
+# (`ya pkg install` fetches them into plugins/, which git ignores).
+
+[mgr]
+ratio          = [0, 2, 8]          # parent (hidden) : current : preview — a very wide preview for images
+sort_by        = "natural"
+sort_dir_first = true
+sort_sensitive = false
+linemode       = "size"
+show_hidden    = false
+show_symlink   = true
+scrolloff      = 6
+title_format   = "yazi · {cwd}"
+
+[preview]
+tab_size       = 2
+max_width      = 3200               # pixels an image may be scaled to before it is shown
+max_height     = 3200
+image_filter   = "lanczos3"
+image_quality  = 90
+
+[tasks]
+image_alloc    = 536870912          # 512 MiB for big images
+suppress_preload = false
+
+# --- openers: what Enter opens (the KDE apps are gone) ------------------------
+[opener]
+edit    = [{ run = 'nvim "$@"',                         desc = "nvim",              block  = true, for = "unix" }]
+pdf     = [{ run = 'zathura "$@"',                      desc = "zathura",           orphan = true, for = "unix" }]
+image   = [{ run = 'swayimg "$@"',                      desc = "swayimg",           orphan = true, for = "unix" }]
+play    = [{ run = 'mpv "$@"',                          desc = "mpv",               orphan = true, for = "unix" }]
+extract = [{ run = 'ouch decompress --yes "$@"',        desc = "Extract here (ouch)",             for = "unix" }]
+browser = [{ run = 'chromium "$@"',                     desc = "Chromium",          orphan = true, for = "unix" }]
+
+[open]
+prepend_rules = [
+  { mime = "application/pdf",          use = ["pdf", "browser", "reveal"] },
+  { mime = "application/epub+zip",     use = ["pdf", "reveal"] },
+  { mime = "image/*",                  use = ["image", "browser", "reveal"] },
+  { mime = "video/*",                  use = ["play", "reveal"] },
+  { mime = "audio/*",                  use = ["play", "reveal"] },
+  { mime = "application/{zip,x-tar,gzip,x-bzip*,x-xz,zstd,x-7z-compressed,vnd.rar,x-rar}", use = ["extract", "reveal"] },
+  { url = "*.html",                    use = ["browser", "edit"] },
+]
+
+# --- previews -----------------------------------------------------------------
+[plugin]
+# git status next to every file / folder (plugin: git)
+prepend_fetchers = [
+  { url = "*",  run = "git", group = "git" },
+  { url = "*/", run = "git", group = "git" },
+]
+prepend_previewers = [
+  # folders as a tree (3 deep), Markdown rendered, archives listed, PDFs/videos by yazi itself
+  { url = "*/",   run = 'piper -- eza -TL=3 --color=always --icons=always --group-directories-first --no-quotes "$1"' },
+  { url = "*.md", run = 'piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dark "$1"' },
+  { mime = "application/{zip,x-tar,gzip,x-bzip*,x-xz,zstd,x-7z-compressed,vnd.rar}", run = 'piper -- ouch list --tree "$1"' },
+  { url = "*.json", run = 'piper -- jq -C . "$1"' },
+]

@@ -1,0 +1,92 @@
+# Extras on top of yazi's defaults (press ~ in yazi for the full list; these are
+# listed in arch-keybinds → Terminal UIs as well).
+
+[[mgr.prepend_keymap]]
+on   = "l"
+run  = "plugin smart-enter"
+desc = "Enter the directory, or open the file"
+
+[[mgr.prepend_keymap]]
+on   = "T"
+run  = "plugin toggle-pane max-preview"
+desc = "Maximize / restore the preview pane"
+
+[[mgr.prepend_keymap]]
+on   = "f"
+run  = "plugin jump-to-char"
+desc = "Jump to the next file starting with a character"
+
+[[mgr.prepend_keymap]]
+on   = "F"
+run  = "filter --smart"
+desc = "Filter files in this folder"
+
+[[mgr.prepend_keymap]]
+on   = "M"
+run  = "plugin mount"
+desc = "Mount / unmount / eject disks"
+
+[[mgr.prepend_keymap]]
+on   = ["c", "m"]
+run  = "plugin chmod"
+desc = "Change permissions (chmod)"
+
+[[mgr.prepend_keymap]]
+on   = "<A-d>"
+run  = "plugin diff"
+desc = "Diff the hovered file with the selected one"
+
+[[mgr.prepend_keymap]]
+on   = ["c", "z"]
+run  = 'shell -- ouch compress "$@" "$(basename "$1").zip"'
+desc = "Compress the selection to a .zip here (ouch)"
+
+[[mgr.prepend_keymap]]
+on   = "E"
+run  = 'shell -- nvim "$@"'
+for  = "unix"
+block = true
+desc = "Edit with nvim"
+
+[[mgr.prepend_keymap]]
+on   = "<C-g>"
+run  = 'shell -- lazygit'
+block = true
+desc = "lazygit in this folder"
+
+[[mgr.prepend_keymap]]
+on   = "<C-n>"
+run  = 'shell -- ripdrag -a -x "$@"'
+orphan = true
+desc = "Drag the selection out into another window (ripdrag)"
+
+# --- jump to places -----------------------------------------------------------
+[[mgr.prepend_keymap]]
+on   = ["g", "p"]
+run  = "cd ~/Projects"
+desc = "Go to ~/Projects"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "r"]
+run  = "cd ~/Projects/hypr-setup"
+desc = "Go to the hypr-setup repo"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "v"]
+run  = "cd ~/Videos"
+desc = "Go to ~/Videos"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "w"]
+run  = "cd ~/Videos/Wallpapers"
+desc = "Go to the wallpapers"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "m"]
+run  = "cd /run/media/kopy"
+desc = "Go to the mounted disks"
+
+[[mgr.prepend_keymap]]
+on   = ["g", "t"]
+run  = "cd /tmp"
+desc = "Go to /tmp"

@@ -1,0 +1,81 @@
+# Tailwind "stone" monochrome to match the rest of the setup; colour only where it
+# carries meaning (git state, markers, errors).
+
+[mgr]
+cwd                = { fg = "#a8a29e" }
+hovered            = { fg = "#fafaf9", bg = "#292524", bold = true }
+preview_hovered    = { fg = "#fafaf9", bg = "#292524" }
+find_keyword       = { fg = "#fafaf9", bg = "#57534e", bold = true }
+find_position      = { fg = "#a8a29e", italic = true }
+marker_selected    = { fg = "#e7e5e4", bg = "#e7e5e4" }
+marker_copied      = { fg = "#a3e635", bg = "#a3e635" }
+marker_cut         = { fg = "#f87171", bg = "#f87171" }
+marker_marked      = { fg = "#fbbf24", bg = "#fbbf24" }
+tab_active         = { fg = "#0c0a09", bg = "#d6d3d1", bold = true }
+tab_inactive       = { fg = "#a8a29e", bg = "#292524" }
+border_style       = { fg = "#44403c" }
+count_copied       = { fg = "#0c0a09", bg = "#a3e635" }
+count_cut          = { fg = "#0c0a09", bg = "#f87171" }
+count_selected     = { fg = "#0c0a09", bg = "#e7e5e4" }
+
+[mode]
+normal_main = { fg = "#0c0a09", bg = "#d6d3d1", bold = true }
+normal_alt  = { fg = "#d6d3d1", bg = "#44403c" }
+select_main = { fg = "#0c0a09", bg = "#fbbf24", bold = true }
+select_alt  = { fg = "#fbbf24", bg = "#44403c" }
+unset_main  = { fg = "#0c0a09", bg = "#f87171", bold = true }
+unset_alt   = { fg = "#f87171", bg = "#44403c" }
+
+[status]
+overall   = { fg = "#a8a29e", bg = "#1c1917" }
+sep_left  = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+perm_type = { fg = "#a8a29e" }
+perm_read  = { fg = "#a3e635" }
+perm_write = { fg = "#fbbf24" }
+perm_exec  = { fg = "#f87171" }
+perm_sep   = { fg = "#57534e" }
+progress_label  = { fg = "#fafaf9", bold = true }
+progress_normal = { fg = "#d6d3d1", bg = "#44403c" }
+progress_error  = { fg = "#f87171", bg = "#44403c" }
+
+[input]
+border   = { fg = "#a8a29e" }
+title    = { fg = "#fafaf9" }
+value    = { fg = "#fafaf9" }
+selected = { bg = "#44403c" }
+
+[pick]
+border   = { fg = "#a8a29e" }
+active   = { fg = "#fafaf9", bg = "#44403c", bold = true }
+inactive = { fg = "#a8a29e" }
+
+[confirm]
+border  = { fg = "#a8a29e" }
+title   = { fg = "#fafaf9" }
+content = { fg = "#d6d3d1" }
+list    = { fg = "#d6d3d1" }
+btn_yes = { bg = "#44403c", fg = "#fafaf9" }
+btn_no  = { fg = "#a8a29e" }
+
+[which]
+cols            = 3
+mask            = { bg = "#0c0a09" }
+cand            = { fg = "#fafaf9" }
+rest            = { fg = "#78716c" }
+desc            = { fg = "#a8a29e" }
+separator       = "  "
+separator_style = { fg = "#57534e" }
+
+[filetype]
+rules = [
+  { url = "*/",                     fg = "#e7e5e4", bold = true },
+  { url = "*",  is = "link",        fg = "#a8a29e", italic = true },
+  { url = "*",  is = "exec",        fg = "#a3e635" },
+  { mime = "image/*",               fg = "#d6d3d1" },
+  { mime = "{audio,video}/*",       fg = "#d6d3d1" },
+  { mime = "application/{zip,x-tar,gzip,x-bzip*,x-xz,zstd,x-7z-compressed,vnd.rar}", fg = "#fbbf24" },
+  { url = "*.{md,txt}",             fg = "#d6d3d1" },
+  { url = "*", is = "orphan",       fg = "#f87171", bold = true },
+  { url = "*",                      fg = "#a8a29e" },
+]
