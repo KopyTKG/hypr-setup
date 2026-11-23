@@ -1,0 +1,29 @@
+# Keybinds — every keybind in the setup in one searchable table (arch-keybinds,
+# SUPER+F1, Menu → Keybinds). Hyprland, dialogs, shell, kitty, yazi, nvim, mpv, waybar
+# clicks, terminal UIs. Smart matching: every word you type has to match the row, so
+# "yazi seek", "fish ctrl r", "super 3" or "nvim lsp" all work. Enter / Esc close.
+#
+# The list's label is the column header. It must equal `arch-keybinds header`
+# (same fixed column widths); the table is monospace (spot.css sets the family).
+# SPOT_TITLE (the count) is supplied by the script.
+
+anchor   = "center"
+width    = 1280
+style    = "spot.css"
+keyboard = "exclusive"
+toggle   = true        # a keybind dialog: pressing the key again closes it, repeats never queue up (spot >= 0.5.0)
+
+[opacity]
+outside = 100
+
+[[items]]
+type        = "list"
+id          = "row"
+label       = " SCOPE                        KEYS                             WHAT IT DOES"
+placeholder = "Filter…  yazi seek · fish ctrl r · super 3 · nvim lsp"
+match       = "smart"
+stdin       = true
+height      = 640
+
+[submit]
+stdout = "{row}"

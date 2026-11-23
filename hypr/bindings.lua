@@ -13,7 +13,7 @@ local function webapp(keys, desc, class, url)
 end
 
 -- Keybinds
-bind("SUPER + F1", exec("arch-floatterm arch-installer arch-keybinds"), "Keybinds")
+bind("SUPER + F1", exec("arch-keybinds"), "Keybinds")
 
 bind("SUPER + ALT + SPACE", exec("arch-menu"), "Arch menu")
 bind("SUPER + SHIFT + P", exec("arch-display"), "Display settings")

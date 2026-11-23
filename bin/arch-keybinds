@@ -3,14 +3,21 @@
 # editor, waybar clicks, terminal UIs. Bound to SUPER+F1 and reachable from
 # arch-menu → Keybinds.
 #
-#   arch-keybinds           fzf viewer; type to filter ("fish", "waybar", "super 3")
+#   arch-keybinds           spot dialog; type to filter ("fish", "yazi seek", "super 3")
 #   arch-keybinds --md      the same data as Markdown (KEYBINDS.md is this output)
 #   arch-keybinds --list    scope<TAB>keys<TAB>description, no colours (scripts, tests)
+#   arch-keybinds --refresh rebuild the app caches (fish / kitty / yazi / mpv / nvim keys)
+#   arch-keybinds header    the table's column header (also the label in spot-config/keybinds.toml)
 #
 # Sources:
 #   - Hyprland binds        live from `hyprctl binds -j`, each put in a category
 #   - Waybar clicks         generated from waybar/modules.jsonc (never goes stale)
-#   - everything else       arch-menu/keybinds.conf  (Scope | Keys | Description)
+#   - installed apps        read from the apps themselves: fish (`bind`), kitty (its default
+#                           shortcuts), yazi (its compiled-in keymap + ~/.config/yazi/keymap.toml),
+#                           mpv (input.conf), nvim (every mapping with a description). Cached in
+#                           ~/.cache/arch-keybinds for 12 h or until the app's config changes.
+#   - everything else       arch-menu/keybinds.conf  (Scope | Keys | Description), also the place
+#                           for apps that cannot be read (btop, lazygit, zathura, ...)
 #
 # Where two Hyprland binds share a key combination both are listed and marked ⚠:
 # both are registered, so expect one key press to be able to trigger both.
@@ -18,16 +25,21 @@
 # Refresh the document:  arch-keybinds --md > ~/Projects/hypr-setup/KEYBINDS.md
 #
 # Test hooks: ARCH_KEYBINDS_HYPR_JSON (a file instead of hyprctl),
-# ARCH_KEYBINDS_CONF, ARCH_KEYBINDS_WAYBAR, ARCH_KEYBINDS_NO_FZF=1 (print the viewer's
-# coloured lines instead of opening fzf).
+# ARCH_KEYBINDS_CONF, ARCH_KEYBINDS_WAYBAR, ARCH_KEYBINDS_NO_PROVIDERS=1 (skip the app
+# sources), ARCH_KEYBINDS_REFRESH=1, ARCH_SPOT_DIR.
 
 set -e
 
+SW=28 KW=32                           # column widths of the table; the spot config's label must match
+export SW KW
 mode=view
 case ${1:-} in
   "")       ;;
+  header)   printf '%-*s %-*s %s\n' "$SW" SCOPE "$KW" KEYS "WHAT IT DOES"; exit 0 ;;
+  --refresh) export ARCH_KEYBINDS_REFRESH=1; mode=none ;;
   --md)     mode=md ;;
   --list)   mode=list ;;
+  --table)  mode=table ;;
   -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
   *)        echo "arch-keybinds: unknown argument '$1' (see --help)" >&2; exit 2 ;;
 esac
@@ -42,31 +54,11 @@ export CONF=${ARCH_KEYBINDS_CONF:-$HOME/.config/arch-menu/keybinds.conf}
 export WAYBAR=${ARCH_KEYBINDS_WAYBAR:-$HOME/.config/waybar/modules.jsonc}
 
 generate() {
-python3 -I - "$mode" << 'PY'
+python3 -I - "${1:-$mode}" << 'PY'
 import json, os, re, sys
 
 mode = sys.argv[1]
 
-# ---------------------------------------------------------------- colours
-RESET, BOLD = "\033[0m", "\033[1m"
-def fg(r, g, b): return f"\033[38;2;{r};{g};{b}m"
-MODS = {                              # Tokyo Night accents for mods + stone neutrals
-    "SUPER": fg(122, 162, 247), "SHIFT": fg(158, 206, 106),
-    "CTRL":  fg(224, 175, 104), "ALT":   fg(187, 154, 247),
-}
-C_KEY, C_SEP = BOLD + fg(250, 250, 249), fg(120, 113, 108)
-C_DESC, C_MUTED, C_WARN = fg(214, 211, 209), fg(168, 162, 158), fg(247, 118, 142)
-
-def colorize(plain):
-    parts = []
-    for tok in plain.split(" + "):
-        parts.append((MODS.get(tok, C_KEY)) + tok + RESET)
-    return (C_SEP + " + " + RESET).join(parts)
-
-def visible_len(s):                   # fzf pads by the coloured length, so measure plain
-    return len(re.sub(r"\033\[[0-9;]*m", "", s))
-
-# ---------------------------------------------------------------- Hyprland
 MOD_ORDER = [(64, "SUPER"), (4, "CTRL"), (8, "ALT"), (1, "SHIFT")]
 KEYCODE = {10: "1", 11: "2", 12: "3", 13: "4", 14: "5", 15: "6", 16: "7", 17: "8", 18: "9", 19: "0"}
 KEYNAME = {"minus": "-", "equal": "=", "slash": "/", "COMMA": ",", "ESCAPE": "ESC", "Delete": "DELETE",
@@ -175,6 +167,9 @@ for name, cfg in modules.items():
             add("Waybar", label, f"{pretty}: {describe(cfg[opt])}")
 
 # ---------------------------------------------------------------- keybinds.conf
+import shutil
+NEEDS = {"lazygit": "lazygit", "lazydocker": "lazydocker", "btop": "btop", "zathura": "zathura", "gdu": "gdu",
+         "Terminal (kitty)": "kitty"}
 conf_scopes = []
 try:
     for line in open(os.environ["CONF"]):
@@ -185,14 +180,233 @@ try:
         if len(parts) != 3 or not all(parts):
             continue
         scope, keys, desc = parts
+        need = NEEDS.get(scope)
+        if need and shutil.which(need) is None:
+            continue                       # that app is not installed: its keys do not belong here
         if scope not in conf_scopes:
             conf_scopes.append(scope)
         add(scope, keys, desc)
 except OSError:
     print("arch-keybinds: no keybinds.conf; only Hyprland and waybar are listed", file=sys.stderr)
 
+# ---------------------------------------------------------------- installed apps
+# Read from the apps themselves where they expose their keys (never goes stale);
+# anything curated lives in keybinds.conf. Slow sources are cached (providers.json).
+import hashlib, shlex, shutil, subprocess, time
+
+def norm(k): return re.sub(r"\s+", "", k).upper()
+have_keys = {(r["scope"], norm(r["plain"])) for r in rows}
+auto_scopes = []
+def add_auto(scope, plain, desc):
+    key = (scope, norm(plain))
+    if not plain or key in have_keys:
+        return
+    have_keys.add(key)
+    if scope not in auto_scopes and scope not in conf_scopes:
+        auto_scopes.append(scope)
+    add(scope, plain, desc)
+
+def have(cmd): return shutil.which(cmd) is not None
+def run(cmd, timeout=20):
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env={**os.environ, "NO_COLOR": "1"}).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+MODNAME = {"c": "CTRL", "ctrl": "CTRL", "control": "CTRL", "a": "ALT", "alt": "ALT", "m": "ALT", "meta": "ALT",
+           "s": "SHIFT", "shift": "SHIFT", "d": "SUPER", "super": "SUPER", "cmd": "SUPER", "hyper": "SUPER"}
+MODSORT = {"SUPER": 0, "CTRL": 1, "ALT": 2, "SHIFT": 3}
+def join_key(mods, key):
+    mods = sorted(set(mods), key=lambda m: MODSORT.get(m, 9))
+    if mods and len(key) == 1 and key.isalpha():
+        key = key.upper()                 # CTRL + U, not CTRL + u
+    return " + ".join(mods + [key])
+NAMED = {"esc": "ESC", "escape": "ESC", "enter": "ENTER", "return": "ENTER", "cr": "ENTER", "space": "SPACE", "tab": "TAB",
+         "backspace": "BACKSPACE", "bs": "BACKSPACE", "delete": "DELETE", "del": "DELETE", "insert": "INSERT", "home": "HOME",
+         "end": "END", "pageup": "PAGE UP", "pagedown": "PAGE DOWN", "up": "UP", "down": "DOWN", "left": "LEFT", "right": "RIGHT"}
+def key_name(k):
+    if k == " ": return "SPACE"
+    k = k.strip()
+    low = k.lower().replace("_", "").replace(" ", "")
+    if low in NAMED: return NAMED[low]
+    if re.fullmatch(r"f\d{1,2}", low): return low.upper()
+    return k.upper().replace("_", " ") if len(k) > 1 else k
+
+def pretty_angle(tok):                # <C-x> <A-Left> <Esc> <S-Enter> <C--> ...
+    m = re.match(r"^<((?:[A-Za-z]+-)*)(.+)>$", tok)
+    mods = [MODNAME.get(x.lower(), x.upper()) for x in m.group(1).split("-") if x] if m else []
+    key = m.group(2) if m else tok.strip("<>")
+    if len(key) == 1 and key.isupper(): mods.append("SHIFT")
+    return join_key(mods, key_name(key.lower() if len(key) == 1 else key))
+
+def pretty_seq(tokens, literal=False):  # yazi / nvim style: tokens are "g" "<C-x>" ...; literal: "K" stays K (vim)
+    out = []
+    for t in tokens:
+        if t.startswith("<") and t.endswith(">") and len(t) > 2:
+            out.append(pretty_angle(t))
+        elif len(t) == 1 and t.isupper() and not literal:
+            out.append(join_key(["SHIFT"], t))
+        else:
+            out.append(key_name(t) if t == " " else t)
+    return "  then  ".join(out)
+
+def humanize(cmd):
+    c = cmd.strip().replace("_", " ")
+    c = re.sub(r"^\s+|\s+$", "", c)
+    return (c[:1].upper() + c[1:]) if c else c
+
+def cached(name, make, sources):
+    """JSON cache under ~/.cache/arch-keybinds: reused until older than 12 h or a source file changed."""
+    d = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "arch-keybinds")
+    path = os.path.join(d, name + ".json")
+    newest = 0
+    for src in sources:
+        try:
+            newest = max(newest, os.stat(src).st_mtime)
+        except OSError:
+            pass
+    if os.environ.get("ARCH_KEYBINDS_REFRESH") != "1":
+        try:
+            if time.time() - os.stat(path).st_mtime < 12 * 3600 and os.stat(path).st_mtime >= newest:
+                return json.load(open(path))
+        except (OSError, json.JSONDecodeError):
+            pass
+    data = make()
+    try:
+        os.makedirs(d, exist_ok=True)
+        json.dump(data, open(path, "w"))
+    except OSError:
+        pass
+    return data
+
+HOME = os.path.expanduser("~")
+
+def fish_rows():
+    out = []
+    for line in run(["fish", "-c", "bind"]).splitlines():
+        try: t = shlex.split(line)
+        except ValueError: continue
+        if not t or t[0] != "bind": continue
+        i, mode = 1, "default"
+        while i < len(t) and t[i].startswith("-"):
+            if t[i] in ("-M", "-m", "--mode", "--sets-mode"): mode = t[i + 1]; i += 1
+            i += 1
+        if i >= len(t) or mode not in ("default", "insert"): continue
+        key, cmd = t[i], " ".join(t[i + 1:])
+        if not key or "\\" in key or "," in key or "[" in key or key.startswith("e") and not re.match(r"^(enter|end|escape)$", key) and len(key) > 1 and key[1] in "[O" or not cmd or cmd == "self-insert": continue
+        parts = key.split("-")
+        mods = [MODNAME.get(m.lower(), m.upper()) for m in parts[:-1]]
+        out.append([join_key(mods, key_name(parts[-1])), humanize(cmd.replace("-", " "))])
+    return out
+
+def kitty_rows():
+    # kitty +runpy exec()s this with separate globals/locals, so everything lives inside main()
+    code = (
+        "def main():\n"
+        "    import json\n"
+        "    from kitty.options.types import defaults\n"
+        "    from kitty.key_encoding import functional_key_number_to_name_map as N\n"
+        "    def name(k): return N.get(k) or chr(k)\n"
+        "    def mods(m):\n"
+        "        r=[]\n"
+        "        if m & 256: r += ['CTRL','SHIFT']\n"
+        "        if m & 8: r.append('SUPER')\n"
+        "        if m & 4 and 'CTRL' not in r: r.append('CTRL')\n"
+        "        if m & 2: r.append('ALT')\n"
+        "        if m & 1 and 'SHIFT' not in r: r.append('SHIFT')\n"
+        "        return r\n"
+        "    out=[]\n"
+        "    for kd in defaults.map:\n"
+        "        ks=[kd.trigger]+list(kd.rest)\n"
+        "        out.append([[mods(k.mods), str(name(k.key))] for k in ks]+[kd.definition])\n"
+        "    print(json.dumps(out))\n"
+        "main()\n")
+    try:
+        data = json.loads(run(["kitty", "+runpy", code]).strip().splitlines()[-1])
+    except (json.JSONDecodeError, IndexError):
+        return []
+    rows_ = []
+    for item in data:
+        *ks, action = item
+        keys = "  then  ".join(join_key(m, key_name(k)) for m, k in ks)
+        rows_.append([keys, humanize(action)])
+    return rows_
+
+def yazi_rows():
+    out = []
+    km = os.path.join(HOME, ".config/yazi/keymap.toml")
+    try:
+        import tomllib
+        for e in tomllib.load(open(km, "rb")).get("mgr", {}).get("prepend_keymap", []):
+            on = e.get("on", []); on = [on] if isinstance(on, str) else on
+            out.append([pretty_seq(on), e.get("desc") or e.get("run", "")])
+    except Exception:
+        pass
+    # yazi's own default keymap is compiled into the binary; read it from there
+    strings = run(["strings", "-n", "4", shutil.which("yazi") or "/usr/bin/yazi"], timeout=60).splitlines()
+    start = next((i for i, l in enumerate(strings) if "schemas/keymap.json" in l), None)
+    if start is not None:
+        rx = re.compile(r'^\s*\{\s*on\s*=\s*(\[[^\]]*\]|"(?:[^"\\]|\\.)*")\s*,\s*run\s*=\s*(\[[^\]]*\]|"[^"]*"|\'[^\']*\')\s*(?:,\s*desc\s*=\s*"((?:[^"\\]|\\.)*)")?')
+        for l in strings[start + 1:]:
+            if re.match(r"^\[(tasks|spot|pick|input|confirm|cmp|help)\]", l):
+                break
+            m = rx.match(l)
+            if m:
+                on = re.findall(r'"((?:[^"\\]|\\.)*)"', m.group(1))
+                out.append([pretty_seq(on), m.group(3) or m.group(2).strip("\"'[] ")])
+    return out
+
+def mpv_rows():
+    out, inside = [], False
+    try:
+        lines = open("/usr/share/doc/mpv/input.conf").read().splitlines()
+    except OSError:
+        return out
+    for l in lines:
+        if l.startswith("#default-bindings start"): inside = True; continue
+        if l.startswith("#default-bindings end"): break
+        if not inside or not re.match(r"^#[^ #]", l): continue
+        m = re.match(r"^#(\S+)\s+(.+?)(?:\s+#\s*(.*))?$", l)
+        if not m or m.group(2).startswith("{") or m.group(2).startswith("ignore"): continue
+        key = m.group(1)
+        km = re.match(r"^((?:\w+\+)*)(.+)$", key)             # "ctrl++" is ctrl and the plus key
+        k, mods = km.group(2), [MODNAME.get(x.lower(), x.upper()) for x in km.group(1).split("+") if x]
+        if len(k) == 1 and k.isupper(): mods.append("SHIFT"); k = k.lower()
+        out.append([join_key(mods, k if len(k) == 1 else key_name(k)), m.group(3) or humanize(m.group(2))])
+    return out
+
+def nvim_rows():
+    lua = ("local o={} for _,mode in ipairs({'n','v','x','i'}) do for _,m in ipairs(vim.api.nvim_get_keymap(mode)) do "
+           "if m.desc and not m.lhs:find('<Plug>') and not m.lhs:find('<SNR>') then "
+           "o[#o+1]={mode,m.lhs,m.desc} end end end io.stdout:write(vim.json.encode(o))")
+    raw = run(["nvim", "--headless", "-i", "NONE", "-n", "+lua " + lua, "+qa!"], timeout=25)
+    try:
+        data = json.loads(raw[raw.index("["):])
+    except (ValueError, json.JSONDecodeError):
+        return []
+    names = {"n": "", "v": "visual: ", "x": "visual: ", "i": "insert: "}
+    out = []
+    for mode, lhs, desc in data:
+        toks = re.findall(r"<[^>]+>|.", lhs)
+        out.append([pretty_seq(toks, literal=True).replace("  then  ", " "), names.get(mode, "") + desc])
+    return out
+
+PROVIDERS = [
+    ("Shell (fish)",     "fish",   fish_rows,  [os.path.join(HOME, ".config/fish")]),
+    ("Terminal (kitty)", "kitty",  kitty_rows, [os.path.join(HOME, ".config/kitty/kitty.conf")]),
+    ("Yazi",             "yazi",   yazi_rows,  [os.path.join(HOME, ".config/yazi/keymap.toml")]),
+    ("mpv",              "mpv",    mpv_rows,   ["/usr/share/doc/mpv/input.conf"]),
+    ("Editor (nvim)",    "nvim",   nvim_rows,  [os.path.join(HOME, ".config/nvim")]),
+]
+if os.environ.get("ARCH_KEYBINDS_NO_PROVIDERS") != "1":
+    for scope, binary, fn, srcs in PROVIDERS:
+        if not have(binary):
+            continue
+        for keys, desc in cached(re.sub(r"\W+", "_", scope.lower()), fn, srcs):
+            add_auto(scope, keys, desc)
+
 # ---------------------------------------------------------------- order
-scope_order = ["Hyprland"] + conf_scopes
+scope_order = ["Hyprland"] + conf_scopes + auto_scopes
 if "Waybar" not in scope_order:
     scope_order.append("Waybar")
 def order(r):
@@ -213,9 +427,10 @@ elif mode == "md":
     out = ["# Keybinds", "",
            "Every keybind in this setup, generated by `arch-keybinds --md` (the same data "
            "SUPER+F1 shows, where you can type to filter). Hyprland binds come from the live "
-           "session, the waybar clicks from `waybar/modules.jsonc`, and everything else from "
-           "[`arch-menu/keybinds.conf`](arch-menu/keybinds.conf) — edit that file for the "
-           "non-Hyprland keys, then regenerate:", "",
+           "session, the waybar clicks from `waybar/modules.jsonc`, the keys of installed apps "
+           "(fish, kitty, yazi, mpv, nvim) from the apps themselves, and the rest from "
+           "[`arch-menu/keybinds.conf`](arch-menu/keybinds.conf) — edit that file for keys that "
+           "cannot be read from an app, then regenerate:", "",
            "```sh", "arch-keybinds --md > ~/Projects/hypr-setup/KEYBINDS.md", "```", ""]
     if conflicts:
         out += ["> **⚠ Shared key combinations.** Two binds are registered for each of these, so one "
@@ -240,28 +455,24 @@ elif mode == "md":
             out += table(srows)
     print("\n".join(out).rstrip() + "\n")
 
-else:  # view
-    sw = max((len(label(r)) for r in rows), default=0)
-    kw = max((len(r["plain"]) for r in rows), default=0)
+else:  # table: aligned plain rows for the spot dialog (widths shared with `header`)
+    SW, KW = int(os.environ["SW"]), int(os.environ["KW"])
+    cut = lambda t, w: t if len(t) <= w else t[:w - 1] + "~"
     for r in rows:
-        scope = C_MUTED + label(r).ljust(sw) + RESET
-        keys = colorize(r["plain"])
-        pad = " " * (kw - visible_len(keys))
-        extra = f"  {C_WARN}{r['extra']}{RESET}" if r["extra"] else ""
-        print(f"{scope}   {keys}{pad}   {C_DESC}{r['desc']}{RESET}{extra}")
+        desc = r["desc"] + (f"  {r['extra']}" if r["extra"] else "")
+        print(f"{cut(label(r), SW):<{SW}} {cut(r['plain'], KW):<{KW}} {desc}")
 PY
 }
 
-if [[ $mode == view && -z ${ARCH_KEYBINDS_NO_FZF:-} ]]; then
-  clear
-  generate | fzf \
-      --ansi \
-      --height=100% \
-      --prompt="Keybind> " \
-      --header="All keybinds — type to filter (\"fish\", \"waybar\", \"super 3\")   esc to close" \
-      --tiebreak=index \
-      --no-mouse \
-      >/dev/null || true
-else
-  generate
-fi
+case $mode in
+  view)
+    if ! command -v spot >/dev/null 2>&1; then
+      echo "arch-keybinds: spot is not installed; printing the table instead" >&2
+      generate table; exit 0
+    fi
+    table=$(generate table)
+    printf '%s\n' "$table" | SPOT_TITLE="Keybinds · $(grep -c . <<<"$table") of them" spot "${ARCH_SPOT_DIR:-$HOME/.config/spot}/keybinds.toml" >/dev/null || true ;;
+  none)  generate list >/dev/null; echo "keybind caches refreshed" ;;
+  table) generate table ;;
+  *)     generate ;;
+esac
