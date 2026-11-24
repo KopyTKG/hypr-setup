@@ -9,11 +9,13 @@ style    = "spot.css"
 keyboard = "exclusive"
 toggle   = true        # a keybind dialog: pressing the key again closes it, repeats never queue up (spot >= 0.5.0)
 
+# Two sections so the rows can have different widths: Lock / Suspend share the top row
+# 50/50, the other three sit below. No label on the second, so they read as one block.
 [[items]]
 label   = "Power"
 type    = "tiles"
-id      = "action"
-columns = 3
+id      = "session"
+columns = 2
 
 [[items.tiles]]
 icon  = ""
@@ -24,6 +26,11 @@ value = "lock"
 icon  = ""
 label = "Suspend"
 value = "suspend"
+
+[[items]]
+type    = "tiles"
+id      = "action"
+columns = 3
 
 [[items.tiles]]
 icon  = ""
@@ -63,6 +70,6 @@ label = "Performance"
 value = "performance"
 
 [submit]
-# One JSON object: {"_active":"battery","action":"lock","battery":"balanced"}.
+# One JSON object: {"_active":"battery","session":"lock","action":"logout","battery":"balanced"}.
 # _active = id of the tile section last used. arch-power-menu parses it with jq.
 format = "json"

@@ -7,7 +7,8 @@ current=$(powerprofilesctl get 2>/dev/null || echo balanced)
 
 out=$(SPOT_DEFAULT_BATTERY="$current" SPOT_CURRENT_BATTERY="$current" spot ~/.config/spot/power.toml) || exit 0
 section=$(jq -r '._active' <<<"$out")
-action=$(jq -r '.action' <<<"$out")
+# The power tiles are two sections (top row: session, bottom row: action); take the one used.
+action=$(jq -r 'if ._active == "session" then .session else .action end' <<<"$out")
 battery=$(jq -r '.battery' <<<"$out")
 
 if [[ $section == battery ]]; then

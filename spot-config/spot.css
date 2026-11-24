@@ -177,6 +177,13 @@
   padding: 4px 0;
 }
 
+/* An unlabelled tile section continues the one above it (power.toml: two tiles on
+   top, three below): cancel the item spacing and padding so the rows sit as close
+   as rows of one section. A labelled section starts with its label, not the tiles. */
+.spot-item + .spot-item > .spot-tiles:first-child {
+  margin-top: -20px;
+}
+
 .spot-tile {
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(245, 245, 244, 0.08);
@@ -260,4 +267,103 @@
   font-size: 9pt;
   color: #f7768e;
   margin-top: 6px;
+}
+
+/* Power menu, bottom row: Logout (1st) pastel blue, Restart (2nd) pastel yellow,
+   Shutdown (3rd) pastel red.
+   spot has no per-tile class, so they are picked by position in the unlabelled
+   section (only power.toml has one): reorder those tiles and update this. */
+.spot-item + .spot-item > .spot-tiles:first-child > .spot-tile:nth-child(2) .spot-tile-icon,
+.spot-item + .spot-item > .spot-tiles:first-child > .spot-tile:nth-child(2) .spot-tile-label {
+  color: #f9e2af;
+}
+.spot-item + .spot-item > .spot-tiles:first-child > .spot-tile:nth-child(3) .spot-tile-icon,
+.spot-item + .spot-item > .spot-tiles:first-child > .spot-tile:nth-child(3) .spot-tile-label {
+  color: #ff9e9e;
+}
+.spot-item + .spot-item > .spot-tiles:first-child > .spot-tile.spot-cursor:nth-child(2) {
+  border-color: #f9e2af;
+  outline-color: #f9e2af;   /* the cursor ring, blue by default */
+  background: rgba(249, 226, 175, 0.14);
+}
+.spot-item + .spot-item > .spot-tiles:first-child > .spot-tile.spot-cursor:nth-child(3) {
+  border-color: #ff9e9e;
+  outline-color: #ff9e9e;   /* the cursor ring, blue by default */
+  background: rgba(255, 158, 158, 0.14);
+}
+.spot-item + .spot-item > .spot-tiles:first-child > .spot-tile:nth-child(1) .spot-tile-icon,
+.spot-item + .spot-item > .spot-tiles:first-child > .spot-tile:nth-child(1) .spot-tile-label {
+  color: #a6c8ff;
+}
+.spot-item + .spot-item > .spot-tiles:first-child > .spot-tile.spot-cursor:nth-child(1) {
+  border-color: #a6c8ff;
+  outline-color: #a6c8ff;
+  background: rgba(166, 200, 255, 0.14);
+}
+
+/* Power menu, top row: Lock pastel green, Suspend pastel lavender. Matched as the
+   labelled two-tile section with exactly two items after it (only power.toml). */
+.spot-item:nth-last-child(3) > .spot-label + .spot-tiles > .spot-tile:nth-child(1):nth-last-child(2) .spot-tile-icon,
+.spot-item:nth-last-child(3) > .spot-label + .spot-tiles > .spot-tile:nth-child(1):nth-last-child(2) .spot-tile-label {
+  color: #a6e3a1;
+}
+.spot-item:nth-last-child(3) > .spot-label + .spot-tiles > .spot-tile.spot-cursor:nth-child(1):nth-last-child(2) {
+  border-color: #a6e3a1;
+  outline-color: #a6e3a1;
+  background: rgba(166, 227, 161, 0.14);
+}
+.spot-item:nth-last-child(3) > .spot-label + .spot-tiles > .spot-tile:nth-child(2):nth-last-child(1) .spot-tile-icon,
+.spot-item:nth-last-child(3) > .spot-label + .spot-tiles > .spot-tile:nth-child(2):nth-last-child(1) .spot-tile-label {
+  color: #cba6f7;
+}
+.spot-item:nth-last-child(3) > .spot-label + .spot-tiles > .spot-tile.spot-cursor:nth-child(2):nth-last-child(1) {
+  border-color: #cba6f7;
+  outline-color: #cba6f7;
+  background: rgba(203, 166, 247, 0.14);
+}
+
+/* Power menu, battery row: Power saver pastel green, Balanced pastel blue, Performance
+   pastel peach, including the active tile's border and badge. Matched as the third
+   and last item (after the title), a labelled tiles section. */
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(1):nth-last-child(3) .spot-tile-icon,
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(1):nth-last-child(3) .spot-tile-label,
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(1):nth-last-child(3) .spot-tile-badge {
+  color: #a6e3a1;
+}
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(1):nth-last-child(3).spot-active {
+  border-color: rgba(166, 227, 161, 0.6);
+  background: rgba(166, 227, 161, 0.08);
+}
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile.spot-cursor:nth-child(1):nth-last-child(3) {
+  border-color: #a6e3a1;
+  outline-color: #a6e3a1;
+  background: rgba(166, 227, 161, 0.14);
+}
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(2):nth-last-child(2) .spot-tile-icon,
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(2):nth-last-child(2) .spot-tile-label,
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(2):nth-last-child(2) .spot-tile-badge {
+  color: #a6c8ff;
+}
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(2):nth-last-child(2).spot-active {
+  border-color: rgba(166, 200, 255, 0.6);
+  background: rgba(166, 200, 255, 0.08);
+}
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile.spot-cursor:nth-child(2):nth-last-child(2) {
+  border-color: #a6c8ff;
+  outline-color: #a6c8ff;
+  background: rgba(166, 200, 255, 0.14);
+}
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(3):nth-last-child(1) .spot-tile-icon,
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(3):nth-last-child(1) .spot-tile-label,
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(3):nth-last-child(1) .spot-tile-badge {
+  color: #fab387;
+}
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile:nth-child(3):nth-last-child(1).spot-active {
+  border-color: rgba(250, 179, 135, 0.6);
+  background: rgba(250, 179, 135, 0.08);
+}
+.spot-item:nth-child(4):last-child > .spot-label + .spot-tiles > .spot-tile.spot-cursor:nth-child(3):nth-last-child(1) {
+  border-color: #fab387;
+  outline-color: #fab387;
+  background: rgba(250, 179, 135, 0.14);
 }
