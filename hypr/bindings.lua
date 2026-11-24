@@ -44,6 +44,10 @@ bind("SUPER + N", exec("uwsm-app -- xdg-terminal-exec nvim"), "Editor")
 bind("SUPER + SHIFT + D", exec("uwsm-app -- xdg-terminal-exec lazydocker"), "Docker")
 bind("SUPER + D", exec('arch-launch-app discord "uwsm-app -- flatpak run com.discordapp.Discord"'), "Discord")
 
+-- Password extensions as floating windows over any webapp (see bin/arch-passwords)
+bind("SUPER + ALT + P", exec("arch-passwords"), "Passwords (Nextcloud extension popup)")
+bind("SUPER + ALT + O", exec("arch-passwords otp"), "One-time codes (Nextcloud OTP popup)")
+
 -- Proton stuff
 webapp("SUPER + C", "Calendar", "thekrew-calendar", "https://cloud.thekrew.app/apps/calendar/dayGridMonth/now")
 bind("SUPER + E", exec('arch-launch-app thunderbird "uwsm-app -- flatpak run org.mozilla.thunderbird"'), "Email")

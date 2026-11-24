@@ -3,6 +3,9 @@
 -- All arch-* terminal windows (installers + TUI control panels) float centered
 hl.window_rule({ match = { class = "arch-.*" }, float = true, center = true, size = { 1400, 900 } })
 
+-- The password extensions' popups as windows (bin/arch-passwords): small, floating, centred.
+hl.window_rule({ match = { class = "^chrome-(mhajlicjhgoofheldnmollgbgjheenbi|ljbdflkioncfbcncbnijleofalpakhlf)__.*popup\\.html-Default$" }, float = true, center = true, size = { 400, 640 } })
+
 -- Steam games auto-fullscreen so they draw above the floating Steam client window
 hl.window_rule({ match = { class = "steam_app_.*" }, fullscreen = true })
 

@@ -24,6 +24,7 @@ arch-keybinds --md > ~/Projects/hypr-setup/KEYBINDS.md
 | `SUPER + M` | Music |
 | `SUPER + N` | Editor |
 | `SUPER + T` | Terminal |
+| `SUPER + ALT + P` | Passwords (Nextcloud extension popup) |
 | `SUPER + CTRL + A` | Gemini |
 | `SUPER + CTRL + I` | Messenger **⚠ also: Toggle locking on idle** |
 | `SUPER + SHIFT + A` | V0 |
@@ -38,6 +39,7 @@ arch-keybinds --md > ~/Projects/hypr-setup/KEYBINDS.md
 | `SUPER + ESC` | Power menu |
 | `SUPER + F1` | Keybinds |
 | `SUPER + SPACE` | Launch apps |
+| `SUPER + ALT + O` | One-time codes (Nextcloud OTP popup) |
 | `SUPER + ALT + SPACE` | Arch menu |
 | `SUPER + CTRL + B` | Bluetooth controls |
 | `SUPER + CTRL + DELETE` | Toggle laptop display |
