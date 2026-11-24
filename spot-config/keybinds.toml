@@ -2,7 +2,9 @@
 # as a COLLAPSIBLE list: one folded group per scope (Hyprland · Apps, Yazi, fish,
 # kitty, nvim, mpv, waybar clicks, ...). Enter, click or Left/Right on a group header
 # folds / unfolds it; typing searches every group at once, folded or not, and the group
-# name counts as part of the row: "yazi seek", "fish ctrl r", "super 3", "nvim lsp".
+# name counts as part of the row: "yazi seek", "fish ctrl r", "nvim lsp". You can also
+# search by the key combination itself, typed any way: "super+3", "super 3", "ctrl+shift+c"
+# (the dialog shows keys as SUPER+3 so that all of those match).
 # Needs spot >= 0.5.0 (collapsible lists). Enter on a row just closes the dialog.
 #
 # The list's label is the column header. It must equal `arch-keybinds header` (it is
@@ -24,7 +26,7 @@ id          = "row"
 collapsible = true
 collapsed   = true     # start with every group folded: a short index, open what you need
 label       = "     KEYS                             WHAT IT DOES"
-placeholder = "Filter…  yazi seek · fish ctrl r · super 3 · nvim lsp"
+placeholder = "Filter…  super+3 · ctrl+shift+c · alt+tab · yazi seek · nvim lsp"
 match       = "smart"
 stdin       = true
 height      = 640

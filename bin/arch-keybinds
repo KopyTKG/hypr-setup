@@ -463,7 +463,9 @@ else:  # grouped / table: aligned plain rows (widths shared with `header`)
     for r in rows:
         desc = r["desc"] + (f"  {r['extra']}" if r["extra"] else "")
         if mode == "grouped":      # GROUP<TAB>KEYS DESCRIPTION, for a collapsible spot list
-            print(f"{label(r)}\t{cut(r['plain'], KW):<{KW}} {desc}")
+            # SUPER+C, not SUPER + C: then "super+c", "super c" and "super + c" all find it
+            keys = r["plain"].replace(" + ", "+")
+            print(f"{label(r)}\t{cut(keys, KW):<{KW}} {desc}")
         else:
             print(f"{cut(label(r), SW):<{SW}} {cut(r['plain'], KW):<{KW}} {desc}")
 PY
