@@ -13,8 +13,8 @@
 # arch-webapp-install uses, made unique if two names collide.
 #
 # Why: omarchy-launch-webapp only resolved because ~/.local/share/omarchy/bin is
-# still on PATH. arch-launch-webapp gives the window a stable class and focuses
-# an already-open window instead of starting a second one.
+# still on PATH. arch-launch-webapp focuses an already-open window (found by the class
+# Chromium derives from the URL) instead of starting a second one.
 #
 # Safe to run twice: entries that no longer call omarchy-launch-webapp are left
 # alone. The original is kept next to it as <file>.bak.<timestamp> (not a

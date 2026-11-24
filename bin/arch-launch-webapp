@@ -1,14 +1,43 @@
 #!/bin/bash
-# Focus an existing chromium --app window by class, else launch one.
-# Usage: webapp.sh <class> <url>
-CLASS="$1"
-URL="$2"
-if [[ -z $CLASS || -z $URL ]]; then
-  echo "Usage: $0 <class> <url>" >&2
+# arch-launch-webapp <name> <url> — open a webapp as a chromium --app window, or focus it
+# if it is already open.
+#
+# Usage: arch-launch-webapp <name> <url>     (<name> is only a label now; see below)
+#
+# Chromium's --class is a property of the whole *process*: it names the process's browser
+# windows and is ignored for app windows, whose class Chromium derives from the URL
+# (chrome-<host>_<path with / as _>-Default). Passing --class therefore did nothing for the
+# webapp, and when a webapp was the first thing to start Chromium it renamed the user's
+# normal browser windows to the webapp's name, so the "is it open?" check found a browser
+# window and focused that instead of launching the app. So: no --class, and the check uses
+# the class Chromium really gives the app.
+NAME=$1
+URL=$2
+if [[ -z $NAME || -z $URL ]]; then
+  echo "Usage: $0 <name> <url>" >&2
   exit 1
 fi
-if hyprctl clients -j | grep -q "\"class\": \"$CLASS\""; then
-  hyprctl dispatch "hl.dsp.focus({ window = \"class:^$CLASS\$\" })"
+
+# chrome-<host>_<path>-Default: host without port, path without query / fragment,
+# every "/" in "host_path" replaced by "_" (so https://x.com/ is chrome-x.com__-Default).
+app_class() {
+  local rest=${1#*://} host path
+  host=${rest%%[/?#]*}; host=${host##*@}; host=${host%%:*}
+  path=/; [[ $rest == */* ]] && path=/${rest#*/}
+  path=${path%%[?#]*}
+  host=$(tr '[:upper:]' '[:lower:]' <<<"$host")
+  local app="${host}_${path}"
+  printf 'chrome-%s-Default' "${app//\//_}"
+}
+
+[[ ${1:-} == --class-of ]] && { app_class "$2"; echo; exit 0; }   # for tests and debugging
+
+CLASS=$(app_class "$URL")
+addr=$(hyprctl clients -j | jq -r --arg c "$CLASS" '[.[] | select(.class == $c)][0].address // empty')
+
+if [[ -n $addr ]]; then                       # already open: bring it forward
+  [[ $(hyprctl dispatch focuswindow "address:$addr") == ok ]] ||
+    hyprctl dispatch "hl.dsp.focus({ window = \"address:$addr\" })" >/dev/null
 else
-  exec uwsm-app -- chromium --app="$URL" --class="$CLASS"
+  exec uwsm-app -- chromium --app="$URL"
 fi

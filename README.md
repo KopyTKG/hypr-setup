@@ -195,7 +195,7 @@ All under `bin/`, linked into `~/.local/bin/`. Examples:
 | `arch-remote-custom`            | gum prompt → User/Host/Port → spawns ssh in a tiled `ssh-session` window |
 | `arch-power-menu`               | bound to SUPER+ESC                                                 |
 | `arch-killactive`               | SUPER+W; dismisses a spot dialog (`spot --dismiss`), else closes the window |
-| `arch-launch-webapp <class> <url>` | focus existing chromium-app window by class, else launch it    |
+| `arch-launch-webapp <name> <url>` | focus the webapp's window if it is open, else `chromium --app=<url>`. The window is found by the class Chromium derives from the URL (`chrome-<host>_<path>-Default`); `--class` is deliberately not used: it is per Chromium *process*, ignored for app windows, and renamed the browser's own windows when a webapp started Chromium (the webapp key then focused a browser window instead of launching). `<name>` is only a label (`arch-launch-webapp --class-of <url>` prints the class) |
 | `arch-apply-browser-theme`      | copy `chromium/policies/managed/color.json` to system policy dir   |
 | `arch-askpass`                  | Password prompt (`SSH_ASKPASS`); libsecret-cached. Inline `gum` from a TTY, `spot` password dialog headless |
 
