@@ -8,6 +8,7 @@ end
 
 -- Menus
 bind("SUPER + SPACE", exec("arch-launch-apps"), "Launch apps")
+bind("ALT + F2", exec("arch-run-menu"), "Run a command")
 bind("SUPER + CTRL + E", exec("arch-emoji"), "Emoji picker")
 bind("SUPER + ESCAPE", exec("arch-power-menu"), "Power menu")
 bind("XF86PowerOff", exec("arch-power-menu"), "Power menu", { locked = true })

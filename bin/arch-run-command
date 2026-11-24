@@ -1,0 +1,24 @@
+#!/bin/bash
+# arch-run-command <command line> — what the launcher's ">" does with a row.
+#
+# Starts the command like any app (uwsm-app, no terminal). If it fails straight away
+# (within 2 s) it is almost always a terminal program (htop, nvim, ...) or a typo, so
+# it is run again in a terminal that stays open until you press Enter: you see the
+# program, or the error. A command that fails later gets a notification.
+
+cmd=$*
+[[ -n $cmd ]] || exit 0
+
+t0=$EPOCHSECONDS
+err=$(uwsm-app -- sh -c "$cmd" 2>&1 >/dev/null)
+rc=$?
+(( rc == 0 )) && exit 0
+
+if (( EPOCHSECONDS - t0 <= 2 )); then
+  exec uwsm-app -- xdg-terminal-exec sh -c "$cmd"'
+rc=$?
+[ $rc -eq 0 ] || { echo; echo "[exit $rc] press Enter to close"; read -r _; }'
+fi
+notify-send -u normal -a arch-run-command "Command failed (exit $rc)" "$cmd${err:+
+$err}" 2>/dev/null
+exit "$rc"

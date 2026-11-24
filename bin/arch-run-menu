@@ -1,0 +1,17 @@
+#!/bin/bash
+# arch-run-menu — the run bar (ALT+F2): spot-config/run.toml, a bare search box where
+# the first thing typed is a command (needs spot >= 0.7.0: default sources, hide_empty).
+# On an older spot it falls back to the app launcher opened in run mode (the ">" prefix,
+# spot >= 0.6.0), so the key keeps working.
+
+ver=$(spot --version 2>/dev/null | awk '{print $2}')
+ver=${ver%%-*}                                   # 0.7.0-3-gabc123 -> 0.7.0
+atleast() { [[ $ver == dev || ( -n $ver && $(printf '%s\n%s\n' "$ver" "$1" | sort -V | head -n1) == "$1" ) ]]; }
+
+if atleast 0.7.0; then
+  exec spot run
+elif atleast 0.6.0; then
+  SPOT_QUERY="> " exec spot launcher
+fi
+notify-send -u critical -a arch-run-menu "Run" "spot ${ver:-?} is too old: the run bar needs spot 0.6.0 or newer" 2>/dev/null
+exit 1

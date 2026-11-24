@@ -5,7 +5,8 @@
 #   = 2+2        calculator (qalc); Enter copies the result      ("5 ft to cm")
 #   . report     files and folders under ~ (fd); Enter opens them
 #   @ gtk4       web search, one row per engine (arch-menu/websearch.conf)
-#   > htop       run a command ("> fire" completes from PATH); ">> htop" in a terminal
+#   > htop       run a command ("> fire" completes from PATH); a terminal program such as
+#                htop is rerun in a terminal automatically; ">> htop" forces a terminal
 # The most-launched apps come first. Needs spot >= 0.5.0.
 #
 # How apps start is [apps.launch]: through uwsm-app like every other launcher in
@@ -70,7 +71,7 @@ name     = "run"
 prefix   = ">"
 icon     = "utilities-terminal"
 exec     = "arch-launcher-run {query}"
-activate = "uwsm-app -- sh -c {value}"
+activate = "arch-run-command {value}"      # runs it; a terminal program that fails at once is rerun in a terminal
 
 [[sources]]
 name     = "run in terminal"

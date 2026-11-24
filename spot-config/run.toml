@@ -1,0 +1,44 @@
+# Run bar (arch-run-menu, ALT+F2): just a search box. Type a command and it appears
+# below as "run: …" with completions from your PATH; Enter runs it (a terminal program
+# that fails at once is rerun in a terminal, see bin/arch-run-command). ">> htop" forces a
+# terminal. The list stays hidden until there is something to show. The same runner is the
+# ">" prefix in the app launcher (SUPER+SPACE). Needs spot >= 0.7.0 (default sources, hide_empty).
+
+title    = ""
+anchor   = "center"
+width    = 640
+style    = "spot.css"
+keyboard = "exclusive"
+toggle   = true            # ALT+F2 again closes it
+
+[opacity]
+outside = 100
+
+[back]
+show = "never"
+
+[[items]]
+type        = "apps"
+id          = "run"
+placeholder = "Run…   >> htop for a terminal"
+height      = 360
+hide_empty  = true         # a bare search bar until there is something to list
+
+[apps]
+icon_size          = 32
+icon_size_selected = 32
+show_comment       = true
+
+[[sources]]
+name     = "run"
+default  = true            # no prefix: everything typed is a command line
+icon     = "utilities-terminal"
+exec     = "arch-launcher-run {query}"
+activate = "arch-run-command {value}"
+
+[[sources]]
+name     = "run in terminal"
+prefix   = ">>"
+icon     = "utilities-terminal"
+exec     = "arch-launcher-run {query}"
+activate = "uwsm-app -- xdg-terminal-exec sh -c {value}"
