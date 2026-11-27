@@ -1,0 +1,11 @@
+type        = "provider"
+api         = 1
+version     = "1.0.0"
+description = "UFW's state and rules, for the bar and arch-firewall (read only)"
+uses        = ["ufw"]
+
+[permissions.read]
+"/etc/ufw/ufw.conf"    = "whether the firewall is on"
+"/etc/default/ufw"     = "the default policies"
+"/etc/ufw/user.rules"  = "the IPv4 rules"
+"/etc/ufw/user6.rules" = "the IPv6 rules"

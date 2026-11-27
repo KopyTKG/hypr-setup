@@ -99,11 +99,10 @@
     "interval": 5
   },
   "custom/firewall": {
-    "exec": "arch-indicator-firewall",
+    "exec": "spot watch --waybar firewall.status",
     "on-click": "arch-firewall",
     "on-click-right": "arch-ufw",
-    "return-type": "json",
-    "interval": 5
+    "return-type": "json"
   },
   "custom/idle-indicator": {
     "exec": "arch-indicator-idle",

@@ -1,0 +1,24 @@
+[
+  {
+    "label": "allow    in        udp   53317         Anywhere               Anywhere           ",
+    "key": "allow    in        udp   53317         Anywhere               Anywhere           ",
+    "action": "allow",
+    "dir": "in",
+    "proto": "udp",
+    "port": "53317",
+    "from": "Anywhere",
+    "to": "Anywhere",
+    "note": ""
+  },
+  {
+    "label": "allow    in        udp   53            172.16.0.0/12          172.17.0.1         allow-docker-dns",
+    "key": "allow    in        udp   53            172.16.0.0/12          172.17.0.1         allow-docker-dns",
+    "action": "allow",
+    "dir": "in",
+    "proto": "udp",
+    "port": "53",
+    "from": "172.16.0.0/12",
+    "to": "172.17.0.1",
+    "note": "allow-docker-dns"
+  }
+]

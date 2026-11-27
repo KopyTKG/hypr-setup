@@ -6,7 +6,10 @@
 #   arch-firewall rules      print the table (header + rows) and exit
 #   arch-firewall header     print just the column header
 #
-# Listing needs no root: /etc/ufw/user.rules and user6.rules are world-readable.
+# Listing needs no root. The state, the policies and the rules come from the
+# `firewall` spot mod (spot-config/mods/firewall, with its parser mods/ufw), which
+# also feeds waybar. Approve it once per machine: spot mods allow firewall
+# This script only changes things; the mod only reads.
 # Anything that changes the firewall goes through arch-root (sudo, with the password
 # asked in a spot dialog that shows the exact ufw command), and the result is shown
 # as a notification.
@@ -31,11 +34,9 @@
 # The header is also the `label` of the list in firewall.toml; they must stay
 # equal (`arch-firewall header` prints the right one).
 #
-# Test hooks: UFW_DIR, UFW_DEFAULTS, ARCH_SPOT_DIR (where the spot configs are), FW_SERVICES.
+# Test hooks: ARCH_SPOT_DIR (where the spot configs are), FW_SERVICES.
 
 set -u
-UFW_DIR=${UFW_DIR:-/etc/ufw}
-UFW_DEFAULTS=${UFW_DEFAULTS:-/etc/default/ufw}
 CFG=${ARCH_SPOT_DIR:-$HOME/.config/spot}
 
 # The table is only the firewall's; what to go back to is the caller's business.
@@ -49,6 +50,7 @@ RESET='  Reset (delete ALL rules)'
 ON='  Enable firewall'
 OFF='  Disable firewall'
 NORULES='(no rules yet)'
+UNKNOWN='(rules unknown: spot mods)'
 SERVICES=${FW_SERVICES:-$HOME/.config/arch-menu/firewall-services.conf}
 LAN=(192.168.0.0/16 10.0.0.0/8 172.16.0.0/12)   # private ranges
 CUSTOM='  Custom rule…'
@@ -59,35 +61,19 @@ header() {
   printf '%-*s %-*s %-*s %-*s %-*s %-*s %s' "$W_ACTION" ACTION "$W_DIR" DIR "$W_PROTO" PROTO "$W_PORT" PORT "$W_FROM" FROM "$W_TO" TO NOTE
 }
 
-enabled() { grep -q '^ENABLED=yes' "$UFW_DIR/ufw.conf" 2>/dev/null; }
-
-policy() {  # policy INPUT|OUTPUT → deny / allow / reject
-  case $(sed -n "s/^DEFAULT_${1}_POLICY=\"\\?\\([A-Z]*\\).*/\\1/p" "$UFW_DEFAULTS" 2>/dev/null | head -1) in
-    DROP) echo deny ;; ACCEPT) echo allow ;; REJECT) echo reject ;; *) echo '?' ;;
-  esac
+# Ask the firewall mod. It fails, and says why on stderr, when there is no fresh
+# answer: an old or missing one must not pass for "no rules" or "inactive". (A
+# warning that a value is old lands in $out too, which then is not JSON.)
+ask() {  # ask <value> <jq filter>
+  local out
+  if out=$(spot get --json "firewall.$1" 2>&1) && [[ -n $out ]] && jq . <<<"$out" >/dev/null 2>&1; then
+    jq -r "$2" <<<"$out"
+  else
+    printf '%s\n' "${out:-spot: no answer from the firewall mod}" >&2; return 1
+  fi
 }
 
-# Tuple lines look like:
-#   ### tuple ### <action> <proto> <dport> <dst> <sport> <src> <dir> [comment=<hex>]
-# IPv4 and IPv6 twins (0.0.0.0/0 and ::/0) are one rule to the user; show it once.
-rules() {
-  cat "$UFW_DIR/user.rules" "$UFW_DIR/user6.rules" 2>/dev/null | awk \
-    -v wa="$W_ACTION" -v wd="$W_DIR" -v wp="$W_PROTO" -v wo="$W_PORT" -v wf="$W_FROM" -v wt="$W_TO" '
-    function any(a) { return (a == "0.0.0.0/0" || a == "::/0") ? "Anywhere" : a }
-    function cut(s, w) { return length(s) > w ? substr(s, 1, w - 1) "~" : s }
-    function unhex(h,   out, i) { out = ""; for (i = 1; i <= length(h); i += 2) out = out sprintf("%c", strtonum("0x" substr(h, i, 2))); return out }
-    /^### tuple ### / {
-      action = $4; if (action ~ /^route:/) action = "rt:" substr(action, 7)
-      proto = $5; dport = $6; dst = any($7); sport = $8; src = any($9); dir = $10
-      note = ""
-      if ($11 ~ /^comment=/) note = unhex(substr($11, 9))
-      port = dport; if (sport != "any") port = dport " (sport " sport ")"
-      key = action "|" proto "|" port "|" dst "|" src "|" dir
-      if (key in seen) next
-      seen[key] = 1
-      printf "%-*s %-*s %-*s %-*s %-*s %-*s %s\n", wa, action, wd, dir, wp, proto, wo, cut(port, wo), wf, cut(src, wf), wt, cut(dst, wt), note
-    }'
-}
+rules() { ask rules '.[].label'; }
 
 # What `ufw delete` needs to remove the rule on a table row (arguments, one per line).
 delete_args() {
@@ -237,31 +223,36 @@ rule_menu() {  # rule_menu <table row>: Edit / Delete tiles (Esc or Back = table
   esac
 }
 
-table() {
-  local r
-  r=$(rules)
-  printf '%s\n' "$ADD"
-  if enabled; then printf '%s\n' "$OFF"; else printf '%s\n' "$ON"; fi
-  printf '%s\n' "$RELOAD" "$RESET"
-  if [[ -n $r ]]; then printf '%s\n' "$r"; else printf '%s\n' "$NORULES"; fi
+# Read once per round, so that title and table agree.
+load() {
+  KNOWN=1
+  { TITLE=$(ask title .) && STATE=$(ask status '.class // "inactive"') && RULES=$(rules); } 2>/dev/null && return 0
+  KNOWN=0 TITLE='Firewall · state unknown'
+  notify "Firewall: the mod does not answer" "$(spot get firewall.title 2>&1 | head -3)  (spot mods)" critical
 }
 
-title() {
-  local n state; n=$(rules | grep -c .)
-  if enabled; then state=ACTIVE; else state=INACTIVE; fi
-  printf 'Firewall · %s · in: %s · out: %s · %s rule(s)' "$state" "$(policy INPUT)" "$(policy OUTPUT)" "$n"
+table() {
+  printf '%s\n' "$ADD"
+  if (( ! KNOWN )); then printf '%s\n' "$ON" "$OFF"    # both: which applies is not known
+  elif [[ $STATE == active ]]; then printf '%s\n' "$OFF"
+  else printf '%s\n' "$ON"; fi
+  printf '%s\n' "$RELOAD" "$RESET"
+  if (( ! KNOWN )); then printf '%s\n' "$UNKNOWN"
+  elif [[ -n $RULES ]]; then printf '%s\n' "$RULES"
+  else printf '%s\n' "$NORULES"; fi
 }
 
 case ${1:-} in
   header) header; echo; exit 0 ;;
-  rules)  header; echo; rules; exit 0 ;;
+  rules)  r=$(rules) || exit 1; header; echo; [[ -n $r ]] && printf '%s\n' "$r"; exit 0 ;;
   -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
   "") ;;
   *) echo "arch-firewall: unknown argument '$1' (see --help)" >&2; exit 2 ;;
 esac
 
 while :; do
-  choice=$(table | SPOT_BACK=$MENU_BACK SPOT_TITLE="$(title)" spot "$CFG/firewall.toml") || exit 0
+  load
+  choice=$(table | SPOT_BACK=$MENU_BACK SPOT_TITLE="$TITLE" spot "$CFG/firewall.toml") || exit 0
   [[ -n $choice ]] || exit 0
   case $choice in
     allow\ *|deny\ *|limit\ *|reject\ *|rt:*) rule_menu "$choice" ;;
@@ -270,6 +261,6 @@ while :; do
     "$OFF")     confirm "Disable the firewall?" && run_ufw disable ;;
     "$RELOAD")  run_ufw reload ;;
     "$RESET")   confirm "Delete ALL rules and disable?" "ufw --force reset" && run_ufw --force reset ;;
-    "$NORULES") ;;
+    "$NORULES"|"$UNKNOWN") ;;
   esac
 done

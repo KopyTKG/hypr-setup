@@ -1,0 +1,16 @@
+type        = "parser"
+api         = 1
+version     = "1.0.0"
+description = "UFW rules as table rows"
+input       = "the contents of /etc/ufw/user.rules and user6.rules, one after the other"
+
+[returns]
+label  = "string" # one line of the table, as arch-firewall reads it back
+key    = "string" # the same line
+action = "string" # allow, deny, limit, reject; rt: first for a route rule
+dir    = "string" # in, out, in_<interface>, ...
+proto  = "string"
+port   = "string"
+from   = "string"
+to     = "string"
+note   = "string" # the rule's comment
