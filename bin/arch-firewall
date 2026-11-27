@@ -9,7 +9,7 @@
 # Listing needs no root. The state, the policies and the rules come from the
 # `firewall` spot mod (spot-config/mods/firewall, with its parser mods/ufw), which
 # also feeds waybar. Approve it once per machine: spot mods allow firewall
-# This script only changes things; the mod only reads.
+# This script only changes things; the mod only reads. Needs spot >= 0.9.3.
 # Anything that changes the firewall goes through arch-root (sudo, with the password
 # asked in a spot dialog that shows the exact ufw command), and the result is shown
 # as a notification.
@@ -61,16 +61,11 @@ header() {
   printf '%-*s %-*s %-*s %-*s %-*s %-*s %s' "$W_ACTION" ACTION "$W_DIR" DIR "$W_PROTO" PROTO "$W_PORT" PORT "$W_FROM" FROM "$W_TO" TO NOTE
 }
 
-# Ask the firewall mod. It fails, and says why on stderr, when there is no fresh
-# answer: an old or missing one must not pass for "no rules" or "inactive". (A
-# warning that a value is old lands in $out too, which then is not JSON.)
+# Ask the firewall mod. --fresh fails, and says why, when there is no answer of
+# now: an old or missing one must not pass for "no rules" or "inactive".
 ask() {  # ask <value> <jq filter>
   local out
-  if out=$(spot get --json "firewall.$1" 2>&1) && [[ -n $out ]] && jq . <<<"$out" >/dev/null 2>&1; then
-    jq -r "$2" <<<"$out"
-  else
-    printf '%s\n' "${out:-spot: no answer from the firewall mod}" >&2; return 1
-  fi
+  out=$(spot get --fresh --json "firewall.$1") && jq -r "$2" <<<"$out"
 }
 
 rules() { ask rules '.[].label'; }
