@@ -92,11 +92,10 @@
     "tooltip": false
   },
   "custom/sockets": {
-    "exec": "arch-sockets count",
+    "exec": "spot watch --waybar sockets.count",
     "on-click": "arch-sockets",
     "on-click-right": "arch-sockets --listening",
-    "return-type": "json",
-    "interval": 5
+    "return-type": "json"
   },
   "custom/firewall": {
     "exec": "spot watch --waybar firewall.status",

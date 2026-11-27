@@ -31,16 +31,18 @@ spot.value("table", { ttl = 2000 }, function() return rows() end)
 spot.value("listening", { ttl = 2000 }, function() return rows(listening) end)
 
 spot.value("count", { every = 5000 }, function()
-  local n = { total = 0, listening = 0, established = 0, udp = 0 }
+  local n = { total = 0, listening = 0, established = 0, other = 0, udp = 0 }
   for _, s in ipairs(sockets()) do
     n.total = n.total + 1
     if listening(s) then n.listening = n.listening + 1 end
     if s.state_name == "ESTAB" then n.established = n.established + 1 end
+    if s.proto == "tcp" and not listening(s) and s.state_name ~= "ESTAB" then n.other = n.other + 1 end
     if s.proto == "udp" then n.udp = n.udp + 1 end
   end
   return {
-    text = tostring(n.total),
-    tooltip = ("%d sockets\n  %d listening\n  %d established\n  %d UDP"):format(n.total, n.listening, n.established, n.udp),
+    text = "\239\135\166 " .. n.total, -- the plug icon
+    tooltip = ("%d sockets\n  %d listening\n  %d established\n  %d other TCP\n  %d UDP\n\nclick: all  \194\183  right-click: listening")
+      :format(n.total, n.listening, n.established, n.other, n.udp),
     class = "sockets",
   }
 end)
