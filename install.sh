@@ -201,3 +201,22 @@ fi
 
 green "done. Restart waybar / chromium / running terminals to pick up everything."
 green "      Reboot to see new SDDM login + Plymouth boot splash."
+
+# spot mods run only once approved, on each machine, by you at a terminal. This
+# only tells you which ones are waiting; it never approves anything. Last, so that
+# it is not lost above the rest.
+mods_notice() {
+  command -v spot >/dev/null 2>&1 || return 0
+  local names list name waiting=()
+  names=$(python3 -I -c 'import sys, tomllib; print(*tomllib.load(open(sys.argv[1], "rb")).get("mods", []), sep="\n")' \
+    "$REPO/spot-config/mods.toml" 2>/dev/null) || { red "spot mods: could not read spot-config/mods.toml"; return 0; }
+  list=$(spot mods 2>/dev/null) || list=
+  for name in $names; do
+    grep -Eq "^$name +provider +approved [0-9]" <<<"$list" || waiting+=("$name")
+  done
+  (( ${#waiting[@]} )) || return 0
+  red "spot mods waiting for your approval (until then their bar modules show nothing useful):"
+  for name in "${waiting[@]}"; do red "      spot mods allow $name"; done
+  red "      then restart waybar. 'spot mods' shows their state."
+}
+mods_notice
