@@ -4,6 +4,7 @@
 #   arch-wallpaper pick          choose a video (spot list) or go back to the static image
 #   arch-wallpaper set <file>    use this video (and turn animation on)
 #   arch-wallpaper on | off      animation on / off (off = static image only)
+#   arch-wallpaper battery [on|off|toggle]   also animate on battery (default off)
 #   arch-wallpaper status        what is configured and what is running
 #   arch-wallpaper watch         the daemon hypr autostart runs (see below)
 #   arch-wallpaper refresh       re-draw now (after swaybg was restarted)
@@ -11,9 +12,10 @@
 #
 # swaybg (the static image) always stays running underneath; the video is drawn on
 # top by mpvpaper. Animation is only active while ALL of these hold:
-#   a video is set  ·  animation is on  ·  the laptop is on AC power
-# so unplugging drops back to the static image (no GPU/battery cost) and plugging
-# in brings the video back. `watch` polls the power state every 30 s.
+#   a video is set  ·  animation is on  ·  on AC power, or `battery on`
+# so by default unplugging drops back to the static image (no GPU/battery cost) and
+# plugging in brings the video back. `watch` polls the power state every 30 s.
+# Menu → Toggle → Wallpaper on battery flips the `battery` setting.
 # While the video runs, swaybg shows its FIRST FRAME (base.jpg) instead of the static
 # image, so whatever shows through at the loop point is nearly identical to the video
 # (a gap there used to flash the static image). On battery / animation off, swaybg
@@ -28,7 +30,7 @@
 # static background.jpg.
 #
 # Videos are looked for in ~/Videos/Wallpapers (WALLPAPER_DIR overrides). State:
-# ~/.local/state/arch-wallpaper/{video,enabled}. Tuning: MPV_OPTS (default below).
+# ~/.local/state/arch-wallpaper/{video,enabled,battery}. Tuning: MPV_OPTS (default below).
 # Test hooks: WALLPAPER_DIR, XDG_STATE_HOME, XDG_RUNTIME_DIR, POWER_SUPPLY_DIR.
 
 set -u
@@ -49,16 +51,23 @@ on_ac()  {  # true when no battery is discharging (desktops have none: always AC
   (( any )) && return 1 || return 0
 }
 
+power_ok() { [[ $(get battery) == on ]] || on_ac; }
+
 want() {  # prints the video path when animation should be running now, else nothing
   local v; v=$(get video)
-  [[ -n $v && -f $v && $(get enabled) != off ]] && on_ac && command -v mpvpaper >/dev/null 2>&1 && printf '%s' "$v"
+  [[ -n $v && -f $v && $(get enabled) != off ]] && power_ok && command -v mpvpaper >/dev/null 2>&1 && printf '%s' "$v"
 }
 
-stop_video() { pkill -x mpvpaper 2>/dev/null; while pgrep -x mpvpaper >/dev/null; do sleep 0.1; done; }
+# running <program> <rest of its command line> — the process may show as a full path
+running() { pgrep -xf "([^ ]*/)?$1 $(printf '%s' "$2" | sed 's/[][\\.*^$+?(){}|]/\\&/g')" >/dev/null; }
+playing() { pgrep -xf "([^ ]*/)?mpvpaper .* $(printf '%s' "$1" | sed 's/[][\\.*^$+?(){}|]/\\&/g')" >/dev/null; }
+
+# SIGKILL: on SIGTERM mpvpaper tends to abort and dump core while tearing down.
+stop_video() { pkill -KILL -x mpvpaper 2>/dev/null; while pgrep -x mpvpaper >/dev/null; do sleep 0.1; done; }
 
 set_base() {  # set_base <image> — make swaybg show it; new one first, then retire the old (no bare moment)
   local img=$1 old
-  pgrep -xf "swaybg -i $img -m fill" >/dev/null && return 0
+  running swaybg "-i $img -m fill" && return 0
   old=$(pgrep -x swaybg)
   setsid -f uwsm-app -- swaybg -i "$img" -m fill >/dev/null 2>&1
   sleep 0.4
@@ -73,7 +82,7 @@ apply() {  # apply [force]
     set_base "$STATIC"
     return 0
   fi
-  if [[ ${1:-} != force ]] && pgrep -xf "mpvpaper .*$(printf '%s' "$v" | sed 's/[][\.*^$/]/\\&/g')\$" >/dev/null && pgrep -xf "swaybg -i $BASE -m fill" >/dev/null; then return 0; fi
+  if [[ ${1:-} != force ]] && playing "$v" && running swaybg "-i $BASE -m fill"; then return 0; fi
   [[ -s $BASE ]] || cmd_lock_sync
   stop_video
   [[ -s $BASE ]] && set_base "$BASE"      # underlay first: mpvpaper must be started after swaybg to sit above it
@@ -118,7 +127,7 @@ cmd_set() {
   [[ -f $f ]] || { echo "arch-wallpaper: no such file: $1" >&2; exit 1; }
   printf '%s' "$f" > "$STATE/video"; echo on > "$STATE/enabled"
   command -v mpvpaper >/dev/null 2>&1 || { notify "mpvpaper is not installed (run bootstrap.sh)"; exit 1; }
-  on_ac && notify "Animated: $(basename "$f")" || notify "Saved: $(basename "$f") — plays when plugged in"
+  power_ok && notify "Animated: $(basename "$f")" || notify "Saved: $(basename "$f") — plays when plugged in (Toggle → Wallpaper on battery)"
   cmd_lock_sync
   poke force
 }
@@ -139,9 +148,21 @@ cmd_pick() {
 cmd_off() { echo off > "$STATE/enabled"; cmd_lock_sync; poke; notify "Static wallpaper"; }
 cmd_on()  { echo on  > "$STATE/enabled"; cmd_lock_sync; poke force; notify "Animation on"; }
 
+cmd_battery() {
+  local to=${1:-toggle}
+  [[ $to == toggle ]] && { [[ $(get battery) == on ]] && to=off || to=on; }
+  case $to in
+    on)  echo on > "$STATE/battery"; echo on > "$STATE/enabled"   # asking for it also undoes `off`
+         cmd_lock_sync; poke force
+         [[ -f $(get video) ]] && notify "Animation on battery: on" || notify "Animation on battery: on — pick a video in Setup → Wallpaper" ;;
+    off) echo off > "$STATE/battery"; poke; notify "Animation on battery: off" ;;
+    *)   echo "arch-wallpaper: battery takes on, off or toggle" >&2; exit 2 ;;
+  esac
+}
+
 cmd_status() {
-  printf 'video:    %s\nanimate:  %s\npower:    %s\nrunning:  %s\n' \
-    "$(get video || true)" "$(get enabled || echo on)" "$(on_ac && echo AC || echo battery)" \
+  printf 'video:    %s\nanimate:  %s\non batt:  %s\npower:    %s\nrunning:  %s\n' \
+    "$(get video || true)" "$(get enabled || echo on)" "$(get battery || echo off)" "$(on_ac && echo AC || echo battery)" \
     "$(pgrep -x mpvpaper >/dev/null && echo yes || echo no)"
 }
 
@@ -150,6 +171,7 @@ case ${1:-pick} in
   set)     cmd_set "${2:?usage: arch-wallpaper set <file>}" ;;
   on)      cmd_on ;;
   off)     cmd_off ;;
+  battery) cmd_battery "${2:-}" ;;
   status)  cmd_status ;;
   watch)   cmd_watch ;;
   refresh) poke force ;;

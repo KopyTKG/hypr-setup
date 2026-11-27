@@ -127,7 +127,8 @@ show_toggle() {
     "  Notifications" \
     "  Touchpad" \
     "  Window transparency" \
-    "  Window gaps") in
+    "  Window gaps" \
+    "  Wallpaper on battery") in
     *Waybar*)        arch-toggle-waybar ;;
     *Nightlight*)    arch-toggle-nightlight ;;
     *"Idle lock"*)   arch-toggle-idle ;;
@@ -135,6 +136,7 @@ show_toggle() {
     *Touchpad*)      arch-toggle-touchpad ;;
     *transparency*)  arch-toggle-window-transparency ;;
     *gaps*)          arch-toggle-window-gaps ;;
+    *"on battery"*)  arch-wallpaper battery toggle ;;
     *Back*)          show_main ;;
   esac
 }
