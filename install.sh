@@ -45,7 +45,27 @@ done
 
 cyan "[2/7] Link standalone config files"
 link_to "$REPO/spot-config"                  "$HOME/.config/spot"
-link_to "$REPO/chromium/chromium-flags.conf" "$HOME/.config/chromium-flags.conf"
+
+# Chromium needs the full path of the extension, so this one is written, not
+# linked: @REPO@ becomes wherever this repo is. Run again after editing it.
+write_chromium_flags() {
+  local src=$REPO/chromium/chromium-flags.conf dst=$HOME/.config/chromium-flags.conf text
+  text=$(<"$src"); text=${text//@REPO@/"$REPO"}
+  if [[ ! -L $dst && -f $dst && $(<"$dst") == "$text" ]]; then
+    gray "  ✓ $dst (already written)"
+    return
+  fi
+  if [[ -L $dst && $(readlink "$dst") == "$src" ]]; then
+    rm "$dst"                       # the link of earlier versions: never write through it
+  elif [[ -e $dst || -L $dst ]]; then
+    mv "$dst" "$dst.bak.$TS"
+    gray "    backup: $dst → $dst.bak.$TS"
+  fi
+  mkdir -p "$(dirname "$dst")"
+  printf '%s\n' "$text" > "$dst"
+  green "  → $dst"
+}
+write_chromium_flags
 link_to "$REPO/bash/.bashrc"   "$HOME/.bashrc"
 link_to "$REPO/starship.toml"  "$HOME/.config/starship.toml"
 link_to "$REPO/xdg-terminals.list" "$HOME/.config/xdg-terminals.list"   # which terminal xdg-terminal-exec uses

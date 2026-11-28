@@ -117,7 +117,7 @@ git submodule update --remote nvim
 7-phase bootstrap:
 
 1. Symlink config dirs into `~/.config/`
-2. Symlink standalone files (`chromium-flags.conf`, `.bashrc`, `starship.toml`)
+2. Symlink standalone files (`.bashrc`, `starship.toml`) and write `chromium-flags.conf` with this repo's path in it (re-run after editing the one in `chromium/`)
 3. Symlink `bin/arch-*` into `~/.local/bin/`
 4. Apply system-wide Chromium / Brave theme policy (writes `/etc/{chromium,brave}/policies/managed/color.json`)
 5. Push `FZF_DEFAULT_OPTS` to live systemd user env + write GTK dark-theme settings, enable `gcr-ssh-agent.socket`
@@ -231,3 +231,7 @@ Stone palette (`#0c0a09` bg, `#f5f5f4` border, `#fafaf9` fg, `#a8a29e` muted) is
 - Hyprland config is Lua (0.56+; the hyprlang `.conf` format is legacy). Validate with `Hyprland --verify-config -c ~/.config/hypr/hyprland.lua`; LSP stubs via `hypr/.luarc.json`. Scripts talk to it with `hyprctl dispatch 'hl.dsp.…'` / `hyprctl eval 'hl.config(…)'` — the old `dispatch <name> <args>` / `keyword` forms no longer work
 - Steam compatibility tools install path: `~/.steam/root/compatibilitytools.d/`
 - AMD requires `vulkan-radeon` + `lib32-vulkan-radeon` for Proton games (no RADV = no DXVK = no Unity)
+
+## License
+
+MIT, see [`LICENSE`](LICENSE). Parts come from Omarchy, also MIT: see [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md).
